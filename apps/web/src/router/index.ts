@@ -17,6 +17,18 @@ export const router = createRouter({
       component: WorkspaceLayout,
       children: [
         {
+          path: 'projects/:id/risks',
+          name: 'project-risks',
+          component: () => import('../views/RiskMapView.vue'),
+          meta: { title: '项目漏洞地图' },
+        },
+        {
+          path: 'defense/sessions/:id/risks',
+          name: 'session-risks',
+          component: () => import('../views/RiskMapView.vue'),
+          meta: { title: '答辩漏洞地图' },
+        },
+        {
           path: 'settings',
           name: 'system-settings',
           component: SystemSettingsView,

@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@defense/shared": "0.1.0",
+    "@vue-flow/core": "^1.48.2",
     "echarts": "^6.1.0",
     "lucide-vue-next": "^0.468.0",
     "pinia": "^3.0.0",

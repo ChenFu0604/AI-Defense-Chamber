@@ -1,0 +1,313 @@
+.risk-map-heading,
+.risk-toolbar,
+.risk-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+.risk-map-heading {
+  justify-content: space-between;
+}
+.risk-map-source-note,
+.risk-muted {
+  color: #a2abc2;
+  font-size: 12px;
+  line-height: 1.8;
+  margin: 16px 0;
+}
+.risk-toolbar {
+  justify-content: space-between;
+  padding: 18px 0;
+  font-size: 12px;
+  color: #aeb9cd;
+}
+.risk-toolbar select {
+  color: #e4e8f7;
+  background: #181c29;
+  border: 1px solid #46506a;
+  padding: 8px;
+  border-radius: 6px;
+  margin-left: 6px;
+}
+.risk-badge {
+  display: inline-block;
+  padding: 4px 9px;
+  font-size: 11px;
+  border-radius: 5px;
+  line-height: 1.6;
+}
+.risk-badge.risk-level-high {
+  color: #ffb7bf;
+  background: #462832;
+}
+.risk-badge.risk-level-medium {
+  color: #f0cf94;
+  background: #3b3225;
+}
+.risk-badge.risk-level-low {
+  color: #9fe1d3;
+  background: #203d39;
+}
+.risk-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+.risk-workspace.has-selection {
+  grid-template-columns: minmax(0, 1fr) 330px;
+}
+.risk-canvas {
+  height: 640px;
+  position: relative;
+  border: 1px solid #3b425d;
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: #0e121d;
+  background-image: radial-gradient(#333b51 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+.risk-canvas .vue-flow {
+  background: transparent;
+}
+.risk-canvas .vue-flow__node-risk {
+  border-radius: 9px;
+}
+.risk-canvas .vue-flow__node:focus-visible {
+  outline: 3px solid #c1afff;
+  outline-offset: 5px;
+}
+.risk-node-card {
+  width: 280px;
+  min-height: 150px;
+  padding: 15px;
+  border: 1px solid #6b5261;
+  border-top: 3px solid #cc7787;
+  border-radius: 9px;
+  background: #211b29;
+  color: #e4e7f4;
+  overflow-wrap: anywhere;
+  box-shadow: 0 6px 14px #05071055;
+}
+.risk-node-card.risk-level-high {
+  border-top-color: #f09aa8;
+  background: #2b1d2a;
+}
+.risk-node-card.risk-level-medium {
+  border-color: #746047;
+  border-top-color: #d8b477;
+  background: #242126;
+}
+.risk-node-card.risk-level-low {
+  border-color: #3a7168;
+  border-top-color: #85c8b8;
+  background: #19262b;
+}
+.risk-node-card.is-selected {
+  outline: 3px solid #baabfb;
+  outline-offset: 4px;
+}
+.risk-node-meta {
+  display: flex;
+  justify-content: space-between;
+  color: #d7adbb;
+  font-size: 10px;
+  margin-bottom: 9px;
+}
+.risk-node-card strong {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.risk-node-card p {
+  margin: 8px 0;
+  color: #b8bdcf;
+  font-size: 11px;
+}
+.risk-node-card small {
+  color: #949eb8;
+  font-size: 10px;
+}
+.risk-canvas .vue-flow__handle {
+  background: #a79ad6;
+  border: 2px solid #282438;
+  width: 9px;
+  height: 9px;
+}
+.risk-canvas-controls {
+  position: absolute;
+  bottom: 46px;
+  left: 12px;
+  display: flex;
+  gap: 5px;
+  z-index: 5;
+  flex-wrap: wrap;
+}
+.risk-canvas-controls button {
+  color: #e5e6f5;
+  font-size: 12px;
+  background: #202637;
+  border: 1px solid #535d78;
+  border-radius: 5px;
+  padding: 8px 11px;
+}
+.risk-canvas-tip {
+  position: absolute;
+  bottom: 10px;
+  left: 14px;
+  right: 12px;
+  pointer-events: none;
+  color: #8995b2;
+  font-size: 10px;
+  background: #111624d9;
+  border-radius: 4px;
+  padding: 5px;
+}
+.risk-details {
+  background: #151b29;
+  border: 1px solid #465071;
+  border-radius: 12px;
+  padding: 22px;
+  max-height: 760px;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+}
+.risk-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.risk-detail-header button {
+  font-size: 22px;
+  background: transparent;
+  border: none;
+}
+.risk-details h2 {
+  font-size: 19px;
+  line-height: 1.7;
+  margin: 16px 0;
+}
+.risk-details h3 {
+  font-size: 13px;
+  color: #dfdef0;
+  margin: 23px 0 10px;
+}
+.risk-details p,
+.risk-details li {
+  color: #bdc5d9;
+  line-height: 1.9;
+  font-size: 12px;
+}
+.risk-details .risk-description {
+  white-space: pre-wrap;
+}
+.risk-details .risk-source-label {
+  color: #c5adfa;
+}
+.risk-details .risk-muted {
+  color: #8e9bb6;
+  font-size: 11px;
+}
+.risk-details blockquote {
+  border-left: 2px solid #82719c;
+  padding: 9px 12px;
+  background: #1d2434;
+  margin: 12px 0;
+}
+.risk-details blockquote strong {
+  color: #c5bdde;
+  font-size: 11px;
+}
+.risk-details small {
+  display: block;
+  color: #97a3bd;
+  font-size: 10px;
+  margin-top: 4px;
+}
+.risk-details ul {
+  padding-left: 18px;
+}
+.risk-details li + li {
+  margin-top: 10px;
+}
+.risk-relation {
+  padding: 10px 0;
+  border-top: 1px solid #333b53;
+}
+.risk-relation button {
+  text-align: left;
+  color: #c5b2ff;
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: 12px;
+}
+.risk-node-list {
+  margin: 28px 0;
+}
+.risk-node-list h2 {
+  font-size: 16px;
+  margin-bottom: 16px;
+}
+.risk-node-list small {
+  color: #939db2;
+  font-size: 11px;
+  font-weight: normal;
+  margin-left: 12px;
+}
+.risk-node-list > button {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  padding: 14px;
+  border: 1px solid #323a51;
+  background: #141a26;
+  border-radius: 7px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+.risk-node-list > button > span:last-child {
+  margin-left: auto;
+  color: #b9aacd;
+  font-size: 11px;
+}
+.risk-node-list > button[aria-pressed='true'] {
+  border-color: #c0a9fb;
+}
+.risk-empty {
+  min-height: 220px;
+}
+.risk-demo {
+  border-color: #9d7c49;
+  color: #eac88f;
+}
+@media (max-width: 1180px) {
+  .risk-workspace.has-selection {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .risk-details {
+    max-height: none;
+  }
+}
+@media (max-width: 700px) {
+  .risk-canvas {
+    height: 500px;
+  }
+  .risk-node-list > button {
+    flex-wrap: wrap;
+  }
+  .risk-node-list > button > span:last-child {
+    width: 100%;
+    margin-left: 0;
+  }
+  .risk-legend {
+    gap: 7px;
+  }
+}

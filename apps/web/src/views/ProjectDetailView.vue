@@ -61,6 +61,18 @@ const analysisStatus = computed(() => {
       </div>
     </div>
     <ProjectAnalysisPanel :project="project" />
+    <div class="defense-actions">
+      <RouterLink
+        :to="{ name: 'project-risks', params: { id: project.id } }"
+        class="app-button button-secondary"
+        >查看项目漏洞地图<ArrowUpRight :size="16" /></RouterLink
+      ><RouterLink
+        v-if="analyses.stateFor(project.id).demo"
+        :to="{ name: 'project-risks', params: { id: project.id }, query: { mode: 'demo' } }"
+        class="text-button"
+        >查看已保存模拟画像的地图（模拟）</RouterLink
+      >
+    </div>
     <div class="detail-layout">
       <div class="detail-sections">
         <section v-for="field in projectTextFields" :key="field.key" class="detail-section">

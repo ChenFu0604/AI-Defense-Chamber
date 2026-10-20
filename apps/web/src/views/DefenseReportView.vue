@@ -54,6 +54,13 @@ const answers = computed(
       ><span>已保存 {{ answers }} 次回答</span>
     </div>
     <p class="notice">逐轮反馈仅展示已保存结果；评分报告依据本次实际回答生成，不能替代外部核验。</p>
+    <div class="defense-actions">
+      <RouterLink
+        :to="{ name: 'session-risks', params: { id } }"
+        class="app-button button-secondary"
+        >查看本场答辩漏洞地图 →</RouterLink
+      >
+    </div>
     <template v-if="store.session.mode === 'live'">
       <p v-if="reports.status === 'loading'" class="notice" role="status">正在读取历史评分报告…</p>
       <div

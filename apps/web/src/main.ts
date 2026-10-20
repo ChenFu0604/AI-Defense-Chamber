@@ -9,5 +9,6 @@ import './styles/judges.css'
 import './styles/defense.css'
 import './styles/settings.css'
 import './styles/report.css'
+import './styles/risk-map.css'
 
 createApp(App).use(createPinia()).use(router).mount('#app')

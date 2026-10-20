@@ -50,6 +50,9 @@ defineExpose({ open })
       <div class="milestone">
         <Check :size="18" /><span>阶段 06 · 评分报告与能力雷达图</span><b>已实现</b>
       </div>
+      <div class="milestone">
+        <Check :size="18" /><span>阶段 07 · 项目漏洞地图</span><b>已实现</b>
+      </div>
     </template>
     <template v-else>
       <h2 id="dialog-title">本地开发指南</h2>
