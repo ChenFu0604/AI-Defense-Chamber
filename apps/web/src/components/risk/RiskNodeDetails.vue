@@ -28,6 +28,8 @@ const originLabels = {
   ai_turn: 'AI 逐轮反馈',
 }
 function locationLabel(ref: RiskEvidence) {
+  if (ref.origin === 'project_material' && ref.locator.startsWith('attachment.'))
+    return '项目附件提取文字'
   if (ref.origin === 'defense_answer') return '已保存的回答原文'
   if (ref.origin === 'project_material')
     return projectFieldLabels[ref.locator as keyof typeof projectFieldLabels] ?? '项目原文'

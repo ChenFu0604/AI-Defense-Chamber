@@ -11,6 +11,8 @@ import { createDefenseRouter } from './routes/defense.js'
 import { defenseService, type DefenseService } from './services/defense-service.js'
 import { createSettingsRouter } from './routes/settings.js'
 import { createReportsRouter } from './routes/reports.js'
+import { createAttachmentsRouter } from './routes/attachments.js'
+import { attachmentService, type AttachmentService } from './services/attachment-service.js'
 import { createReportService, type ReportService } from './services/report-service.js'
 import {
   modelSettingsService,
@@ -24,11 +26,25 @@ export function createApp(
     defense?: DefenseService
     modelSettings?: ModelSettingsService
     reports?: ReportService
+    attachments?: AttachmentService
   } = {},
 ) {
   const app = express()
   app.disable('x-powered-by')
   app.use(cors({ origin: env.WEB_ORIGIN }))
+  app.use('/api/v1', createAttachmentsRouter(options.attachments ?? attachmentService))
+  app.use('/api', createAttachmentsRouter(options.attachments ?? attachmentService))
+  // Bounded document text occurs in both project and analysis snapshots; keep the
+  // smaller default limit for unrelated APIs.
+  app.use(
+    [
+      '/api/v1/projects/analyze',
+      '/api/projects/analyze',
+      '/api/v1/defense/sessions',
+      '/api/defense/sessions',
+    ],
+    express.json({ limit: '1mb' }),
+  )
   app.use(express.json({ limit: '256kb' }))
   app.use('/api/v1', healthRouter, createProjectsRouter(options.analyzeProject ?? analyzeProject))
   app.use('/api', healthRouter, createProjectsRouter(options.analyzeProject ?? analyzeProject))

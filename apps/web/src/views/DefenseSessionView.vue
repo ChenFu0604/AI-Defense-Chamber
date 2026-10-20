@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   judgeDefinitions,
@@ -10,6 +10,9 @@ import {
 import { useDefenseStore } from '../stores/defense'
 import DefenseMessages from '../components/defense/DefenseMessages.vue'
 import AppButton from '../components/ui/AppButton.vue'
+import AttachmentUploader from '../components/attachments/AttachmentUploader.vue'
+import AttachmentGallery from '../components/attachments/AttachmentGallery.vue'
+const uploading = ref(false)
 const route = useRoute(),
   store = useDefenseStore()
 const id = computed(() => String(route.params.id ?? ''))
@@ -98,6 +101,10 @@ onBeforeUnmount(() => {
         {{ current.content }}
       </p>
     </div>
+    <details v-if="store.session.project.attachments?.length" class="history-card">
+      <summary>本项目附带的图片与文档</summary>
+      <AttachmentGallery :items="store.session.project.attachments" />
+    </details>
     <div class="defense-switch" aria-label="切换评委">
       <AppButton
         v-for="role in judgeDefinitions"
@@ -105,6 +112,7 @@ onBeforeUnmount(() => {
         variant="secondary"
         :disabled="
           blocked ||
+          uploading ||
           !!store.operation ||
           store.session.status !== 'awaiting_answer' ||
           store.session.currentJudgeId === role.id ||
@@ -135,13 +143,20 @@ onBeforeUnmount(() => {
         maxlength="4000"
         rows="5"
         :disabled="blocked || !!store.operation || store.session.status !== 'awaiting_answer'"
-        placeholder="说明你的判断、依据与尚需验证的部分…"
+        placeholder="说明你的判断和依据；附图时请解释图中要证明的内容…"
         @input="store.updateDraft(($event.target as HTMLTextAreaElement).value)"
+      />
+      <AttachmentUploader
+        :model-value="store.draftAttachments"
+        :disabled="blocked || !!store.operation || store.session.status !== 'awaiting_answer'"
+        label="为本次回答补充图片与文档"
+        @update:model-value="store.updateAttachments"
+        @busy="uploading = $event"
       />
       <div class="defense-actions">
         <AppButton
           v-if="store.session.status === 'awaiting_answer' && !store.operation"
-          :disabled="blocked || !store.draft.trim()"
+          :disabled="blocked || uploading || !store.draft.trim()"
           :busy="store.busy"
           @click="store.answer"
           >提交回答并追问</AppButton
@@ -155,9 +170,9 @@ onBeforeUnmount(() => {
           :disabled="blocked"
           @click="store.initial"
           >生成首问</AppButton
-        ><AppButton variant="secondary" :disabled="blocked" @click="store.end"
+        ><AppButton variant="secondary" :disabled="blocked || uploading" @click="store.end"
           >结束答辩并保存</AppButton
-        ><AppButton variant="ghost" :disabled="store.busy" @click="store.load(id)"
+        ><AppButton variant="ghost" :disabled="store.busy || uploading" @click="store.load(id)"
           >刷新会话状态</AppButton
         >
       </div>

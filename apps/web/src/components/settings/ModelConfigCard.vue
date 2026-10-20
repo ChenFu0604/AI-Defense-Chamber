@@ -148,7 +148,7 @@ async function save() {
       <div class="model-config-note">
         <KeyRound :size="17" />
         <p>
-          接口只返回“是否已配置密钥”，不会回传密钥。测试会向所填地址发送固定短文本，可能消耗少量模型额度，不发送项目资料。
+          接口只返回“是否已配置密钥”，不会回传密钥。测试会向所填地址发送固定短文本，可能消耗少量模型额度，不发送项目资料。含图片的分析与答辩需选择支持视觉的模型；此连接测试不验证图片理解能力。
         </p>
       </div>
       <p v-if="error" class="notice notice-error" role="alert">{{ error }}</p>

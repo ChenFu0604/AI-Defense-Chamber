@@ -17,6 +17,7 @@ import { formatProjectDate } from '../utils/project-format'
 import StorageNotice from '../components/StorageNotice.vue'
 import ProjectAnalysisPanel from '../components/analysis/ProjectAnalysisPanel.vue'
 import { useAnalysisStore } from '../stores/analysis'
+import AttachmentGallery from '../components/attachments/AttachmentGallery.vue'
 const analyses = useAnalysisStore()
 const route = useRoute()
 const projects = useProjectsStore()
@@ -61,6 +62,10 @@ const analysisStatus = computed(() => {
       </div>
     </div>
     <ProjectAnalysisPanel :project="project" />
+    <section v-if="project.attachments?.length" class="history-card">
+      <h2>项目图片与文档</h2>
+      <AttachmentGallery :items="project.attachments" />
+    </section>
     <p v-if="projects.historyWarning" class="notice" role="status">{{ projects.historyWarning }}</p>
     <div class="defense-actions">
       <RouterLink

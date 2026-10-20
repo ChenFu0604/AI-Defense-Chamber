@@ -3,13 +3,17 @@ import { projectInputSchema, type DefenseSession } from '@defense/shared'
 import { AppError } from '../middleware/app-error.js'
 
 export const MAX_REPORT_CONTEXT_CHARS = 180000
-export function buildReportContext(session: DefenseSession) {
+export function buildReportContext(
+  session: DefenseSession,
+  materials: { id: string; name: string; text: string; truncated: boolean }[] = [],
+) {
   const answers = session.messages.filter(
     (message) => message.sender === 'user' && ['sent', 'failed'].includes(message.status),
   )
   if (!answers.length)
     throw new AppError(422, 'REPORT_EMPTY_SESSION', '尚无已保存的用户回答，无法生成评分报告。')
   const context = {
+    materials,
     project: projectInputSchema.parse(session.project),
     profile: {
       coreValue: session.analysis.output.coreValue,
@@ -34,6 +38,11 @@ export function buildReportContext(session: DefenseSession) {
         question: question.content,
         judgeId: question.judgeId,
         answerStatus: message.status,
+        attachments: message.attachments?.map((a) => ({
+          id: a.id,
+          name: a.name,
+          mimeType: a.mimeType,
+        })),
       }
     }),
     unansweredQuestionCount: session.messages.filter(

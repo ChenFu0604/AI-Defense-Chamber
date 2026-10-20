@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { attachmentListSchema } from './attachments.js'
 
 export const projectTypes = ['innovation', 'research', 'graduation', 'pitch', 'other'] as const
 export const defenseDifficulties = ['normal', 'advanced', 'pressure'] as const
@@ -30,6 +31,7 @@ export const projectFieldLabels = {
   technicalPlan: '技术方案',
   valueProposition: '商业模式或应用价值',
   difficulty: '答辩难度',
+  attachments: '补充附件',
 } as const
 
 export const projectTextLimits = {
@@ -61,6 +63,7 @@ export const projectInputSchema = z.object({
     projectTextLimits.valueProposition,
   ),
   difficulty: z.enum(defenseDifficulties, { error: '请选择有效的答辩难度。' }),
+  attachments: attachmentListSchema.optional(),
 })
 
 export const projectSchema = projectInputSchema
@@ -89,7 +92,7 @@ export type ProjectType = (typeof projectTypes)[number]
 export type DefenseDifficulty = (typeof defenseDifficulties)[number]
 export type ProjectInput = z.infer<typeof projectInputSchema>
 export type Project = z.infer<typeof projectSchema>
-export type ProjectField = keyof ProjectInput
+export type ProjectField = keyof typeof projectFieldLabels
 export type ProjectFieldErrors = Partial<Record<ProjectField, string>>
 
 export function validateProjectForm(

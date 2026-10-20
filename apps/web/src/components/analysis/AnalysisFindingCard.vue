@@ -15,7 +15,11 @@ defineProps<{ title?: string; finding: AnalysisFinding }>()
     <details v-if="finding.evidence.length" class="finding-evidence">
       <summary>查看材料依据 · {{ finding.evidence.length }} 处</summary>
       <blockquote v-for="(reference, index) in finding.evidence" :key="index">
-        <span>{{ projectFieldLabels[reference.field] }}</span>
+        <span>{{
+          reference.field === 'materials'
+            ? '附件提取文字（未外部核验）'
+            : projectFieldLabels[reference.field]
+        }}</span>
         <p>“{{ reference.quote }}”</p>
       </blockquote>
     </details>

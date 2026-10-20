@@ -8,6 +8,7 @@ import {
   projectTypes,
   projectTypeLabels,
   projectTextLimits,
+  projectFieldLabels,
   type Project,
   type ProjectField,
 } from '@defense/shared'
@@ -16,6 +17,11 @@ import FormField from './ui/FormField.vue'
 import { useProjectForm } from '../composables/useProjectForm'
 import { useProjectsStore } from '../stores/projects'
 import { exampleProject, projectTextFields } from '../data/project-form'
+import AttachmentUploader from './attachments/AttachmentUploader.vue'
+const uploading = ref(false),
+  importText = ref(''),
+  importField = ref<(typeof projectTextFields)[number]['key']>('description'),
+  importError = ref('')
 
 const emit = defineEmits<{ created: [project: Project] }>()
 const { form, errors, errorSummary, hasContent, validateField, submit } = useProjectForm()
@@ -46,7 +52,7 @@ function onInput(field: ProjectField) {
   projects.saveError = ''
 }
 async function save() {
-  if (savedProject.value || projects.saving) return
+  if (savedProject.value || projects.saving || uploading.value) return
   const project = await submit()
   if (!project) {
     const firstError = Object.keys(errors.value)[0]
@@ -55,6 +61,27 @@ async function save() {
   }
   savedProject.value = project
   emit('created', project)
+}
+function appendImport() {
+  const existing = form[importField.value],
+    text = importText.value.trim()
+  const next = existing ? existing + '\n\n' + text : text
+  if (!text) {
+    importError.value = '请先选择并检查要导入的文字。'
+    return
+  }
+  if (next.length > projectTextLimits[importField.value]) {
+    importError.value = `追加后超过本字段 ${projectTextLimits[importField.value]} 字上限，请在预览中删减；原填写内容未改变。`
+    return
+  }
+  form[importField.value] = next
+  importError.value = ''
+  importText.value = ''
+  onInput(importField.value)
+}
+function selectDocument(text: string) {
+  importText.value = text
+  importError.value = ''
 }
 </script>
 <template>
@@ -69,7 +96,7 @@ async function save() {
       <div>
         <span class="section-kicker">PROJECT BRIEF</span>
         <h2>先把你的项目，讲清楚。</h2>
-        <p>所有字段均为必填；尚未确定的内容，可以如实注明“待验证”。</p>
+        <p>八项项目资料均为必填，图片与文档选填；尚未确定的内容可注明“待验证”。</p>
       </div>
       <AppButton
         variant="secondary"
@@ -209,13 +236,64 @@ async function save() {
         </p>
       </fieldset>
     </fieldset>
+    <AttachmentUploader
+      :model-value="form.attachments ?? []"
+      :disabled="projects.saving || !!savedProject"
+      label="项目图片与文档（选填）"
+      @update:model-value="form.attachments = $event.length ? $event : undefined"
+      @busy="uploading = $event"
+    />
+    <p v-if="errors.attachments" class="field-error" role="alert">{{ errors.attachments }}</p>
+    <section
+      v-if="form.attachments?.some((file) => file.text) && !savedProject"
+      class="document-import"
+      aria-label="文档文字填入表单"
+    >
+      <strong>文档已解析，可选择文字填入表单</strong>
+      <p>附件会随项目保存并用于分析。也可在下方选取文字追加到指定字段，原内容不会被覆盖。</p>
+      <div class="defense-actions">
+        <AppButton
+          v-for="file in form.attachments.filter((file) => file.text)"
+          :key="file.id"
+          variant="secondary"
+          :disabled="uploading"
+          @click="selectDocument(file.text)"
+          >选取 {{ file.name }} 的文字</AppButton
+        >
+      </div>
+      <label
+        >填入字段<select v-model="importField">
+          <option v-for="field in projectTextFields" :key="field.key" :value="field.key">
+            {{ field.label }}
+          </option>
+        </select></label
+      >
+      <label for="document-import-text">待追加文字（可编辑）</label>
+      <textarea
+        id="document-import-text"
+        v-model="importText"
+        rows="5"
+        placeholder="选择上方文档，在这里保留需要填写的文字…"
+      />
+      <p>
+        {{ importText.length }} 字；目标字段上限 {{ projectTextLimits[importField] }} 字，当前已用
+        {{ form[importField].length }} 字。
+      </p>
+      <p v-if="importError" role="alert" class="field-error">{{ importError }}</p>
+      <AppButton
+        variant="secondary"
+        :disabled="uploading || !importText.trim()"
+        @click="appendImport"
+        >追加到{{ projectFieldLabels[importField] }}</AppButton
+      >
+    </section>
     <div class="form-submit-bar">
       <p>
         <ShieldCheck :size="15" /><span
-          >仅保存到当前浏览器，清除浏览器数据后将丢失。<br />创建时不调用模型；点击项目分析时才会发送资料。</span
+          >项目资料保存到此浏览器，附件保存在本机后端。<br />上传与创建不调用模型；分析时才会发送资料与附件。</span
         >
       </p>
-      <AppButton type="submit" :disabled="projects.saving || !!savedProject"
+      <AppButton type="submit" :disabled="projects.saving || !!savedProject || uploading"
         ><LoaderCircle v-if="projects.saving" :size="16" class="spinning" />{{
           projects.saving ? '正在保存…' : savedProject ? '已保存' : '创建项目'
         }}<ArrowUpRight v-if="!projects.saving && !savedProject" :size="17"

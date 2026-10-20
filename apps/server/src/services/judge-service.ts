@@ -10,6 +10,7 @@ import {
 import { judgeConfigs } from '../config/judges.js'
 import { aiClient, type AIClient } from './ai-client.js'
 import { AppError } from '../middleware/app-error.js'
+import { attachmentService, type AttachmentService } from './attachment-service.js'
 
 export type JudgeService = (
   request: JudgeQuestionRequest,
@@ -96,10 +97,17 @@ function demoQuestion(request: JudgeQuestionRequest): JudgeQuestion {
     rationale: '模拟模板：用于演示角色视角和状态，不代表模型判断或已验证风险。',
   }
 }
-export function createJudgeService(client: AIClient = aiClient): JudgeService {
+export function createJudgeService(
+  client: AIClient = aiClient,
+  attachments: AttachmentService = attachmentService,
+): JudgeService {
   return async (request, signal) => {
     if (signal?.aborted) throw new AppError(499, 'REQUEST_CANCELLED', '本次提问已取消。')
     const judge = judgeConfigs.find((item) => item.id === request.judgeId)!
+    const materials =
+      request.mode === 'live'
+        ? await attachments.materials(request.project.attachments)
+        : { images: [], documents: [] }
     const result =
       request.mode === 'demo'
         ? { data: demoQuestion(request), model: null }
@@ -108,12 +116,17 @@ export function createJudgeService(client: AIClient = aiClient): JudgeService {
             system: judge.systemPrompt,
             user: JSON.stringify({
               judgeId: request.judgeId,
-              project: request.project,
+              project: {
+                ...request.project,
+                attachments: request.project.attachments?.map(({ id, name }) => ({ id, name })),
+              },
+              materials: materials.documents,
               profile: request.analysis.output,
               history: request.history,
             }),
             schema: judgeQuestionSchema,
             signal,
+            images: materials.images,
           })
     if (signal?.aborted) throw new AppError(499, 'REQUEST_CANCELLED', '本次提问已取消。')
     const parsed = judgeQuestionSchema.safeParse(result.data)

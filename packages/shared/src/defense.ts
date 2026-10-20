@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { attachmentListSchema } from './attachments.js'
 import { judgeIds, judgeQuestionSchema, type JudgeDefinition } from './judges.js'
 import { projectSchema } from './project.js'
 import { analysisRecordSchema, analysisMatchesProject } from './analysis.js'
@@ -42,6 +43,7 @@ export const defenseMessageSchema = z.strictObject({
   replyTo: z.uuid().nullable(),
   requestId: z.uuid(),
   model: text(200).nullable(),
+  attachments: attachmentListSchema.optional(),
 })
 export type DefenseMessage = z.infer<typeof defenseMessageSchema>
 export const defenseStatusSchema = z.enum([
@@ -135,6 +137,7 @@ export const answerRequestSchema = z.strictObject({
   requestId: z.uuid(),
   questionId: z.uuid(),
   answer: text(4000),
+  attachments: attachmentListSchema.optional(),
 })
 export type AnswerRequest = z.infer<typeof answerRequestSchema>
 export const switchJudgeRequestSchema = z.strictObject({

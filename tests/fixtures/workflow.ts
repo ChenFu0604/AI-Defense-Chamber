@@ -11,10 +11,12 @@ import { createReportService } from '../../apps/server/src/services/report-servi
 import { validAnalysisOutput } from './analysis.js'
 import { reportOutputFixture } from './report.js'
 import { createModelSettingsService } from '../../apps/server/src/services/model-settings-service.js'
+import { createAttachmentService } from '../../apps/server/src/services/attachment-service.js'
 
 /** Local test adapter only: exercises the real JSON client without network/model access. */
 export function createWorkflowFixture(directory: string) {
   const calls = { project_analysis: 0, defense_turn: 0, defense_report: 0 }
+  const modelInputs: { task: string; images: number; context: Record<string, unknown> }[] = []
   const failedAnswers = new Set<string>()
   const failures = new Map<string, 'http' | 'invalid'>()
   const client = createAIClient(
@@ -29,8 +31,17 @@ export function createWorkflowFixture(directory: string) {
       const body = JSON.parse(String(init?.body))
       const task = body.response_format.json_schema.name as keyof typeof calls
       calls[task]++
-      const input = body.messages[1].content as string
+      const content = body.messages[1].content
+      const input = (typeof content === 'string' ? content : content[0].text) as string
       const context = JSON.parse(input.slice(input.indexOf('{')))
+      modelInputs.push({
+        task,
+        images:
+          typeof content === 'string'
+            ? 0
+            : content.filter((part: { type: string }) => part.type === 'image_url').length,
+        context,
+      })
       const failure = failures.get(task)
       failures.delete(task)
       if (failure === 'http') return new Response('{}', { status: 503 })
@@ -106,10 +117,17 @@ export function createWorkflowFixture(directory: string) {
   )
   const repository = createDefenseRepository(join(directory, 'sessions'))
   const reportRepository = createReportRepository(join(directory, 'reports'))
-  const defense = createDefenseService(repository, createDefenseModel(client), reportRepository)
-  const reports = createReportService(defense, reportRepository, client)
+  const attachments = createAttachmentService(join(directory, 'attachments'))
+  const defense = createDefenseService(
+    repository,
+    createDefenseModel(client, attachments),
+    reportRepository,
+    attachments,
+  )
+  const reports = createReportService(defense, reportRepository, client, attachments)
   const app = createApp({
-    analyzeProject: createProjectAnalysisService(client),
+    analyzeProject: createProjectAnalysisService(client, attachments),
+    attachments,
     defense,
     reports,
     askJudge: async () => {
@@ -124,5 +142,5 @@ export function createWorkflowFixture(directory: string) {
       },
     }),
   })
-  return { app, calls, failures, repository, reportRepository }
+  return { app, calls, failures, repository, reportRepository, attachments, modelInputs }
 }

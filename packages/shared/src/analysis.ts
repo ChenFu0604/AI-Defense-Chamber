@@ -10,6 +10,7 @@ export const evidenceReferenceSchema = z.strictObject({
     'coreFeatures',
     'technicalPlan',
     'valueProposition',
+    'materials',
   ]),
   quote: text(600),
 })
@@ -81,7 +82,13 @@ export function analysisEvidenceIsValid(
   ]
   return findings.every((finding) => {
     if (finding.certainty === 'provided' && finding.evidence.length === 0) return false
-    return finding.evidence.every((reference) => project[reference.field].includes(reference.quote))
+    return finding.evidence.every((reference) =>
+      reference.field === 'materials'
+        ? !!project.attachments?.some(
+            (file) => file.mimeType !== 'image/jpeg' && file.text.includes(reference.quote),
+          )
+        : project[reference.field].includes(reference.quote),
+    )
   })
 }
 

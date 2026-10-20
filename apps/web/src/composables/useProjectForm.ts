@@ -29,15 +29,16 @@ export function useProjectForm() {
       message,
     })),
   )
-  const hasContent = computed(() =>
-    [
-      form.name,
-      form.description,
-      form.targetUsers,
-      form.coreFeatures,
-      form.technicalPlan,
-      form.valueProposition,
-    ].some((value) => value.trim().length > 0),
+  const hasContent = computed(
+    () =>
+      [
+        form.name,
+        form.description,
+        form.targetUsers,
+        form.coreFeatures,
+        form.technicalPlan,
+        form.valueProposition,
+      ].some((value) => value.trim().length > 0) || !!form.attachments?.length,
   )
   function validateField(field: ProjectField) {
     const result = validateProjectForm(form)

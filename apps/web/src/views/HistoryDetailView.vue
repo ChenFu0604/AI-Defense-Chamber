@@ -5,7 +5,6 @@ import {
   buildRiskGraph,
   defenseStatusLabels,
   judgeDefinitions,
-  projectFieldLabels,
   projectTypeLabels,
 } from '@defense/shared'
 import { useHistoryStore } from '../stores/history'
@@ -13,6 +12,8 @@ import ReportResults from '../components/report/ReportResults.vue'
 import DefenseMessages from '../components/defense/DefenseMessages.vue'
 import AnalysisResults from '../components/analysis/AnalysisResults.vue'
 import AppButton from '../components/ui/AppButton.vue'
+import AttachmentGallery from '../components/attachments/AttachmentGallery.vue'
+import ProjectSnapshot from '../components/ProjectSnapshot.vue'
 const route = useRoute(),
   store = useHistoryStore()
 const id = computed(() => String(route.params.id)),
@@ -35,13 +36,6 @@ const risks = computed(() => {
     return null
   }
 })
-const projectFields = [
-  'description',
-  'targetUsers',
-  'coreFeatures',
-  'technicalPlan',
-  'valueProposition',
-] as const
 onMounted(store.load)
 watch(id, store.load)
 </script>
@@ -50,7 +44,7 @@ watch(id, store.load)
   <div class="view-heading">
     <div class="eyebrow">SAVED SESSION SNAPSHOT</div>
     <h1>历史答辩与报告</h1>
-    <p>直接读取本地保存的数据，本页不请求模型或后端。</p>
+    <p>读取本地保存的记录，附件预览从本机后端加载；不重新调用模型。</p>
   </div>
   <p v-if="store.error" role="alert" class="notice notice-error">{{ store.error }}</p>
   <template v-else-if="entry">
@@ -91,10 +85,11 @@ watch(id, store.load)
     <details class="history-card">
       <summary>当时的项目资料与分析</summary>
       <h3>{{ entry.session.project.name }}</h3>
-      <div v-for="field in projectFields" :key="field">
-        <h4>{{ projectFieldLabels[field] }}</h4>
-        <p class="history-original">{{ entry.session.project[field] }}</p>
-      </div>
+      <ProjectSnapshot :project="entry.session.project" />
+      <AttachmentGallery
+        v-if="entry.session.project.attachments?.length"
+        :items="entry.session.project.attachments"
+      />
       <AnalysisResults :record="entry.session.analysis" />
     </details>
     <ReportResults v-if="entry.report" :report="entry.report" :messages="entry.session.messages" />

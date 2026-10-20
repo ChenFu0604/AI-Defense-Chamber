@@ -6,6 +6,7 @@ import { useAnalysisStore } from '../../stores/analysis'
 import { useDefenseStore } from '../../stores/defense'
 import { recentDefenseSessions } from '../../services/defense-storage'
 import AppButton from '../ui/AppButton.vue'
+import { MessagesSquare, ArrowUpRight } from 'lucide-vue-next'
 const props = defineProps<{ project: Project }>()
 const analysisStore = useAnalysisStore(),
   defense = useDefenseStore(),
@@ -98,9 +99,17 @@ async function start() {
         v-for="session in recent.slice(0, 5)"
         :key="session.id"
         :to="{ name: 'defense-session', params: { id: session.id } }"
-        >{{ session.mode === 'demo' ? '模拟会话' : '真实会话' }} ·
-        {{ session.id.slice(0, 8) }} →</RouterLink
-      >
+        class="resume-session-card"
+        ><MessagesSquare :size="20" />
+        <div>
+          <span class="resume-session-badge">{{
+            session.mode === 'demo' ? '模拟演示' : '模型答辩'
+          }}</span
+          ><strong>答辩会话 · {{ session.id.slice(0, 8) }}</strong
+          ><small>查看记录或继续回答</small>
+        </div>
+        <ArrowUpRight :size="17"
+      /></RouterLink>
     </div>
   </section>
 </template>

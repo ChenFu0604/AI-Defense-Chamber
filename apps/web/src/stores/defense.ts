@@ -7,6 +7,7 @@ import {
   type DefenseSession,
   type DefenseOperation,
   type JudgeId,
+  type Attachment,
 } from '@defense/shared'
 import { defenseApi, DefenseApiError } from '../services/defense-api'
 import { rememberDefense, readDefenseDraft, saveDefenseDraft } from '../services/defense-storage'
@@ -23,6 +24,7 @@ export const useDefenseStore = defineStore('defense-session', () => {
     error = ref(''),
     warning = ref('')
   const operation = ref<DefenseOperation | null>(null)
+  const draftAttachments = ref<Attachment[]>([])
   let loadedId = '',
     epoch = 0
   let draftWritable = true
@@ -32,7 +34,7 @@ export const useDefenseStore = defineStore('defense-session', () => {
   function persist() {
     if (!session.value || !draftWritable) return
     try {
-      saveDefenseDraft(session.value.id, draft.value, operation.value)
+      saveDefenseDraft(session.value.id, draft.value, operation.value, draftAttachments.value)
     } catch {
       warning.value = '浏览器草稿保存失败。已提交的记录仍保存在服务端，未提交输入请暂勿刷新。'
     }
@@ -42,17 +44,30 @@ export const useDefenseStore = defineStore('defense-session', () => {
     draftWritable = true
     persist()
   }
+  function updateAttachments(value: Attachment[]) {
+    if (busy.value || operation.value) return
+    draftAttachments.value = value
+    draftWritable = true
+    persist()
+  }
   function apply(record: DefenseSession) {
     session.value = record
     if (record.status === 'failed' && record.error) error.value = record.error.message
     const pending = record.pending
     if (pending) {
       if (pending.type === 'answer') {
-        const answer = record.messages.find((v) => v.id === pending.answerMessageId)!.content
+        const message = record.messages.find((v) => v.id === pending.answerMessageId)!
+        const answer = message.content
         draft.value = answer
+        draftAttachments.value = message.attachments ?? []
         operation.value = {
           kind: 'answer',
-          body: { requestId: pending.requestId, questionId: pending.questionId!, answer },
+          body: {
+            requestId: pending.requestId,
+            questionId: pending.questionId!,
+            answer,
+            ...(message.attachments?.length ? { attachments: message.attachments } : {}),
+          },
         }
       } else if (pending.type === 'initial')
         operation.value = { kind: 'question', body: { requestId: pending.requestId } }
@@ -69,8 +84,10 @@ export const useDefenseStore = defineStore('defense-session', () => {
       operation.value &&
       record.completed.some((v) => v.requestId === operation.value!.body.requestId)
     ) {
-      if (operation.value.kind === 'answer' && draft.value.trim() === operation.value.body.answer)
+      if (operation.value.kind === 'answer' && draft.value.trim() === operation.value.body.answer) {
         draft.value = ''
+        draftAttachments.value = []
+      }
       operation.value = null
       error.value = ''
     }
@@ -119,6 +136,7 @@ export const useDefenseStore = defineStore('defense-session', () => {
       if (record.id !== creation.requestId) throw new Error('创建会话返回标识不一致。')
       draft.value = ''
       operation.value = null
+      draftAttachments.value = []
       loadedId = record.id
       draftWritable = true
       apply(record)
@@ -142,6 +160,7 @@ export const useDefenseStore = defineStore('defense-session', () => {
     if (loadedId !== id) {
       session.value = null
       draft.value = ''
+      draftAttachments.value = []
       operation.value = null
       warning.value = ''
       loadedId = id
@@ -149,6 +168,7 @@ export const useDefenseStore = defineStore('defense-session', () => {
       try {
         const saved = readDefenseDraft(id)
         draft.value = saved.answer
+        draftAttachments.value = saved.attachments ?? []
         operation.value = saved.operation
       } catch {
         draftWritable = false
@@ -186,6 +206,7 @@ export const useDefenseStore = defineStore('defense-session', () => {
         throw new Error('二次训练返回的会话标识或来源不一致。')
       draft.value = ''
       operation.value = null
+      draftAttachments.value = []
       loadedId = record.id
       draftWritable = true
       apply(record)
@@ -238,6 +259,8 @@ export const useDefenseStore = defineStore('defense-session', () => {
           'IDEMPOTENCY_CONFLICT',
           'SAME_JUDGE',
           'TURN_LIMIT',
+          'ATTACHMENT_NOT_FOUND',
+          'ATTACHMENT_MISMATCH',
         ].includes(failure.code)
       ) {
         operation.value = null
@@ -256,6 +279,7 @@ export const useDefenseStore = defineStore('defense-session', () => {
       requestId: crypto.randomUUID(),
       questionId: session.value.currentQuestionId,
       answer: draft.value,
+      ...(draftAttachments.value.length ? { attachments: draftAttachments.value } : {}),
     })
     if (!parsed.success) {
       error.value = '请填写 1～4000 字的回答。'
@@ -305,6 +329,7 @@ export const useDefenseStore = defineStore('defense-session', () => {
   return {
     session,
     draft,
+    draftAttachments,
     busy,
     error,
     warning,
@@ -318,6 +343,7 @@ export const useDefenseStore = defineStore('defense-session', () => {
     retry,
     end,
     updateDraft,
+    updateAttachments,
     leave,
     prepare,
   }

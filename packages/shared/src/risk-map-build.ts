@@ -64,7 +64,17 @@ export function buildRiskGraph(input: RiskMapInput): RiskGraph {
         source: risk.certainty === 'provided' ? 'project_material' : 'ai_inference',
         category: 'analysis',
         evidence: [
-          ...risk.evidence.map((ref) => doc('project_material', project.id, ref.field, ref.quote)),
+          ...risk.evidence.map((ref) =>
+            doc(
+              'project_material',
+              project.id,
+              ref.field === 'materials'
+                ? 'attachment.' +
+                    (project.attachments?.find((a) => a.text.includes(ref.quote))?.id ?? 'unknown')
+                : ref.field,
+              ref.quote,
+            ),
+          ),
           doc('ai_analysis', analysis.id, `risks.${index}`, risk.summary),
         ],
         evidenceGaps: risk.certainty === 'insufficient' ? [risk.reasoning] : [],

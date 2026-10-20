@@ -1,5 +1,11 @@
 import { z } from 'zod'
-import { defenseOperationSchema, type DefenseOperation, type DefenseSession } from '@defense/shared'
+import {
+  attachmentListSchema,
+  defenseOperationSchema,
+  type Attachment,
+  type DefenseOperation,
+  type DefenseSession,
+} from '@defense/shared'
 
 const recentSchema = z
   .array(
@@ -14,6 +20,7 @@ const recentSchema = z
 const draftSchema = z.object({
   answer: z.string().max(4000),
   operation: defenseOperationSchema.nullable(),
+  attachments: attachmentListSchema.optional(),
 })
 export const DEFENSE_RECENT_KEY = 'defense-chamber.sessions.v1'
 const draftKey = (id: string) => 'defense-chamber.draft.v1.' + id
@@ -42,8 +49,15 @@ export function readDefenseDraft(id: string) {
     JSON.parse(localStorage.getItem(draftKey(id)) ?? '{"answer":"","operation":null}'),
   )
 }
-export function saveDefenseDraft(id: string, answer: string, operation: DefenseOperation | null) {
-  const value = JSON.stringify(draftSchema.parse({ answer, operation }))
+export function saveDefenseDraft(
+  id: string,
+  answer: string,
+  operation: DefenseOperation | null,
+  attachments?: Attachment[],
+) {
+  const value = JSON.stringify(
+    draftSchema.parse({ answer, operation, ...(attachments?.length ? { attachments } : {}) }),
+  )
   localStorage.setItem(draftKey(id), value)
   if (localStorage.getItem(draftKey(id)) !== value) throw new Error('无法确认草稿保存。')
 }

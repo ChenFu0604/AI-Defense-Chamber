@@ -7,6 +7,7 @@ import {
   severityLabels,
   type DefenseMessage,
 } from '@defense/shared'
+import AttachmentGallery from '../attachments/AttachmentGallery.vue'
 const props = defineProps<{ messages: DefenseMessage[]; demo: boolean }>()
 const feed = ref<HTMLElement | null>(null),
   follow = ref(true)
@@ -54,6 +55,7 @@ const judgeName = (id: string) => judgeDefinitions.find((v) => v.id === id)?.nam
         >
       </div>
       <p class="defense-message-content">{{ message.content }}</p>
+      <AttachmentGallery v-if="message.attachments?.length" :items="message.attachments" />
       <p v-if="message.status === 'pending'">回答已保存，正在生成追问…</p>
       <p v-if="message.status === 'failed'" class="defense-source">
         追问未完成；该回答已保存在服务端，可重试。

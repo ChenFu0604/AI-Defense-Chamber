@@ -1,4 +1,100 @@
 /* Shared workspace surfaces. Risk levels and judge role colors remain contextual. */
+.sidebar > * {
+  flex-shrink: 0;
+}
+.sidebar-note {
+  flex-shrink: 0;
+}
+.project-snapshot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 22px 0;
+}
+.project-snapshot-card {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+  background: #0f121a;
+}
+.project-snapshot-card:first-child {
+  grid-column: 1/-1;
+}
+.project-snapshot-card h4 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: #d4c3ff;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.project-snapshot-card h4::before {
+  content: '';
+  width: 4px;
+  height: 14px;
+  border-radius: 4px;
+  background: var(--accent);
+}
+.project-snapshot-card p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: #b6bed0;
+  font-size: 13px;
+  line-height: 1.95;
+  margin: 0;
+}
+.defense-recent {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.defense-recent h3 {
+  grid-column: 1/-1;
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+.defense-recent .resume-session-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  margin: 0;
+  padding: 18px;
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+  background: #10131c;
+  color: var(--accent);
+  transition: border-color 0.15s;
+}
+.resume-session-card:hover {
+  border-color: #8065ad;
+}
+.resume-session-card > div {
+  flex: 1;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.resume-session-card strong {
+  font-size: 13px;
+  color: #e0e1ec;
+  overflow-wrap: anywhere;
+}
+.resume-session-card small {
+  font-size: 11px;
+  color: #9ba5ba;
+}
+.resume-session-badge {
+  color: #bba7e9;
+  font-size: 10px;
+}
+@media (max-width: 700px) {
+  .project-snapshot-grid,
+  .defense-recent {
+    grid-template-columns: 1fr;
+  }
+}
 .report-card,
 .history-card,
 .defense-start,

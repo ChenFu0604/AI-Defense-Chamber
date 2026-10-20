@@ -16,12 +16,15 @@ import { createDefenseModel } from './defense-model.js'
 
 import { createReportRepository, type ReportRepository } from './report-repository.js'
 import { reportSourceFingerprint } from './report-context.js'
+import { attachmentService, type AttachmentService } from './attachment-service.js'
+import type { Attachment } from '@defense/shared'
 
 const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex')
 export function createDefenseService(
   repository: DefenseRepository = createDefenseRepository(),
   model = createDefenseModel(),
   reports: ReportRepository = createReportRepository(),
+  attachments: AttachmentService = attachmentService,
 ) {
   const locks = new Set<string>()
   async function lock<T>(id: string, task: () => Promise<T>) {
@@ -54,7 +57,13 @@ export function createDefenseService(
   async function execute(
     id: string,
     type: 'initial' | 'answer' | 'switch',
-    payload: { requestId: string; questionId?: string; answer?: string; judgeId?: JudgeId },
+    payload: {
+      requestId: string
+      questionId?: string
+      answer?: string
+      judgeId?: JudgeId
+      attachments?: Attachment[]
+    },
   ) {
     return lock(id, async () => {
       const session = await read(id),
@@ -73,6 +82,7 @@ export function createDefenseService(
         )
           throw new AppError(409, 'PENDING_ACTION', '上次操作已保存，请先重试该操作或结束答辩。')
       } else {
+        if (type === 'answer') await attachments.validate(payload.attachments)
         if (type === 'initial' && session.currentQuestionId)
           throw new AppError(409, 'QUESTION_EXISTS', '首问已生成，请刷新会话。')
         if (
@@ -99,6 +109,7 @@ export function createDefenseService(
             replyTo: session.currentQuestionId,
             requestId: payload.requestId,
             model: null,
+            ...(payload.attachments?.length ? { attachments: payload.attachments } : {}),
           })
         session.pending = {
           requestId: payload.requestId,
@@ -180,6 +191,7 @@ export function createDefenseService(
           throw new AppError(409, 'IDEMPOTENCY_CONFLICT', '创建请求 ID 已用于不同项目资料。')
         return existing
       }
+      await attachments.validate(request.project.attachments)
       const now = new Date().toISOString()
       const session: DefenseSession = {
         id: request.requestId,
@@ -264,7 +276,10 @@ export function createDefenseService(
       return session
     },
     initial: (id: string, requestId: string) => execute(id, 'initial', { requestId }),
-    answer: (id: string, payload: AnswerRequest) => execute(id, 'answer', payload),
+    answer: (id: string, payload: AnswerRequest) => {
+      const { attachments: files, ...body } = payload
+      return execute(id, 'answer', { ...body, ...(files?.length ? { attachments: files } : {}) })
+    },
     switchJudge: (id: string, payload: SwitchJudgeRequest) => execute(id, 'switch', payload),
     async end(id: string) {
       return lock(id, async () => {
