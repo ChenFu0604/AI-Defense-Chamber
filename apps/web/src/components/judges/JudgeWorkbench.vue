@@ -57,7 +57,7 @@ function run(all = false) {
       <span class="preview-chip">角色提问工作台</span>
     </div>
     <p class="judge-disclaimer">
-      同一模型使用四套独立角色提示词，按顺序调用。当前提供角色提问，回答驱动的动态追问、评分与完整会话将在后续阶段实现。
+      此处用于单轮角色预览，同一模型使用四套独立提示词，按顺序调用。完整多轮答辩请使用上方“确认资料并开始答辩”入口。
     </p>
     <div class="judges-grid">
       <JudgeSeat

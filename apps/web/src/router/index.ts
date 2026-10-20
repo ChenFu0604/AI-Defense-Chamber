@@ -5,6 +5,9 @@ import ProjectCreateView from '../views/ProjectCreateView.vue'
 import ProjectDetailView from '../views/ProjectDetailView.vue'
 import DefensePrepareView from '../views/DefensePrepareView.vue'
 import NotFoundView from '../views/NotFoundView.vue'
+import DefenseSessionView from '../views/DefenseSessionView.vue'
+import DefenseReportView from '../views/DefenseReportView.vue'
+import SystemSettingsView from '../views/SystemSettingsView.vue'
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -13,6 +16,24 @@ export const router = createRouter({
       path: '/',
       component: WorkspaceLayout,
       children: [
+        {
+          path: 'settings',
+          name: 'system-settings',
+          component: SystemSettingsView,
+          meta: { title: '系统设置' },
+        },
+        {
+          path: 'defense/sessions/:id',
+          name: 'defense-session',
+          component: DefenseSessionView,
+          meta: { title: '动态答辩' },
+        },
+        {
+          path: 'defense/sessions/:id/report',
+          name: 'defense-report',
+          component: DefenseReportView,
+          meta: { title: '诊断报告' },
+        },
         { path: '', name: 'home', component: HomeView, meta: { title: '总览' } },
         {
           path: 'projects/new',

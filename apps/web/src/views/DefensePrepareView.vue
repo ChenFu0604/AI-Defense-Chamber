@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowUpRight, FolderOpen, Check, Info, ArrowRight } from 'lu
 import { difficultyLabels, difficultyDescriptions, projectTypeLabels } from '@defense/shared'
 import { useProjectsStore } from '../stores/projects'
 import JudgeWorkbench from '../components/judges/JudgeWorkbench.vue'
+import DefenseStartPanel from '../components/defense/DefenseStartPanel.vue'
 import StorageNotice from '../components/StorageNotice.vue'
 const route = useRoute()
 const projects = useProjectsStore()
@@ -23,9 +24,9 @@ const selected = computed(() => projects.findProject(selectedId.value))
   <div class="notice preparation-status">
     <Info :size="18" />
     <div>
-      <strong>当前可用：项目建档、画像分析与四角色提问</strong>
+      <strong>当前可用：多轮答辩、切换评委与会话恢复</strong>
       <p>
-        先在项目详情生成画像，再选择评委提问。模拟模式需主动选择并明确标注；动态追问与评分将在后续阶段接入。
+        先确认项目与画像，再开始答辩。每次追问参考实际回答；结束后可查看记录和逐轮诊断。模拟模式始终明确标注。
       </p>
     </div>
   </div>
@@ -98,6 +99,10 @@ const selected = computed(() => projects.findProject(selectedId.value))
         /></RouterLink>
       </div>
     </template>
-    <JudgeWorkbench :project="selected" />
+    <DefenseStartPanel v-if="selected" :project="selected" />
+    <details class="defense-preview">
+      <summary>查看单轮评委预览与角色规则</summary>
+      <JudgeWorkbench :project="selected" />
+    </details>
   </template>
 </template>

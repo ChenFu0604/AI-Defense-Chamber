@@ -93,3 +93,42 @@ provided 必须有原文引用，所有引用必须是对应资料字段中的�
 speech 为 `{ judgeId, question, questionType, riskLevel, focus, rationale }`。questionType 为 clarification / evidence / feasibility / tradeoff / challenge；riskLevel 为 low / medium / high，表示讨论风险的程度，不是事实核验结果。
 
 模拟返回 model:null，正文包含模拟标记；真实返回模型标识。复用统一 AI 配置、超时、取消与错误码。额外错误：AI_INVALID_OUTPUT（结构或角色错误）、422 DUPLICATE_QUESTION（问题文字近似）。请求失败不降级到模拟。响应均 no-store。重复校验仅覆盖本次提供的历史，不提供跨浏览器全局去重。
+
+## 第五阶段：动态答辩会话
+
+以下接口均支持 `/api` 与 `/api/v1` 前缀，成功结构 `{ success:true, data:DefenseSession }`，错误沿用统一 `{ success:false, error:{code,message} }`。均设置 `Cache-Control:no-store`。
+
+| 方法及路径（省略前缀） | 请求 | 行为 |
+| --- | --- | --- |
+| POST /defense/sessions | `{requestId,project,analysis,mode?,judgeId?}` | 创建并保存 ready 会话，201；会话 ID 为创建请求 UUID。项目为浏览器中的完整资料，画像必须匹配快照和来源。mode 默认 live，judgeId 默认 business |
+| GET /defense/sessions/:id | 无 | 读取完整快照、消息、当前问题、评委、状态与待重试操作 |
+| POST /defense/sessions/:id/question | `{requestId}` | 生成首问；失败可复用同一请求重试 |
+| POST /defense/sessions/:id/answer | `{requestId,questionId,answer}` | 回答 trim 后 1～4000 字；先保存，再生成与回答关联的追问 |
+| POST /defense/sessions/:id/judge | `{requestId,questionId,judgeId}` | 保留历史，标记当前未答问题为 superseded，生成新评委问题 |
+| POST /defense/sessions/:id/end | `{}` | 结束并保存，可重复调用；不存在返回 404 |
+
+生成首问、提交回答与切换评委的请求必须使用独立 UUID；重试原操作必须使用相同 UUID 和相同内容。结束操作自身幂等，无需请求 UUID。成功请求重复发送不会重复写消息；同一 UUID 不同内容返回 409 IDEMPOTENCY_CONFLICT。并发操作返回 409 SESSION_BUSY，过期 questionId 返回 409 STALE_QUESTION。失败且已保存的 pending 操作必须先重试或结束会话，不能另提交不同回答覆盖它。结束后新回答和评委切换返回 409 SESSION_ENDED，已完成请求的原样重放只返回当前记录。
+
+DefenseSession 保存项目、画像、mode、currentJudgeId、currentQuestionId、status、messages、pending、completed 和时间戳。状态为 ready / generating / awaiting_answer / failed / ended。消息包含 ID、sender（user/judge）、content、createdAt、judgeId、status、question、assessment、replyTo、requestId 和 model。用户消息 pending/failed 表示追问尚未完成，回答本身已保存。
+
+assessment 包含最新回答连续原文 answerQuote、evaluation（evidence_missing/sufficient/unclear）、feedback、nextStrategy 与待验证风险。追问文本必须包含该引用，引用必须真实属于最新回答；否则返回 502 AI_UNGROUNDED_FOLLOWUP。此检查只证明文字关联，不证明模型理解与推理正确。
+
+额外错误：SESSION_NOT_FOUND（404）、SESSION_STORAGE_ERROR / SESSION_STORAGE_CORRUPT（500）、PENDING_ACTION（409）、DUPLICATE_QUESTION（422）、TURN_LIMIT（409）、CONTEXT_TOO_LARGE（413）。模型错误、超时、认证和配置错误复用既有 AIClient。网络超时不能视为服务端撤销，请先 GET 会话并依据 pending/completed 恢复。
+
+当前单进程本地文件存储；未实现账号鉴权、多进程共享锁或云数据库。完整会话地址和本地数据目录应按项目资料保护，不能直接将该本地开发服务开放为公网多用户服务。
+
+## 系统设置：OpenAI 兼容模型
+
+均支持 /api 与 /api/v1 前缀；需要 X-Settings-Request:1 请求头，仅允许本机地址与可信应用来源，响应为 no-store。默认开发来源为 localhost:5173、127.0.0.1:5173 以及配置的 WEB_ORIGIN。
+
+- GET /settings/model：返回 baseUrl、model、timeoutMs、responseFormat、hasApiKey、source、status、updatedAt，绝不返回 apiKey。source 为 saved / environment / default；status 仅表示配置完整性，不表示网络或认证已验证。
+- PUT /settings/model：保存配置；请求 `{baseUrl,model,apiKey?,timeoutMs,responseFormat}`。密钥留空保留当前值，首次配置或更换地址时需重新输入。原子写入成功且确认可读取后返回脱敏配置；保存失败不返回 success:true。
+- POST /settings/model/test：相同请求，测试当前草稿；不保存、不修改运行配置。使用所选模型和结构化格式请求 /chat/completions，验证固定 `{ok:true}` 返回，成功返回 `{success:true,data:{model,latencyMs,responseFormat}}`。可能消耗少量额度，不发送项目资料。
+
+后端 .data/model-config.json 优先于 .env，保存后无需重启，统一 AIClient 下次调用即可使用；没有保存文件时沿用环境变量。文件损坏明确报错，不静默降级或覆盖原文件。实际密钥只保存在后端本地文件，.data 已被 Git 忽略。
+
+额外错误码：SETTINGS_ACCESS_DENIED（403）、API_KEY_REQUIRED（400）、MODEL_SETTINGS_BUSY（409）、MODEL_SETTINGS_READ_FAILED / MODEL_SETTINGS_CORRUPT / MODEL_SETTINGS_SAVE_FAILED（500）。模型认证、限流、网络、超时和结构异常复用 AIClient 错误码，原始服务商错误不返回页面。
+
+### 模型列表
+
+POST /settings/model/models（同样支持 /api 与 /api/v1）。请求 `{baseUrl,apiKey?,timeoutMs}`，不要求 model 字段；后端以 Bearer 密钥请求 Base URL + /models，校验上游 `{data:[{id:string}]}`，仅返回去重排序的模型 ID：`{success:true,data:{models:string[]}}`。获取不保存，空列表返回空数组。接口不支持返回 MODEL_LIST_UNSUPPORTED；结构异常为 MODEL_LIST_INVALID_OUTPUT；连接失败为 MODEL_LIST_CONNECTION_FAILED。沿用设置访问限制、换地址密钥保护及超时处理。模型列表不构成对话能力或结构化输出能力的验证。

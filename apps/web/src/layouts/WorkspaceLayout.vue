@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Plus,
   FolderOpen,
+  Settings,
 } from 'lucide-vue-next'
 import BrandMark from '../components/BrandMark.vue'
 import HealthStatus from '../components/HealthStatus.vue'
@@ -60,11 +61,17 @@ const stageDialog = ref<InstanceType<typeof StageDialog> | null>(null)
         <button @click="stageDialog?.open()">了解开发进度<ArrowRight :size="15" /></button>
       </div>
       <div class="sidebar-bottom">
+        <RouterLink
+          to="/settings"
+          class="nav-item"
+          :class="{ active: route.name === 'system-settings' }"
+          ><Settings :size="18" />系统设置</RouterLink
+        >
         <button class="nav-item" @click="stageDialog?.open('guide')">
           <BookOpen :size="18" />开发指南<ArrowUpRight :size="14" class="nav-end" />
         </button>
         <div class="version">
-          <span class="status-dot online"></span>本地项目工作区<span>PHASE 04</span>
+          <span class="status-dot online"></span>本地项目工作区<span>PHASE 05</span>
         </div>
       </div>
     </aside>
@@ -76,6 +83,9 @@ const stageDialog = ref<InstanceType<typeof StageDialog> | null>(null)
           }}</span>
         </div>
         <div class="topbar-right">
+          <RouterLink to="/settings" class="mobile-settings-link" aria-label="系统设置"
+            ><Settings :size="18"
+          /></RouterLink>
           <HealthStatus /><span class="header-divider"></span
           ><span class="local-badge"><ShieldCheck :size="14" />本地开发版</span>
         </div>
@@ -85,7 +95,7 @@ const stageDialog = ref<InstanceType<typeof StageDialog> | null>(null)
         <footer class="page-footer">
           <span>AI DEFENSE CHAMBER <span class="footer-dot">·</span> 在质疑中，让项目更强。</span
           ><span
-            >阶段 04 / 多角色评委<span class="footer-dot">·</span
+            >阶段 05 / 动态答辩<span class="footer-dot">·</span
             ><button @click="stageDialog?.open('guide')">开发说明<ArrowUpRight :size="12" /></button
           ></span>
         </footer>

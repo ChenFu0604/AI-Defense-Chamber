@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { AppError } from '../middleware/app-error.js'
+import { readSavedModelSettings } from './model-settings-file.js'
 
 const configSchema = z.object({
   OPENAI_API_KEY: z.string().trim().min(1),
@@ -26,13 +27,18 @@ export interface AIConfig {
 }
 export type AIConfigurationStatus = 'configured' | 'not_configured' | 'configuration_error'
 
-export function readAIConfig(source: NodeJS.ProcessEnv = process.env): AIConfig {
+export function readAIConfig(source?: NodeJS.ProcessEnv, savedPath?: string): AIConfig {
+  if (source === undefined) {
+    const saved = readSavedModelSettings(savedPath)
+    if (saved) return { ...saved.config, baseUrl: saved.config.baseUrl.replace(/\/+$/, '') }
+    source = process.env
+  }
   const missing = ['OPENAI_API_KEY', 'OPENAI_MODEL'].filter((name) => !source[name]?.trim())
   if (missing.length)
     throw new AppError(
       503,
       'AI_NOT_CONFIGURED',
-      `尚未配置模型 API。请在服务端 apps/server/.env 中填写 ${missing.join('、')} 和 OPENAI_BASE_URL，然后重启后端。`,
+      `尚未配置模型 API。请在“系统设置 → 模型配置”填写并保存，或在服务端 apps/server/.env 中填写 ${missing.join('、')} 和 OPENAI_BASE_URL 后重启。`,
     )
   const parsed = configSchema.safeParse({
     OPENAI_API_KEY: source.OPENAI_API_KEY,
@@ -55,9 +61,7 @@ export function readAIConfig(source: NodeJS.ProcessEnv = process.env): AIConfig 
     responseFormat: parsed.data.AI_RESPONSE_FORMAT,
   }
 }
-export function getAIConfigurationStatus(
-  source: NodeJS.ProcessEnv = process.env,
-): AIConfigurationStatus {
+export function getAIConfigurationStatus(source?: NodeJS.ProcessEnv): AIConfigurationStatus {
   try {
     readAIConfig(source)
     return 'configured'

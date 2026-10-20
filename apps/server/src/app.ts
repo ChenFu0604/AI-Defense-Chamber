@@ -7,9 +7,21 @@ import { analyzeProject, type ProjectAnalysisService } from './services/project-
 import { errorHandler, notFound } from './middleware/error-handler.js'
 import { createJudgesRouter } from './routes/judges.js'
 import { askJudge, type JudgeService } from './services/judge-service.js'
+import { createDefenseRouter } from './routes/defense.js'
+import { defenseService, type DefenseService } from './services/defense-service.js'
+import { createSettingsRouter } from './routes/settings.js'
+import {
+  modelSettingsService,
+  type ModelSettingsService,
+} from './services/model-settings-service.js'
 
 export function createApp(
-  options: { analyzeProject?: ProjectAnalysisService; askJudge?: JudgeService } = {},
+  options: {
+    analyzeProject?: ProjectAnalysisService
+    askJudge?: JudgeService
+    defense?: DefenseService
+    modelSettings?: ModelSettingsService
+  } = {},
 ) {
   const app = express()
   app.disable('x-powered-by')
@@ -19,6 +31,10 @@ export function createApp(
   app.use('/api', healthRouter, createProjectsRouter(options.analyzeProject ?? analyzeProject))
   app.use('/api/v1', createJudgesRouter(options.askJudge ?? askJudge))
   app.use('/api', createJudgesRouter(options.askJudge ?? askJudge))
+  app.use('/api/v1', createDefenseRouter(options.defense ?? defenseService))
+  app.use('/api', createDefenseRouter(options.defense ?? defenseService))
+  app.use('/api/v1', createSettingsRouter(options.modelSettings ?? modelSettingsService))
+  app.use('/api', createSettingsRouter(options.modelSettings ?? modelSettingsService))
   app.use(notFound)
   app.use(errorHandler)
   return app

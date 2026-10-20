@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { readAIConfig, type AIConfig } from '../config/ai.js'
 import { AppError } from '../middleware/app-error.js'
+import { modelTransport, modelConnectionHint } from './model-transport.js'
 
 export interface StructuredAITask<T> {
   system: string
@@ -29,7 +30,7 @@ const completionSchema = z.object({
 })
 const MAX_RESPONSE_BYTES = 512 * 1024
 
-async function readBoundedResponse(response: Response): Promise<string> {
+export async function readBoundedResponse(response: Response): Promise<string> {
   const reader = response.body?.getReader()
   if (!reader) throw new AppError(502, 'AI_INVALID_OUTPUT', '模型返回了空响应，请重试。')
   const chunks: Uint8Array[] = []
@@ -51,7 +52,10 @@ async function readBoundedResponse(response: Response): Promise<string> {
   return Buffer.concat(chunks).toString('utf8')
 }
 
-export function createAIClient(config: AIConfig, transport: typeof fetch = fetch): AIClient {
+export function createAIClient(
+  config: AIConfig,
+  transport: typeof fetch = modelTransport.fetch,
+): AIClient {
   return {
     async generate<T>(task: StructuredAITask<T>) {
       const controller = new AbortController()
@@ -175,7 +179,7 @@ export function createAIClient(config: AIConfig, transport: typeof fetch = fetch
         throw new AppError(
           502,
           'AI_CONNECTION_FAILED',
-          '无法连接模型服务，请检查后端网络和服务地址后重试。',
+          '无法连接模型服务。' + modelConnectionHint(error),
         )
       } finally {
         clearTimeout(timer)

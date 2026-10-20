@@ -6,5 +6,7 @@ import './styles/main.css'
 import './styles/projects.css'
 import './styles/analysis.css'
 import './styles/judges.css'
+import './styles/defense.css'
+import './styles/settings.css'
 
 createApp(App).use(createPinia()).use(router).mount('#app')
