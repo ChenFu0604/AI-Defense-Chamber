@@ -54,9 +54,20 @@ watch(
           >查看文件<ExternalLink :size="12"
         /></a>
       </div>
+      <p v-if="file.ocr" class="attachment-ocr-notice">
+        OCR 已识别{{
+          file.mimeType === 'application/pdf' ? `第 ${file.ocr.pages.join('、')} 页` : '图片文字'
+        }}，结果可能有错漏，请核对原文件。
+        <span v-if="file.ocr.skippedPages.length"
+          >第 {{ file.ocr.skippedPages.join('、') }} 页超出 OCR
+          页数上限，尚未识别；请拆分后上传。</span
+        >
+      </p>
       <details v-if="file.text" class="attachment-extraction">
         <summary>
-          查看提取文字 · {{ file.text.length }} 字{{ file.truncated ? '（已截断）' : '' }}
+          查看{{ file.ocr ? 'OCR / 提取' : '提取' }}文字 · {{ file.text.length }} 字{{
+            file.truncated ? '（仅保留部分）' : ''
+          }}
         </summary>
         <pre>{{ file.text }}</pre>
       </details>

@@ -14,6 +14,7 @@ import {
 } from '@defense/shared'
 import { AppError } from '../middleware/app-error.js'
 import { extractPdfText } from './pdf-text.js'
+import { extractMaterialText } from './material-text.js'
 
 const storedSchema = z.strictObject({
   attachment: attachmentSchema,
@@ -59,7 +60,7 @@ export function createAttachmentService(
   return {
     read,
     validate,
-    async upload(input: Buffer, filename: string) {
+    async upload(input: Buffer, filename: string, options: { ocr?: boolean } = {}) {
       if (active >= 2) throw new AppError(429, 'UPLOAD_BUSY', '正在处理其他文件，请稍后重试。')
       if (!input.length || input.length > MAX_DOCUMENT_BYTES)
         throw new AppError(413, 'FILE_TOO_LARGE', '文件不能为空，文档最多 8 MiB。')
@@ -68,7 +69,8 @@ export function createAttachmentService(
         let bytes = input,
           text = '',
           pageCount: number | null = null,
-          truncated = false
+          truncated = false,
+          ocr: Attachment['ocr']
         let name =
           filename
             .replace(/[\x00-\x1f<>:"/\\|?*]/g, '_')
@@ -78,7 +80,7 @@ export function createAttachmentService(
         if (input.subarray(0, 5).toString() === '%PDF-') {
           mimeType = 'application/pdf'
           name = name.replace(/\.[^.]+$/, '').slice(0, 175) + '.pdf'
-          ;({ text, pageCount, truncated } = await extractPdfText(input))
+          ;({ text, pageCount, truncated, ocr } = await extractPdfText(input, options))
         } else if (/\.txt$/i.test(name)) {
           mimeType = 'text/plain'
           try {
@@ -120,6 +122,11 @@ export function createAttachmentService(
               '图片无法读取。支持静态 PNG、JPEG、WebP，最多 1600 万像素；也可上传 PDF 或 UTF-8 TXT。',
             )
           }
+          if (options.ocr) {
+            // Run OCR only after validating and normalizing the image. Failure
+            // stays visible; users can explicitly turn OCR off for photo-only attachments.
+            ;({ text, truncated, ocr } = await extractMaterialText(bytes, 'image'))
+          }
         }
         const attachment = attachmentSchema.parse({
           id: randomUUID(),
@@ -129,6 +136,7 @@ export function createAttachmentService(
           text,
           pageCount,
           truncated,
+          ...(ocr ? { ocr } : {}),
           createdAt: new Date().toISOString(),
         })
         const binary = path(attachment.id, '.bin'),
@@ -157,11 +165,15 @@ export function createAttachmentService(
     async materials(items: Attachment[] = [], textBudget = 6000) {
       // Each caller selects a bounded set. Full document extraction remains in saved metadata.
       const unique = [...new Map(items.map((a) => [a.id, a])).values()].slice(0, 8)
-      const documents: { id: string; name: string; text: string; truncated: boolean }[] = []
+      const documents: {
+        id: string
+        name: string
+        text: string
+        truncated: boolean
+        extraction: string
+      }[] = []
       const images: { name: string; url: string }[] = []
-      const perDocument = Math.floor(
-        textBudget / Math.max(1, unique.filter((a) => a.mimeType !== 'image/jpeg').length),
-      )
+      const perDocument = Math.floor(textBudget / Math.max(1, unique.filter((a) => a.text).length))
       for (const ref of unique) {
         const { attachment, bytes } = await read(ref.id)
         if (JSON.stringify(attachment) !== JSON.stringify(attachmentSchema.parse(ref)))
@@ -171,11 +183,14 @@ export function createAttachmentService(
             name: attachment.name,
             url: 'data:image/jpeg;base64,' + bytes.toString('base64'),
           })
-        else
+        if (attachment.text)
           documents.push({
             id: attachment.id,
             name: attachment.name,
             text: attachment.text.slice(0, perDocument),
+            extraction: attachment.ocr
+              ? 'OCR 识别文字，可能错漏，须核对原文件；不代表已验证事实'
+              : '文档原文提取，仍为用户提供资料',
             truncated: attachment.truncated || attachment.text.length > perDocument,
           })
       }

@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { nextTick, ref } from 'vue'
-import { ArrowUpRight, Check, FileText, ShieldCheck, LoaderCircle } from 'lucide-vue-next'
+import {
+  ArrowUpRight,
+  Check,
+  FileText,
+  FileUp,
+  ChevronDown,
+  ShieldCheck,
+  LoaderCircle,
+} from 'lucide-vue-next'
 import {
   defenseDifficulties,
   difficultyDescriptions,
@@ -9,6 +17,7 @@ import {
   projectTypeLabels,
   projectTextLimits,
   projectFieldLabels,
+  MAX_ATTACHMENTS,
   type Project,
   type ProjectField,
 } from '@defense/shared'
@@ -19,6 +28,8 @@ import { useProjectsStore } from '../stores/projects'
 import { exampleProject, projectTextFields } from '../data/project-form'
 import AttachmentUploader from './attachments/AttachmentUploader.vue'
 const uploading = ref(false),
+  materialsOpen = ref(false),
+  attachmentPicker = ref<InstanceType<typeof AttachmentUploader> | null>(null),
   importText = ref(''),
   importField = ref<(typeof projectTextFields)[number]['key']>('description'),
   importError = ref('')
@@ -83,6 +94,11 @@ function selectDocument(text: string) {
   importText.value = text
   importError.value = ''
 }
+function importDocument() {
+  if (projects.saving || savedProject.value || uploading.value) return
+  materialsOpen.value = true
+  attachmentPicker.value?.chooseDocuments()
+}
 </script>
 <template>
   <form
@@ -98,13 +114,89 @@ function selectDocument(text: string) {
         <h2>先把你的项目，讲清楚。</h2>
         <p>八项项目资料均为必填，图片与文档选填；尚未确定的内容可注明“待验证”。</p>
       </div>
-      <AppButton
-        variant="secondary"
-        :disabled="projects.saving || !!savedProject"
-        @click="loadExample"
-        ><FileText :size="14" />载入示例</AppButton
-      >
+      <div class="project-form-heading-actions">
+        <AppButton
+          variant="secondary"
+          :busy="uploading"
+          :disabled="
+            projects.saving || !!savedProject || (form.attachments?.length ?? 0) >= MAX_ATTACHMENTS
+          "
+          @click="importDocument"
+          ><FileUp :size="15" />{{ uploading ? '正在处理材料…' : '导入项目文档' }}</AppButton
+        >
+        <AppButton
+          variant="secondary"
+          :disabled="projects.saving || !!savedProject || uploading"
+          @click="loadExample"
+          ><FileText :size="14" />载入示例</AppButton
+        >
+      </div>
     </div>
+    <details
+      class="project-materials"
+      :open="materialsOpen"
+      @toggle="materialsOpen = ($event.target as HTMLDetailsElement).open"
+    >
+      <summary>
+        <span><FileUp :size="17" />从项目材料开始</span
+        ><small>PDF / TXT 解析 · 扫描件 OCR · 图片附件</small><ChevronDown :size="16" />
+      </summary>
+      <p class="project-materials-hint">
+        导入文档后可预览提取文字，选择追加到下方字段。请核对原文，已有填写不会自动覆盖。
+      </p>
+      <AttachmentUploader
+        ref="attachmentPicker"
+        :model-value="form.attachments ?? []"
+        :disabled="projects.saving || !!savedProject"
+        label="项目图片与文档（选填）"
+        @update:model-value="form.attachments = $event.length ? $event : undefined"
+        @busy="uploading = $event"
+      />
+      <p v-if="errors.attachments" class="field-error" role="alert">{{ errors.attachments }}</p>
+      <section
+        v-if="form.attachments?.some((file) => file.text) && !savedProject"
+        class="document-import"
+        aria-label="文档文字填入表单"
+      >
+        <strong>文档已解析，可选择文字填入表单</strong>
+        <p>附件会随项目保存并用于分析。也可在下方选取文字追加到指定字段，原内容不会被覆盖。</p>
+        <div class="defense-actions">
+          <AppButton
+            v-for="file in form.attachments.filter((file) => file.text)"
+            :key="file.id"
+            variant="secondary"
+            :disabled="uploading"
+            @click="selectDocument(file.text)"
+            >选取 {{ file.name }} 的文字</AppButton
+          >
+        </div>
+        <label
+          >填入字段<select v-model="importField">
+            <option v-for="field in projectTextFields" :key="field.key" :value="field.key">
+              {{ field.label }}
+            </option>
+          </select></label
+        >
+        <label for="document-import-text">待追加文字（可编辑）</label>
+        <textarea
+          id="document-import-text"
+          v-model="importText"
+          rows="5"
+          placeholder="选择上方文档，在这里保留需要填写的文字…"
+        />
+        <p>
+          {{ importText.length }} 字；目标字段上限 {{ projectTextLimits[importField] }} 字，当前已用
+          {{ form[importField].length }} 字。
+        </p>
+        <p v-if="importError" role="alert" class="field-error">{{ importError }}</p>
+        <AppButton
+          variant="secondary"
+          :disabled="uploading || !importText.trim()"
+          @click="appendImport"
+          >追加到{{ projectFieldLabels[importField] }}</AppButton
+        >
+      </section>
+    </details>
     <div v-if="confirmExample" class="notice example-confirm" role="status">
       <p>载入示例会替换当前填写内容。</p>
       <div>
@@ -236,57 +328,6 @@ function selectDocument(text: string) {
         </p>
       </fieldset>
     </fieldset>
-    <AttachmentUploader
-      :model-value="form.attachments ?? []"
-      :disabled="projects.saving || !!savedProject"
-      label="项目图片与文档（选填）"
-      @update:model-value="form.attachments = $event.length ? $event : undefined"
-      @busy="uploading = $event"
-    />
-    <p v-if="errors.attachments" class="field-error" role="alert">{{ errors.attachments }}</p>
-    <section
-      v-if="form.attachments?.some((file) => file.text) && !savedProject"
-      class="document-import"
-      aria-label="文档文字填入表单"
-    >
-      <strong>文档已解析，可选择文字填入表单</strong>
-      <p>附件会随项目保存并用于分析。也可在下方选取文字追加到指定字段，原内容不会被覆盖。</p>
-      <div class="defense-actions">
-        <AppButton
-          v-for="file in form.attachments.filter((file) => file.text)"
-          :key="file.id"
-          variant="secondary"
-          :disabled="uploading"
-          @click="selectDocument(file.text)"
-          >选取 {{ file.name }} 的文字</AppButton
-        >
-      </div>
-      <label
-        >填入字段<select v-model="importField">
-          <option v-for="field in projectTextFields" :key="field.key" :value="field.key">
-            {{ field.label }}
-          </option>
-        </select></label
-      >
-      <label for="document-import-text">待追加文字（可编辑）</label>
-      <textarea
-        id="document-import-text"
-        v-model="importText"
-        rows="5"
-        placeholder="选择上方文档，在这里保留需要填写的文字…"
-      />
-      <p>
-        {{ importText.length }} 字；目标字段上限 {{ projectTextLimits[importField] }} 字，当前已用
-        {{ form[importField].length }} 字。
-      </p>
-      <p v-if="importError" role="alert" class="field-error">{{ importError }}</p>
-      <AppButton
-        variant="secondary"
-        :disabled="uploading || !importText.trim()"
-        @click="appendImport"
-        >追加到{{ projectFieldLabels[importField] }}</AppButton
-      >
-    </section>
     <div class="form-submit-bar">
       <p>
         <ShieldCheck :size="15" /><span

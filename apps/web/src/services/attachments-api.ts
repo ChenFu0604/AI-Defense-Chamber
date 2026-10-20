@@ -3,6 +3,7 @@ import {
   MAX_DOCUMENT_BYTES,
   MAX_IMAGE_BYTES,
   apiErrorResponseSchema,
+  OCR_TIMEOUT_MS,
   type Attachment,
 } from '@defense/shared'
 
@@ -15,17 +16,24 @@ export function validateUploadFile(file: Pick<File, 'name' | 'type' | 'size'>): 
     return document ? '文档不能超过 8 MiB。' : '图片不能超过 4 MiB。'
   return ''
 }
-export async function uploadAttachment(file: File, signal?: AbortSignal): Promise<Attachment> {
+export async function uploadAttachment(
+  file: File,
+  signal?: AbortSignal,
+  options: { ocr?: boolean } = {},
+): Promise<Attachment> {
   const error = validateUploadFile(file)
   if (error) throw new Error(error)
-  const response = await fetch('/api/v1/attachments', {
+  const response = await fetch('/api/v1/attachments' + (options.ocr ? '?ocr=true' : ''), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/octet-stream',
       'X-File-Name': encodeURIComponent(file.name),
     },
     body: file,
-    signal: AbortSignal.any([AbortSignal.timeout(30000), ...(signal ? [signal] : [])]),
+    signal: AbortSignal.any([
+      AbortSignal.timeout(options.ocr ? OCR_TIMEOUT_MS + 15000 : 30000),
+      ...(signal ? [signal] : []),
+    ]),
   })
   let raw: unknown
   try {

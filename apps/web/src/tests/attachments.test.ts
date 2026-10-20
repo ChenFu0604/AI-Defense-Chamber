@@ -46,10 +46,62 @@ describe('attachment frontend integration', () => {
         .use(router),
     )
     expect(html).toContain('上传图片 / 文档')
+    expect(html).toContain('导入项目文档')
+    expect(html).toContain('accept="application/pdf,text/plain,.pdf,.txt"')
+    expect(html.indexOf('导入项目文档')).toBeLessThan(html.indexOf('载入示例'))
+    expect(html.indexOf('class="project-materials"')).toBeLessThan(
+      html.indexOf('id="project-name"'),
+    )
+    expect(html.match(/class="attachment-uploader"/g)).toHaveLength(1)
+    expect(html).toContain('OCR 识别扫描件和图片文字')
     expect(html).toContain('拖拽图片或文档到这里')
     expect(html).toContain(
       'accept="image/png,image/jpeg,image/webp,application/pdf,text/plain,.txt"',
     )
+  })
+  it('requests OCR explicitly and validates its returned metadata', async () => {
+    const recognized = {
+      ...file,
+      text: '识别原文，待核对',
+      ocr: { pages: [1], skippedPages: [], confidence: 85 },
+    }
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ success: true, data: recognized })))
+    vi.stubGlobal('fetch', fetcher)
+    const result = await uploadAttachment(new File(['image'], 'project.png'), undefined, {
+      ocr: true,
+    })
+    expect(fetcher.mock.calls[0]![0]).toBe('/api/v1/attachments?ocr=true')
+    expect(result).toEqual(recognized)
+    expect(
+      attachmentListSchema.safeParse([
+        { ...recognized, ocr: { ...recognized.ocr, skippedPages: [1] } },
+      ]).success,
+    ).toBe(false)
+    expect(
+      attachmentListSchema.safeParse([
+        { ...recognized, ocr: { ...recognized.ocr, confidence: 101 } },
+      ]).success,
+    ).toBe(false)
+  })
+  it('displays OCR page omissions and warns that recognition must be checked', async () => {
+    const doc: Attachment = {
+      ...file,
+      name: 'scan.pdf',
+      mimeType: 'application/pdf',
+      pageCount: 4,
+      text: '扫描材料原文',
+      truncated: true,
+      ocr: { pages: [1, 2, 3], skippedPages: [4], confidence: 82 },
+    }
+    const html = await renderToString(
+      createSSRApp({ render: () => h(AttachmentGallery, { items: [doc] }) }),
+    )
+    expect(html).toContain('第 1、2、3 页')
+    expect(html).toContain('第 4 页超出 OCR')
+    expect(html).toContain('结果可能有错漏')
+    expect(html).toContain('扫描材料原文')
   })
   it('validates size/type and rejects bad upload responses without inventing success', async () => {
     expect(validateUploadFile({ name: 'file.docx', type: '', size: 200 })).toContain('PDF')

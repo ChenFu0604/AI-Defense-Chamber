@@ -28,3 +28,49 @@ export function textPdf(text = 'Prototype evidence: 12 anonymous interviews.', p
   pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${start}\n%%EOF\n`
   return Buffer.from(pdf)
 }
+
+/** A real image-only PDF: there is no hidden text layer for OCR tests to read. */
+export function scannedPdf(jpeg: Buffer, width: number, height: number, pages = 1): Buffer {
+  const objects: Buffer[] = [
+    Buffer.from('<< /Type /Catalog /Pages 2 0 R >>'),
+    Buffer.from(
+      `<< /Type /Pages /Kids [${Array.from({ length: pages }, (_, i) => `${4 + i * 2} 0 R`).join(' ')}] /Count ${pages} >>`,
+    ),
+    Buffer.concat([
+      Buffer.from(
+        `<< /Type /XObject /Subtype /Image /Width ${width} /Height ${height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpeg.length} >>\nstream\n`,
+      ),
+      jpeg,
+      Buffer.from('\nendstream'),
+    ]),
+  ]
+  for (let i = 0; i < pages; i++) {
+    const content = 'q 612 0 0 420 0 0 cm /Scan Do Q'
+    objects.push(
+      Buffer.from(
+        `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 420] /Resources << /XObject << /Scan 3 0 R >> >> /Contents ${5 + i * 2} 0 R >>`,
+      ),
+      Buffer.from(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`),
+    )
+  }
+  const parts = [Buffer.from('%PDF-1.7\n')],
+    offsets = [0]
+  let length = parts[0]!.length
+  objects.forEach((object, i) => {
+    offsets.push(length)
+    const part = Buffer.concat([Buffer.from(`${i + 1} 0 obj\n`), object, Buffer.from('\nendobj\n')])
+    parts.push(part)
+    length += part.length
+  })
+  parts.push(
+    Buffer.from(
+      `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n` +
+        offsets
+          .slice(1)
+          .map((offset) => `${String(offset).padStart(10, '0')} 00000 n \n`)
+          .join('') +
+        `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${length}\n%%EOF\n`,
+    ),
+  )
+  return Buffer.concat(parts)
+}

@@ -3,12 +3,10 @@ import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   ArrowUpRight,
-  ArrowRight,
   LayoutDashboard,
   Orbit,
   Route,
   BookOpen,
-  Sparkles,
   ShieldCheck,
   ChevronRight,
   Plus,
@@ -64,12 +62,6 @@ const stageDialog = ref<InstanceType<typeof StageDialog> | null>(null)
           ><Orbit :size="18" />认识评委团<ArrowUpRight :size="14" class="nav-end"
         /></RouterLink>
       </nav>
-      <div class="sidebar-note">
-        <span class="note-icon"><Sparkles :size="18" /></span>
-        <h3>把漏洞，留在上场前。</h3>
-        <p>每一次被追问，都是让项目更扎实的机会。</p>
-        <button @click="stageDialog?.open()">了解开发进度<ArrowRight :size="15" /></button>
-      </div>
       <div class="sidebar-bottom">
         <RouterLink
           to="/settings"

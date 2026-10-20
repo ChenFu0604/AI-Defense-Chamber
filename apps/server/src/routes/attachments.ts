@@ -1,6 +1,7 @@
 import { Router, raw } from 'express'
 import type { AttachmentService } from '../services/attachment-service.js'
 import { AppError } from '../middleware/app-error.js'
+import { attachmentUploadOptionsSchema } from '@defense/shared'
 export function createAttachmentsRouter(service: AttachmentService) {
   const router = Router()
   router.post('/attachments', raw({ type: () => true, limit: '8mb' }), async (req, res) => {
@@ -12,7 +13,9 @@ export function createAttachmentsRouter(service: AttachmentService) {
     }
     if (!filename || !Buffer.isBuffer(req.body))
       throw new AppError(400, 'VALIDATION_ERROR', '请选择要上传的文件。')
-    const result = await service.upload(req.body, filename)
+    const options = attachmentUploadOptionsSchema.safeParse(req.query)
+    if (!options.success) throw new AppError(400, 'VALIDATION_ERROR', 'OCR 参数无效，请重新选择。')
+    const result = await service.upload(req.body, filename, options.data)
     res.set('Cache-Control', 'no-store').status(201).json({ success: true, data: result })
   })
   router.get('/attachments/:id/content', async (req, res) => {

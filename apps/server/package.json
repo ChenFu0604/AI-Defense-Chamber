@@ -11,11 +11,15 @@
   },
   "dependencies": {
     "@defense/shared": "0.1.0",
+    "@napi-rs/canvas": "^1.0.11",
+    "@tesseract.js-data/chi_sim": "^1.0.0",
+    "@tesseract.js-data/eng": "^1.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
     "pdfjs-dist": "^6.4.299",
     "sharp": "^0.35.5",
+    "tesseract.js": "^7.0.0",
     "undici": "^7.30.1",
     "zod": "^4.1.0"
   },

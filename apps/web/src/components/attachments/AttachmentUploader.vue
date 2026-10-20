@@ -1,25 +1,34 @@
 <script setup lang="ts">
 import { onBeforeUnmount, ref } from 'vue'
 import { Upload, LoaderCircle, FileText } from 'lucide-vue-next'
-import { MAX_ATTACHMENTS, type Attachment } from '@defense/shared'
+import { MAX_ATTACHMENTS, MAX_OCR_PAGES, type Attachment } from '@defense/shared'
 import { uploadAttachment } from '../../services/attachments-api'
 import AttachmentGallery from './AttachmentGallery.vue'
 import AppButton from '../ui/AppButton.vue'
 const props = defineProps<{ modelValue: Attachment[]; disabled?: boolean; label?: string }>()
 const emit = defineEmits<{ 'update:modelValue': [items: Attachment[]]; busy: [value: boolean] }>()
 const input = ref<HTMLInputElement | null>(null),
+  documentInput = ref<HTMLInputElement | null>(null),
+  ocrEnabled = ref(false),
   busy = ref(false),
   dragging = ref(false),
   error = ref(''),
   currentName = ref('')
 let controller: AbortController | null = null,
   active = true
+function chooseDocuments() {
+  if (props.disabled || busy.value || props.modelValue.length >= MAX_ATTACHMENTS) return
+  ocrEnabled.value = true
+  documentInput.value?.click()
+}
+defineExpose({ chooseDocuments })
 async function acceptFiles(files: File[]) {
   if (props.disabled || busy.value || !files.length) return
   error.value = ''
   if (props.modelValue.length + files.length > MAX_ATTACHMENTS) {
     error.value = `最多添加 ${MAX_ATTACHMENTS} 个附件，请先移除多余文件。`
     if (input.value) input.value.value = ''
+    if (documentInput.value) documentInput.value.value = ''
     return
   }
   busy.value = true
@@ -32,7 +41,7 @@ async function acceptFiles(files: File[]) {
       if (!active) break
       currentName.value = file.name
       try {
-        const saved = await uploadAttachment(file, controller.signal)
+        const saved = await uploadAttachment(file, controller.signal, { ocr: ocrEnabled.value })
         if (!active) break
         added = [...added, saved]
         emit('update:modelValue', added)
@@ -55,6 +64,7 @@ async function acceptFiles(files: File[]) {
     currentName.value = ''
     emit('busy', false)
     if (input.value) input.value.value = ''
+    if (documentInput.value) documentInput.value.value = ''
     controller = null
   }
 }
@@ -83,6 +93,16 @@ onBeforeUnmount(() => {
       </div>
       <span>{{ modelValue.length }} / {{ MAX_ATTACHMENTS }}</span>
     </div>
+    <label class="attachment-ocr-control">
+      <input v-model="ocrEnabled" type="checkbox" :disabled="disabled || busy" />
+      <span
+        ><strong>OCR 识别扫描件和图片文字</strong
+        ><small
+          >简体中文 + 英文 · 本机处理，不调用模型；扫描 PDF 每份最多识别
+          {{ MAX_OCR_PAGES }} 页，请核对识别结果。</small
+        ></span
+      >
+    </label>
     <div
       class="attachment-dropzone"
       :class="{ dragging, disabled: disabled || busy }"
@@ -91,9 +111,21 @@ onBeforeUnmount(() => {
       @drop.prevent="drop"
     >
       <Upload v-if="!busy" :size="24" /><LoaderCircle v-else :size="24" class="spinning" />
-      <strong>{{ busy ? '正在上传并处理文件…' : '拖拽图片或文档到这里' }}</strong>
+      <strong>{{
+        busy ? (ocrEnabled ? '正在上传并识别文字…' : '正在上传并处理文件…') : '拖拽图片或文档到这里'
+      }}</strong>
       <p v-if="busy" role="status">{{ currentName }}</p>
       <p v-else>图片 ≤ 4 MiB · PDF / TXT ≤ 8 MiB · PDF 最多 40 页</p>
+      <input
+        ref="documentInput"
+        type="file"
+        multiple
+        accept="application/pdf,text/plain,.pdf,.txt"
+        hidden
+        aria-label="选择项目文档（PDF 或 TXT）"
+        :disabled="disabled || busy || modelValue.length >= MAX_ATTACHMENTS"
+        @change="acceptFiles(Array.from(($event.target as HTMLInputElement).files ?? []))"
+      />
       <input
         ref="input"
         type="file"
@@ -113,8 +145,9 @@ onBeforeUnmount(() => {
       >
     </div>
     <p class="attachment-help">
-      <FileText :size="14" />PDF 提取文字供模型参考，最多保留 12000 字；扫描版暂不支持
-      OCR。图片使用需要所选模型支持视觉。上传只存本机后端，分析或提交回答时才发送模型。
+      <FileText :size="14" />文字版 PDF 直接提取；扫描件或图片请开启 OCR，识别最长等待 90
+      秒，每份最多保留 12000 字。上传只存本机后端，分析或提交回答时才发送模型。仅附图片时可关闭
+      OCR；图片理解需要模型支持视觉。
     </p>
     <p v-if="error" class="notice notice-error attachment-error" role="alert">{{ error }}</p>
     <AttachmentGallery

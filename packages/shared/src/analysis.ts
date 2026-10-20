@@ -84,9 +84,7 @@ export function analysisEvidenceIsValid(
     if (finding.certainty === 'provided' && finding.evidence.length === 0) return false
     return finding.evidence.every((reference) =>
       reference.field === 'materials'
-        ? !!project.attachments?.some(
-            (file) => file.mimeType !== 'image/jpeg' && file.text.includes(reference.quote),
-          )
+        ? !!project.attachments?.some((file) => !!file.text && file.text.includes(reference.quote))
         : project[reference.field].includes(reference.quote),
     )
   })
