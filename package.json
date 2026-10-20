@@ -1,0 +1,34 @@
+{
+  "name": "ai-defense-chamber",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.15.0",
+    "npm": ">=10"
+  },
+  "scripts": {
+    "dev": "npm run build:shared && concurrently -k -n server,web -c cyan,magenta \"npm run dev --workspace @defense/server\" \"npm run dev --workspace @defense/web\"",
+    "dev:web": "npm run build:shared && npm run dev --workspace @defense/web",
+    "dev:server": "npm run build:shared && npm run dev --workspace @defense/server",
+    "build:shared": "npm run build --workspace @defense/shared",
+    "prepare": "npm run build:shared",
+    "typecheck": "npm run build:shared && npm run typecheck --workspaces --if-present",
+    "build": "npm run build:shared && npm run build --workspace @defense/server && npm run build --workspace @defense/web",
+    "test": "npm run build:shared && vitest run",
+    "start:server": "npm run start --workspace @defense/server",
+    "preview:web": "npm run preview --workspace @defense/web"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "@types/supertest": "^6.0.3",
+    "concurrently": "^9.2.0",
+    "supertest": "^7.1.0",
+    "typescript": "~5.9.3",
+    "vitest": "^3.2.4"
+  }
+}
