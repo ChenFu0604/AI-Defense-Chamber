@@ -2,12 +2,14 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { DefenseReport } from '@defense/shared'
 import { requestReport, ReportApiError } from '../services/report-api'
+import { archiveReport } from '../services/history-storage'
 
 export const useReportStore = defineStore('defense-report', () => {
   const report = ref<DefenseReport | null>(null)
   const status = ref<'idle' | 'loading' | 'generating' | 'missing' | 'success' | 'error'>('idle')
   const error = ref(''),
     errorCode = ref('')
+  const warning = ref('')
   let sessionId = '',
     epoch = 0,
     controller: AbortController | null = null
@@ -20,12 +22,19 @@ export const useReportStore = defineStore('defense-report', () => {
     sessionId = id
     status.value = generate ? 'generating' : 'loading'
     error.value = ''
+    warning.value = ''
     errorCode.value = ''
     try {
       const result = await requestReport(id, generate, controller.signal)
       if (epoch !== token) return
       report.value = result
       status.value = 'success'
+      try {
+        archiveReport(result)
+      } catch (failure) {
+        warning.value =
+          failure instanceof Error ? failure.message : '报告已保存在后端，本地归档失败。'
+      }
     } catch (failure) {
       if (epoch !== token) return
       const code = failure instanceof ReportApiError ? failure.code : 'REPORT_FAILED'
@@ -50,6 +59,7 @@ export const useReportStore = defineStore('defense-report', () => {
     status,
     error,
     errorCode,
+    warning,
     load: (id: string) => run(id, false),
     generate: (id: string) => run(id, true),
     leave,

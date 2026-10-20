@@ -72,6 +72,13 @@ onBeforeUnmount(() => {
       :max="MAX_DEFENSE_QUESTIONS"
       aria-label="本次答辩问题数量"
     />
+    <section v-if="store.session.training" class="defense-current">
+      <h2>本次训练重点</h2>
+      <p>基于上一场已保存报告，不预设本次成绩。</p>
+      <ul>
+        <li v-for="focus in store.session.training.focus" :key="focus">{{ focus }}</li>
+      </ul>
+    </section>
     <div class="defense-current">
       <h2>当前评委：{{ judge?.name }}</h2>
       <p>{{ judge?.introduction }}</p>

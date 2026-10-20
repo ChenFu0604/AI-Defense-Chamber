@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import {
   answerRequestSchema,
+  createDefenseRequestSchema,
   type CreateDefenseRequest,
   type DefenseSession,
   type DefenseOperation,
@@ -9,6 +10,11 @@ import {
 } from '@defense/shared'
 import { defenseApi, DefenseApiError } from '../services/defense-api'
 import { rememberDefense, readDefenseDraft, saveDefenseDraft } from '../services/defense-storage'
+import {
+  archiveSession,
+  readPendingCreation,
+  savePendingCreation,
+} from '../services/history-storage'
 
 export const useDefenseStore = defineStore('defense-session', () => {
   const session = ref<DefenseSession | null>(null),
@@ -74,19 +80,34 @@ export const useDefenseStore = defineStore('defense-session', () => {
       warning.value = '浏览器会话入口保存失败，可通过当前会话地址恢复服务端记录。'
     }
     persist()
+    try {
+      archiveSession(record)
+    } catch (failure) {
+      warning.value =
+        failure instanceof Error ? failure.message : '本地历史归档失败，后端会话保留。'
+    }
   }
   async function start(input: Omit<CreateDefenseRequest, 'requestId'>) {
     if (busy.value) return null
     busy.value = true
     error.value = ''
     const token = epoch
-    try {
-      if (
-        !creation ||
-        JSON.stringify({ ...creation, requestId: '' }) !==
-          JSON.stringify({ ...input, requestId: '' })
+    const signature = (value: Omit<CreateDefenseRequest, 'requestId'>) =>
+      JSON.stringify(
+        createDefenseRequestSchema.parse({
+          ...value,
+          requestId: '00000000-0000-4000-8000-000000000000',
+        }),
       )
-        creation = { ...input, requestId: crypto.randomUUID() }
+    try {
+      if (!creation || signature(creation) !== signature(input)) {
+        const pending = readPendingCreation()
+        creation =
+          pending?.kind === 'create' && signature(pending.input) === signature(input)
+            ? pending.input
+            : { ...input, requestId: crypto.randomUUID() }
+      }
+      savePendingCreation({ kind: 'create', input: creation })
       try {
         rememberDefense({ id: creation.requestId, project: input.project, mode: input.mode })
       } catch {
@@ -101,6 +122,11 @@ export const useDefenseStore = defineStore('defense-session', () => {
       draftWritable = true
       apply(record)
       creation = null
+      try {
+        savePendingCreation(null)
+      } catch {
+        warning.value = '会话已创建，但本地待创建标记清理失败，请保留会话地址。'
+      }
       return record
     } catch (failure) {
       if (epoch === token) error.value = message(failure)
@@ -137,6 +163,42 @@ export const useDefenseStore = defineStore('defense-session', () => {
       if (token === epoch) error.value = message(failure)
     } finally {
       if (token === epoch) busy.value = false
+    }
+  }
+  async function retrain(sourceId: string, judgeId: JudgeId) {
+    if (busy.value) return null
+    busy.value = true
+    error.value = ''
+    const token = epoch
+    try {
+      const previous = readPendingCreation()
+      const input =
+        previous?.kind === 'retrain' &&
+        previous.sourceId === sourceId &&
+        previous.input.judgeId === judgeId
+          ? previous.input
+          : { requestId: crypto.randomUUID(), judgeId }
+      savePendingCreation({ kind: 'retrain', sourceId, input })
+      const record = await defenseApi('/' + sourceId + '/retrain', input)
+      if (epoch !== token) return null
+      if (record.id !== input.requestId || record.training?.sourceSessionId !== sourceId)
+        throw new Error('二次训练返回的会话标识或来源不一致。')
+      draft.value = ''
+      operation.value = null
+      loadedId = record.id
+      draftWritable = true
+      apply(record)
+      try {
+        savePendingCreation(null)
+      } catch {
+        warning.value = '会话已创建，本地创建标记清理失败。'
+      }
+      return record
+    } catch (failure) {
+      if (epoch === token) error.value = message(failure)
+      return null
+    } finally {
+      if (epoch === token) busy.value = false
     }
   }
   async function send(next: DefenseOperation) {
@@ -242,6 +304,7 @@ export const useDefenseStore = defineStore('defense-session', () => {
     warning,
     operation,
     start,
+    retrain,
     load,
     initial,
     answer,

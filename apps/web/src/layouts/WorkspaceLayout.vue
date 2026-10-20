@@ -38,6 +38,13 @@ const stageDialog = ref<InstanceType<typeof StageDialog> | null>(null)
         ><Plus :size="16" /><span>创建项目</span></RouterLink
       >
       <nav class="side-nav" aria-label="主导航">
+        <RouterLink
+          to="/history"
+          class="nav-item"
+          :class="{ active: route.path.startsWith('/history') }"
+          aria-label="历史记录与二次训练"
+          ><BookOpen :size="18" />历史记录</RouterLink
+        >
         <RouterLink to="/" class="nav-item" :class="{ active: route.name === 'home' }"
           ><LayoutDashboard :size="18" />总览<span
             v-if="route.name === 'home'"
@@ -71,7 +78,7 @@ const stageDialog = ref<InstanceType<typeof StageDialog> | null>(null)
           <BookOpen :size="18" />开发指南<ArrowUpRight :size="14" class="nav-end" />
         </button>
         <div class="version">
-          <span class="status-dot online"></span>本地项目工作区<span>PHASE 07</span>
+          <span class="status-dot online"></span>本地项目工作区<span>PHASE 08</span>
         </div>
       </div>
     </aside>
@@ -95,7 +102,7 @@ const stageDialog = ref<InstanceType<typeof StageDialog> | null>(null)
         <footer class="page-footer">
           <span>AI DEFENSE CHAMBER <span class="footer-dot">·</span> 在质疑中，让项目更强。</span
           ><span
-            >阶段 07 / 漏洞地图<span class="footer-dot">·</span
+            >阶段 08 / 历史与训练<span class="footer-dot">·</span
             ><button @click="stageDialog?.open('guide')">开发说明<ArrowUpRight :size="12" /></button
           ></span>
         </footer>

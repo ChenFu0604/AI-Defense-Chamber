@@ -33,7 +33,10 @@ export async function defenseApi(path: string, body?: unknown): Promise<DefenseS
         : new DefenseApiError('HTTP_ERROR', '答辩服务请求失败，请重试。')
     }
     const parsed = defenseResponseSchema.safeParse(raw)
-    const expectedId = path.split('/')[1]
+    const expectedId =
+      path.endsWith('/retrain') && typeof body === 'object' && body !== null && 'requestId' in body
+        ? body.requestId
+        : path.split('/')[1]
     if (!parsed.success || (expectedId && parsed.data.data.id !== expectedId))
       throw new DefenseApiError('INVALID_RESPONSE', '会话结构或标识异常，请刷新状态后重试。')
     return parsed.data.data

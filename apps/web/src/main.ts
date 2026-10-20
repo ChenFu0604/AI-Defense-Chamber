@@ -10,5 +10,6 @@ import './styles/defense.css'
 import './styles/settings.css'
 import './styles/report.css'
 import './styles/risk-map.css'
+import './styles/history.css'
 
 createApp(App).use(createPinia()).use(router).mount('#app')

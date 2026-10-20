@@ -45,6 +45,9 @@ const answers = computed(
     {{ store.error }} <button @click="loadPage()">重试读取</button>
   </p>
   <p v-if="store.busy" role="status">正在读取记录…</p>
+  <p v-if="store.warning || reports.warning" role="status" class="notice">
+    {{ store.warning || reports.warning }}
+  </p>
   <template v-if="store.session?.status === 'ended'">
     <div class="defense-session-bar">
       <strong>{{ store.session.project.name }}</strong
@@ -55,6 +58,11 @@ const answers = computed(
     </div>
     <p class="notice">逐轮反馈仅展示已保存结果；评分报告依据本次实际回答生成，不能替代外部核验。</p>
     <div class="defense-actions">
+      <RouterLink
+        :to="{ name: 'history-detail', params: { id } }"
+        class="app-button button-secondary"
+        >本地历史与二次训练 →</RouterLink
+      >
       <RouterLink
         :to="{ name: 'session-risks', params: { id } }"
         class="app-button button-secondary"

@@ -10,6 +10,7 @@ import {
 } from '@defense/shared'
 import { AnalysisApiError, requestProjectAnalysis } from '../services/analysis-api'
 import { readAnalysisRecords, saveAnalysisRecord } from '../services/analysis-storage'
+import { archiveAnalysis } from '../services/history-storage'
 
 export interface ProjectAnalysisState {
   status: 'idle' | 'loading' | 'success' | 'error' | 'cancelled'
@@ -91,6 +92,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
       state.warning = ''
       try {
         saveAnalysisRecord(result)
+        archiveAnalysis(result)
       } catch (error) {
         state.warning = error instanceof Error ? error.message : '画像已生成，但未能保存到浏览器。'
       }

@@ -5,6 +5,7 @@ import {
   answerRequestSchema,
   switchJudgeRequestSchema,
   initialQuestionRequestSchema,
+  retrainRequestSchema,
 } from '@defense/shared'
 import type { DefenseService } from '../services/defense-service.js'
 import { AppError } from '../middleware/app-error.js'
@@ -23,6 +24,15 @@ export function createDefenseRouter(service: DefenseService) {
   router.post('/defense/sessions', async (request, response) => {
     const session = await service.create(parse(createDefenseRequestSchema, request.body))
     response.set('Cache-Control', 'no-store').status(201).json({ success: true, data: session })
+  })
+  router.post('/defense/sessions/:id/retrain', async (request, response) => {
+    response
+      .set('Cache-Control', 'no-store')
+      .status(201)
+      .json({
+        success: true,
+        data: await service.retrain(request.params.id!, parse(retrainRequestSchema, request.body)),
+      })
   })
   router.get('/defense/sessions/:id', async (request, response) => {
     response

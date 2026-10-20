@@ -7,6 +7,7 @@ import {
   type ProjectInput,
 } from '@defense/shared'
 import { readProjects, writeProjects } from '../services/project-storage'
+import { archiveProject } from '../services/history-storage'
 
 export const useProjectsStore = defineStore('projects', () => {
   const projects = ref<Project[]>([])
@@ -14,6 +15,7 @@ export const useProjectsStore = defineStore('projects', () => {
   const loadError = ref('')
   const saveError = ref('')
   const saving = ref(false)
+  const historyWarning = ref('')
   const recentProjects = computed(() => projects.value.slice(0, 3))
   let pendingProject: Project | null = null
   let pendingInput = ''
@@ -46,6 +48,13 @@ export const useProjectsStore = defineStore('projects', () => {
       const latest = readProjects()
       const updated = [project, ...latest.filter((saved) => saved.id !== project.id)]
       writeProjects(updated)
+      try {
+        archiveProject(project)
+        historyWarning.value = ''
+      } catch (failure) {
+        historyWarning.value =
+          failure instanceof Error ? failure.message : '历史归档失败，项目主记录已保存。'
+      }
       projects.value = updated
       loaded.value = true
       loadError.value = ''
@@ -69,6 +78,7 @@ export const useProjectsStore = defineStore('projects', () => {
     loadError,
     saveError,
     saving,
+    historyWarning,
     loadProjects,
     createProject,
     findProject,

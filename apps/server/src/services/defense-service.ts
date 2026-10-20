@@ -1,6 +1,9 @@
 import { createHash, randomUUID } from 'node:crypto'
 import {
   MAX_DEFENSE_QUESTIONS,
+  retrainingFocusSchema,
+  reportEvidenceIsValid,
+  type RetrainRequest,
   type DefenseSession,
   type CreateDefenseRequest,
   type AnswerRequest,
@@ -11,10 +14,14 @@ import { AppError } from '../middleware/app-error.js'
 import { createDefenseRepository, type DefenseRepository } from './defense-repository.js'
 import { createDefenseModel } from './defense-model.js'
 
+import { createReportRepository, type ReportRepository } from './report-repository.js'
+import { reportSourceFingerprint } from './report-context.js'
+
 const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex')
 export function createDefenseService(
   repository: DefenseRepository = createDefenseRepository(),
   model = createDefenseModel(),
+  reports: ReportRepository = createReportRepository(),
 ) {
   const locks = new Set<string>()
   async function lock<T>(id: string, task: () => Promise<T>) {
@@ -164,36 +171,78 @@ export function createDefenseService(
       }
     })
   }
+  async function create(request: CreateDefenseRequest, training?: DefenseSession['training']) {
+    return lock(request.requestId, async () => {
+      const existing = await repository.get(request.requestId),
+        fingerprint = training ? hash({ request, training }) : hash(request)
+      if (existing) {
+        if (existing.createFingerprint !== fingerprint)
+          throw new AppError(409, 'IDEMPOTENCY_CONFLICT', '创建请求 ID 已用于不同项目资料。')
+        return existing
+      }
+      const now = new Date().toISOString()
+      const session: DefenseSession = {
+        id: request.requestId,
+        project: request.project,
+        analysis: request.analysis,
+        mode: request.mode,
+        currentJudgeId: request.judgeId,
+        currentQuestionId: null,
+        status: 'ready',
+        createdAt: now,
+        updatedAt: now,
+        endedAt: null,
+        messages: [],
+        pending: null,
+        completed: [],
+        createFingerprint: fingerprint,
+        error: null,
+        training: training ?? null,
+      }
+      return save(session)
+    })
+  }
   return {
-    async create(request: CreateDefenseRequest) {
-      return lock(request.requestId, async () => {
-        const existing = await repository.get(request.requestId),
-          fingerprint = hash(request)
-        if (existing) {
-          if (existing.createFingerprint !== fingerprint)
-            throw new AppError(409, 'IDEMPOTENCY_CONFLICT', '创建请求 ID 已用于不同项目资料。')
-          return existing
-        }
-        const now = new Date().toISOString()
-        const session: DefenseSession = {
-          id: request.requestId,
-          project: request.project,
-          analysis: request.analysis,
-          mode: request.mode,
-          currentJudgeId: request.judgeId,
-          currentQuestionId: null,
-          status: 'ready',
-          createdAt: now,
-          updatedAt: now,
-          endedAt: null,
-          messages: [],
-          pending: null,
-          completed: [],
-          createFingerprint: fingerprint,
-          error: null,
-        }
-        return save(session)
+    create,
+    async retrain(id: string, input: RetrainRequest) {
+      const source = await read(id)
+      if (source.status !== 'ended' || source.mode !== 'live')
+        throw new AppError(409, 'RETRAIN_NOT_READY', '二次训练需要已结束的真实会话及其评分报告。')
+      if (id === input.requestId)
+        throw new AppError(409, 'IDEMPOTENCY_CONFLICT', '新训练必须使用新的会话 ID。')
+      const report = await reports.get(id)
+      if (!report) throw new AppError(404, 'REPORT_NOT_FOUND', '请先生成并保存原会话的评分报告。')
+      if (
+        report.projectId !== source.project.id ||
+        report.sessionId !== source.id ||
+        report.sourceFingerprint !== reportSourceFingerprint(source) ||
+        !reportEvidenceIsValid(report.output, source)
+      )
+        throw new AppError(
+          409,
+          'REPORT_SOURCE_MISMATCH',
+          '历史报告与原会话记录不一致，未创建训练。',
+        )
+      const training = retrainingFocusSchema.parse({
+        sourceSessionId: id,
+        sourceReportId: report.id,
+        focus: [
+          ...report.output.weaknesses.slice(0, 2).map((item) => `${item.title}：${item.detail}`),
+          ...report.output.improvements
+            .slice(0, 2)
+            .map((item) => `${item.title}：${item.action} 完成标准：${item.acceptanceCriteria}`),
+        ].map((item) => item.slice(0, 1500)),
       })
+      return create(
+        {
+          requestId: input.requestId,
+          project: source.project,
+          analysis: source.analysis,
+          mode: source.mode,
+          judgeId: input.judgeId,
+        },
+        training,
+      )
     },
     async get(id: string) {
       const session = await read(id)

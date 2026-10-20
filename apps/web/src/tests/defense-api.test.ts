@@ -7,6 +7,23 @@ afterEach(() => {
   vi.useRealTimers()
 })
 describe('defense API transport', () => {
+  it('validates the new request ID for retraining rather than the old source ID', async () => {
+    const source = defenseFixture(),
+      next = { ...defenseFixture(), id: crypto.randomUUID() }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation(async () => Response.json({ success: true, data: next })),
+    )
+    expect(
+      await defenseApi('/' + source.id + '/retrain', { requestId: next.id, judgeId: 'business' }),
+    ).toEqual(next)
+    await expect(
+      defenseApi('/' + source.id + '/retrain', {
+        requestId: crypto.randomUUID(),
+        judgeId: 'business',
+      }),
+    ).rejects.toMatchObject({ code: 'INVALID_RESPONSE' })
+  })
   it('validates a recovered session and rejects mismatched IDs', async () => {
     const session = defenseFixture('demo')
     vi.stubGlobal(

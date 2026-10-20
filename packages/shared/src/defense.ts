@@ -4,6 +4,16 @@ import { projectSchema } from './project.js'
 import { analysisRecordSchema, analysisMatchesProject } from './analysis.js'
 
 export const MAX_DEFENSE_QUESTIONS = 30
+export const retrainingFocusSchema = z.strictObject({
+  sourceSessionId: z.uuid(),
+  sourceReportId: z.uuid(),
+  focus: z.array(z.string().trim().min(1).max(1500)).min(1).max(5),
+})
+export const retrainRequestSchema = z.strictObject({
+  requestId: z.uuid(),
+  judgeId: z.enum(judgeIds),
+})
+export type RetrainRequest = z.infer<typeof retrainRequestSchema>
 const text = (max: number) => z.string().trim().min(1).max(max)
 export type JudgeRole = JudgeDefinition
 export type DefenseQuestion = z.infer<typeof judgeQuestionSchema>
@@ -67,6 +77,7 @@ export const defenseSessionSchema = z
     completed: z.array(z.strictObject({ requestId: z.uuid(), fingerprint: text(64) })).max(100),
     createFingerprint: text(64),
     error: z.strictObject({ code: text(100), message: text(1200) }).nullable(),
+    training: retrainingFocusSchema.nullable().optional(),
   })
   .superRefine((session, context) => {
     const current = session.messages.find((v) => v.id === session.currentQuestionId)

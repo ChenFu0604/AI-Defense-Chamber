@@ -16,6 +16,7 @@ export function buildDefenseContext(
     task: latestAnswer ? 'follow_up' : 'initial',
     judgeId,
     difficulty: project.difficulty,
+    retraining: session.training ?? null,
     project: {
       name: project.name,
       projectType: project.projectType,
@@ -59,7 +60,7 @@ export function buildDefenseContext(
       .slice(-30)
       .map((v) => clip(v.content, 120)),
     notice:
-      '画像、回答及风险均为提供材料或待验证判断；截断处表示省略，不是事实变化。最新回答完整保留。',
+      '画像、回答及风险均为提供材料或待验证判断；截断处表示省略，不是事实变化。最新回答完整保留。retraining 若存在，优先围绕旧报告薄弱点与改进任务提问；旧评价不是当前表现的结论，不假设用户已改进。',
   }
   while (JSON.stringify(context).length > MAX_DEFENSE_CONTEXT_CHARS && context.recentHistory.length)
     context.recentHistory.shift()

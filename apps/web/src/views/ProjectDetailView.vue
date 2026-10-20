@@ -61,6 +61,7 @@ const analysisStatus = computed(() => {
       </div>
     </div>
     <ProjectAnalysisPanel :project="project" />
+    <p v-if="projects.historyWarning" class="notice" role="status">{{ projects.historyWarning }}</p>
     <div class="defense-actions">
       <RouterLink
         :to="{ name: 'project-risks', params: { id: project.id } }"

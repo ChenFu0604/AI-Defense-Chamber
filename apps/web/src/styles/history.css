@@ -1,0 +1,130 @@
+.history-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin: 22px 0;
+}
+.history-card {
+  background: #151923;
+  border: 1px solid #363d53;
+  border-radius: 12px;
+  padding: 24px;
+  margin: 20px 0;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.history-grid .history-card {
+  margin: 0;
+}
+.history-card h2 {
+  font-size: 20px;
+  margin: 12px 0;
+}
+.history-card h3 {
+  font-size: 15px;
+  margin: 18px 0 10px;
+}
+.history-card p,
+.history-card li {
+  font-size: 13px;
+  color: #b5bed2;
+  line-height: 1.9;
+}
+.history-card summary {
+  cursor: pointer;
+  color: #cbb7ff;
+  font-size: 15px;
+}
+.history-score {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 15px 0;
+  color: #b8bdd4;
+  font-size: 12px;
+}
+.history-score strong {
+  font-size: 38px;
+  color: #bba8fb;
+}
+.history-score span:last-child {
+  margin-left: auto;
+  color: #c9d5eb;
+}
+.history-filter {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 13px;
+  margin: 22px 0;
+}
+.history-filter select,
+.history-compare-select select {
+  background: #202537;
+  border: 1px solid #4b5672;
+  color: #e9e8f5;
+  border-radius: 6px;
+  padding: 10px;
+  max-width: 100%;
+  min-width: 0;
+}
+.history-compare-select {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin: 24px 0;
+}
+.history-compare-select label {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 13px;
+}
+.history-compare-select select { width: 100%; min-width: 0; }
+.history-table-wrap {
+  overflow-x: auto;
+}
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #151923;
+  font-size: 13px;
+}
+.history-table th,
+.history-table td {
+  padding: 18px;
+  text-align: left;
+  border-bottom: 1px solid #343c51;
+  white-space: nowrap;
+}
+.history-table th {
+  color: #c9b5ff;
+}
+.history-delta {
+  font-size: 32px;
+  color: #d1bee8;
+}
+.history-original {
+  white-space: pre-wrap;
+}
+.history-projects > h2 {
+  font-size: 20px;
+  margin-top: 30px;
+}
+@media (max-width: 760px) {
+  .history-grid,
+  .history-compare-select {
+    grid-template-columns: 1fr;
+  }
+  .history-card {
+    padding: 20px 16px;
+  }
+  .history-filter {
+    flex-wrap: wrap;
+  }
+  .history-filter select {
+    width: 100%;
+  }
+}

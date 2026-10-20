@@ -17,6 +17,36 @@ export const router = createRouter({
       component: WorkspaceLayout,
       children: [
         {
+          path: 'history/projects/:id',
+          name: 'history-project',
+          component: () => import('../views/HistoryProjectView.vue'),
+          meta: { title: '历史项目档案' },
+        },
+        {
+          path: 'history',
+          name: 'history',
+          component: () => import('../views/HistoryView.vue'),
+          meta: { title: '历史记录' },
+        },
+        {
+          path: 'history/compare',
+          name: 'history-compare',
+          component: () => import('../views/HistoryCompareView.vue'),
+          meta: { title: '评分对比' },
+        },
+        {
+          path: 'history/:id/train',
+          name: 'history-train',
+          component: () => import('../views/HistoryTrainView.vue'),
+          meta: { title: '二次训练' },
+        },
+        {
+          path: 'history/:id',
+          name: 'history-detail',
+          component: () => import('../views/HistoryDetailView.vue'),
+          meta: { title: '历史答辩报告' },
+        },
+        {
           path: 'projects/:id/risks',
           name: 'project-risks',
           component: () => import('../views/RiskMapView.vue'),
