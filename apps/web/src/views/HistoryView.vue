@@ -5,6 +5,14 @@ import { defenseStatusLabels, projectTypeLabels } from '@defense/shared'
 import { useHistoryStore } from '../stores/history'
 import { downloadHistoryBackup } from '../services/history-service'
 import AppButton from '../components/ui/AppButton.vue'
+import {
+  RefreshCw,
+  ArchiveRestore,
+  Download,
+  ChartNoAxesCombined,
+  ArrowUpRight,
+  FolderOpen,
+} from 'lucide-vue-next'
 const store = useHistoryStore(),
   projectId = ref(''),
   exportError = ref('')
@@ -35,18 +43,38 @@ const date = (value: string) => new Date(value).toLocaleString('zh-CN')
     <h1>历史记录与持续训练</h1>
     <p>保存每一场答辩的资料、回答和报告，比较同一项目的变化。</p>
   </div>
-  <div class="defense-actions">
-    <AppButton variant="secondary" @click="store.load">刷新本地历史</AppButton
-    ><AppButton variant="secondary" @click="store.archiveProjects">补存已有项目与画像</AppButton
-    ><AppButton variant="ghost" @click="backup">导出本地归档</AppButton
-    ><RouterLink to="/history/compare" class="app-button button-secondary"
-      >两次评分对比 →</RouterLink
-    >
-  </div>
-  <p class="notice">
-    历史页面只读已保存快照，不重新调用模型。归档限当前浏览器，最多 3
-    MiB；不会自动清理旧记录。正在进行的会话继续保存在后端，草稿保存在本地。
-  </p>
+  <section class="history-toolbar" aria-label="历史记录工具栏">
+    <div class="history-toolbar-actions">
+      <div class="history-tool-group">
+        <AppButton variant="secondary" @click="store.load"
+          ><RefreshCw :size="15" />刷新本地历史</AppButton
+        >
+        <AppButton variant="secondary" @click="store.archiveProjects"
+          ><ArchiveRestore :size="15" />补存项目与画像</AppButton
+        >
+        <AppButton variant="secondary" @click="backup"
+          ><Download :size="15" />导出本地归档</AppButton
+        >
+      </div>
+      <RouterLink to="/history/compare" class="app-button button-secondary history-compare-link"
+        ><ChartNoAxesCombined :size="16" />两次评分对比<ArrowUpRight :size="14"
+      /></RouterLink>
+    </div>
+    <div class="history-toolbar-filter">
+      <label class="history-filter"
+        ><span><FolderOpen :size="15" />按项目查看</span>
+        <select v-model="projectId">
+          <option value="">全部项目</option>
+          <option v-for="project in store.archive.projects" :key="project.id" :value="project.id">
+            {{ project.name }}
+          </option>
+        </select>
+      </label>
+      <span v-if="!store.error" class="history-record-count"
+        >{{ projectId ? '当前项目' : '全部项目' }}<i />{{ entries.length }} 条答辩记录</span
+      >
+    </div>
+  </section>
   <p v-if="pending" class="notice">
     上一次创建结果尚待确认。<RouterLink
       :to="{ name: 'defense-session', params: { id: pending.input.requestId } }"
@@ -70,15 +98,6 @@ const date = (value: string) => new Date(value).toLocaleString('zh-CN')
   <p v-if="store.warning || store.message" role="status" class="notice">
     {{ store.warning }} {{ store.message }}
   </p>
-  <label class="history-filter"
-    >按项目查看
-    <select v-model="projectId">
-      <option value="">全部项目</option>
-      <option v-for="project in store.archive.projects" :key="project.id" :value="project.id">
-        {{ project.name }}
-      </option>
-    </select></label
-  >
   <div
     v-if="
       !store.error &&
