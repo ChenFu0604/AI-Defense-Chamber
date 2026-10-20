@@ -179,7 +179,7 @@ async function save() {
       <div class="form-section-label"><span>03</span>选择你的答辩强度</div>
       <fieldset class="difficulty-fieldset">
         <legend>答辩难度<span class="required-mark" aria-hidden="true">*</span></legend>
-        <p id="difficulty-hint" class="field-hint">本轮保存难度偏好，后续 AI 训练将使用此设置。</p>
+        <p id="difficulty-hint" class="field-hint">答辩提问将参考此难度设置。</p>
         <div class="difficulty-options">
           <label
             v-for="level in defenseDifficulties"

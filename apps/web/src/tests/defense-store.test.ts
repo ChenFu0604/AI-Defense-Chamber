@@ -77,6 +77,32 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals())
 
 describe('defense session frontend lifecycle', () => {
+  it('ignores a creation response after leaving the preparation page and preserves its retry ID', async () => {
+    const store = useDefenseStore(),
+      base = defenseFixture('demo')
+    let complete!: (session: DefenseSession) => void
+    api.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          complete = resolve
+        }),
+    )
+    const pending = store.start({
+      project: base.project,
+      analysis: base.analysis,
+      mode: base.mode,
+      judgeId: 'business',
+    })
+    const requestId = (api.mock.calls[0]![1] as { requestId: string }).requestId
+    store.leave()
+    complete({ ...base, id: requestId })
+    expect(await pending).toBeNull()
+    expect(store.session).toBeNull()
+    expect(storage.data.get('defense-chamber.pending-create.v1')).toContain(requestId)
+    store.error = '上一页失败'
+    store.prepare()
+    expect(store.error).toBe('')
+  })
   it('does not overwrite an unreadable local draft when loading server records', async () => {
     const session = ready(),
       key = 'defense-chamber.draft.v1.' + session.id
@@ -185,6 +211,7 @@ describe('defense session frontend lifecycle', () => {
     await store.load(session.id)
     expect(store.draft).toBe('回答已保存到服务端')
     expect(store.operation?.kind).toBe('answer')
+    expect(store.error).toBe('超时')
     expect(store.warning).toBeTruthy()
   })
   it('recovers a lost successful response by checking the completed request', async () => {

@@ -1,16 +1,30 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { compareHistoryReports, reportDimensionLabels } from '@defense/shared'
+import { compareHistoryReports, projectInputSchema, reportDimensionLabels } from '@defense/shared'
 import { useHistoryStore } from '../stores/history'
 const store = useHistoryStore(),
   route = useRoute()
 const beforeId = ref(String(route.query.before ?? '')),
   afterId = ref(String(route.query.after ?? ''))
+watch(
+  () => route.query,
+  (query) => {
+    beforeId.value = String(query.before ?? '')
+    afterId.value = String(query.after ?? '')
+  },
+)
 onMounted(store.load)
 const records = computed(() => store.entries.filter((e) => e.report))
 const before = computed(() => records.value.find((e) => e.session.id === beforeId.value)),
   after = computed(() => records.value.find((e) => e.session.id === afterId.value))
+const projectChanged = computed(
+  () =>
+    before.value &&
+    after.value &&
+    JSON.stringify(projectInputSchema.parse(before.value.session.project)) !==
+      JSON.stringify(projectInputSchema.parse(after.value.session.project)),
+)
 const comparison = computed(() => {
   if (!before.value?.report || !after.value?.report) return { data: null, error: '' }
   try {
@@ -57,11 +71,7 @@ const label = (entry: (typeof records.value)[number]) =>
     ><p class="notice">
       AI 主观训练评分受题目、模型与回答数量影响；分数上升不等于客观能力必然提升。{{
         before.report!.model !== after.report!.model ? '两场所用模型不同，请谨慎解读。' : ''
-      }}{{
-        before.session.project.description !== after.session.project.description
-          ? '项目资料也有变化。'
-          : ''
-      }}
+      }}{{ projectChanged ? '项目资料也有变化。' : '' }}
     </p>
     <div class="history-card">
       <h2>综合分 {{ before.report!.overallScore }} → {{ after.report!.overallScore }}</h2>

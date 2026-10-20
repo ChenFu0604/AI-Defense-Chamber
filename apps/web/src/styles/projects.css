@@ -992,9 +992,9 @@
   .sidebar .nav-item {
     padding: 9px 7px;
   }
-  .sidebar .side-nav > .nav-item:first-child,
+  .sidebar .side-nav > .nav-shortcut,
   .sidebar .side-nav > .nav-item:nth-child(2),
-  .sidebar .side-nav > .nav-item:last-child {
+  .sidebar .side-nav > .nav-item:last-child:not(.nav-prepare) {
     display: none;
   }
   .hero-actions {
@@ -1160,7 +1160,8 @@
 }
 
 @media (max-width: 700px) {
-  .sidebar .side-nav > .nav-item.active:nth-child(3) {
+  .sidebar .side-nav > .nav-history,
+  .sidebar .side-nav > .nav-prepare {
     display: flex;
   }
 }

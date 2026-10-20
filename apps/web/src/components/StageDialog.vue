@@ -56,6 +56,9 @@ defineExpose({ open })
       <div class="milestone">
         <Check :size="18" /><span>阶段 08 · 历史记录与二次训练</span><b>已实现</b>
       </div>
+      <div class="milestone">
+        <Check :size="18" /><span>阶段 09 · 流程整合与视觉统一</span><b>已检查</b>
+      </div>
     </template>
     <template v-else>
       <h2 id="dialog-title">本地开发指南</h2>

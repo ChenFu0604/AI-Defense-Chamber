@@ -15,13 +15,17 @@
   --cyan: #72d6df;
   --violet: #b39af3;
   --rose: #f09eae;
+  --surface-card: #13151d;
+  --border-card: #303443;
+  --radius-card: 12px;
+  --space-card: 24px;
 }
 * {
   box-sizing: border-box;
 }
 body {
   margin: 0;
-  min-width: 360px;
+  min-width: 320px;
 }
 button,
 a {
@@ -32,7 +36,7 @@ button {
   cursor: pointer;
 }
 button:disabled {
-  cursor: wait;
+  cursor: not-allowed;
   opacity: 0.5;
 }
 a {
@@ -1330,9 +1334,6 @@ button {
   }
 }
 @media (max-width: 700px) {
-  body {
-    min-width: 360px;
-  }
   .sidebar {
     position: static;
     width: 100%;

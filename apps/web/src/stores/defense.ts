@@ -44,6 +44,7 @@ export const useDefenseStore = defineStore('defense-session', () => {
   }
   function apply(record: DefenseSession) {
     session.value = record
+    if (record.status === 'failed' && record.error) error.value = record.error.message
     const pending = record.pending
     if (pending) {
       if (pending.type === 'answer') {
@@ -296,6 +297,11 @@ export const useDefenseStore = defineStore('defense-session', () => {
     busy.value = false
     persist()
   }
+  function prepare() {
+    leave()
+    error.value = ''
+    warning.value = ''
+  }
   return {
     session,
     draft,
@@ -313,5 +319,6 @@ export const useDefenseStore = defineStore('defense-session', () => {
     end,
     updateDraft,
     leave,
+    prepare,
   }
 })

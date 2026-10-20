@@ -39,8 +39,11 @@ export const useReportStore = defineStore('defense-report', () => {
       if (epoch !== token) return
       const code = failure instanceof ReportApiError ? failure.code : 'REPORT_FAILED'
       errorCode.value = code
-      if (code === 'REPORT_NOT_FOUND') status.value = 'missing'
-      else {
+      if (['REPORT_SOURCE_MISMATCH', 'REPORT_STORAGE_CORRUPT'].includes(code)) report.value = null
+      if (code === 'REPORT_NOT_FOUND') {
+        report.value = null
+        status.value = 'missing'
+      } else {
         status.value = 'error'
         error.value = failure instanceof Error ? failure.message : '报告操作失败，请重试。'
       }
@@ -53,6 +56,9 @@ export const useReportStore = defineStore('defense-report', () => {
     controller?.abort()
     controller = null
     status.value = 'idle'
+    error.value = ''
+    errorCode.value = ''
+    warning.value = ''
   }
   return {
     report,

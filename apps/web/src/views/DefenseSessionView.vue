@@ -24,9 +24,20 @@ const blocked = computed(() => store.busy || store.session?.status === 'generati
 let poll: ReturnType<typeof setInterval> | undefined
 watch(
   id,
-  async (value) => {
+  async (value, _previous, onCleanup) => {
+    let active = true
+    onCleanup(() => {
+      active = false
+    })
     await store.load(value)
-    if (store.session?.status === 'ready' && !store.error) await store.initial()
+    if (
+      active &&
+      id.value === value &&
+      store.session?.id === value &&
+      store.session.status === 'ready' &&
+      !store.error
+    )
+      await store.initial()
   },
   { immediate: true },
 )
@@ -131,6 +142,7 @@ onBeforeUnmount(() => {
         <AppButton
           v-if="store.session.status === 'awaiting_answer' && !store.operation"
           :disabled="blocked || !store.draft.trim()"
+          :busy="store.busy"
           @click="store.answer"
           >提交回答并追问</AppButton
         ><AppButton

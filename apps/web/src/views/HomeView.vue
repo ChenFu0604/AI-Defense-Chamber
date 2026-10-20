@@ -26,15 +26,15 @@ const features = [
     icon: MessagesSquare,
     title: '迎接不同立场的追问',
     description: '从商业、技术、用户与逻辑四个方向，检验回答中的假设与证据。',
-    status: '规划中',
-    available: false,
+    status: '已开放',
+    available: true,
   },
   {
     icon: ChartNoAxesCombined,
     title: '把薄弱点变成下一步',
     description: '用五维能力报告与风险关联图，将答辩反馈转为可以执行的改进建议。',
-    status: '规划中',
-    available: false,
+    status: '已开放',
+    available: true,
   },
 ]
 const steps = [
@@ -162,7 +162,7 @@ const steps = [
         <div class="section-kicker">FROM IDEA TO CONFIDENCE</div>
         <h2 id="workflow-title">每一轮，都更进一步。</h2>
         <p>三步构建你的答辩训练闭环。</p>
-        <span class="planned-tag">项目创建已开放 · AI 训练后续接入</span>
+        <span class="planned-tag">项目建档 → 多轮答辩 → 报告与二次训练</span>
       </div>
       <div class="workflow-steps">
         <article v-for="step in steps" :key="step.number" class="workflow-step">

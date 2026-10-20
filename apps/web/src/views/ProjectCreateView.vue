@@ -42,7 +42,7 @@ async function onCreated(project: Project) {
         <li>在详情页检查你的项目</li>
         <li>进入答辩准备，梳理评委视角</li>
       </ol>
-      <span class="planned-tag">AI 实时问答将在后续阶段接入</span>
+      <span class="planned-tag">配置模型后，可进行多轮追问与评分</span>
     </aside>
   </div>
 </template>

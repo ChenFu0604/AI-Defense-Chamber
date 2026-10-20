@@ -11,11 +11,14 @@ const route = useRoute(),
   store = useDefenseStore(),
   reports = useReportStore()
 const id = computed(() => String(route.params.id ?? ''))
+let active = true
 async function loadPage(value = id.value) {
   reports.leave()
   await store.load(value)
   if (
+    active &&
     id.value === value &&
+    store.session?.id === value &&
     !store.error &&
     store.session?.status === 'ended' &&
     store.session.mode === 'live'
@@ -24,6 +27,7 @@ async function loadPage(value = id.value) {
 }
 watch(id, (value) => void loadPage(value), { immediate: true })
 onBeforeUnmount(() => {
+  active = false
   store.leave()
   reports.leave()
 })

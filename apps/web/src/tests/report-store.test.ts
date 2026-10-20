@@ -65,6 +65,35 @@ describe('report page state', () => {
     expect(reopened.report).toEqual(record)
     expect(request.mock.calls.every((call) => call[1] === false)).toBe(true)
   })
+  it('clears a stale report when the backend confirms that it no longer exists', async () => {
+    const store = useReportStore(),
+      record = reportFixture()
+    request.mockResolvedValueOnce(record)
+    await store.load(record.sessionId)
+    request.mockRejectedValueOnce(new ReportApiError('REPORT_NOT_FOUND', '尚无报告'))
+    await store.load(record.sessionId)
+    expect(store.report).toBeNull()
+    expect(store.status).toBe('missing')
+  })
+  it('clears route-specific error messages when leaving', async () => {
+    const store = useReportStore()
+    request.mockRejectedValueOnce(new ReportApiError('AI_UNAVAILABLE', '测试错误'))
+    await store.generate(reportFixture().sessionId)
+    expect(store.error).toBe('测试错误')
+    store.leave()
+    expect(store.error).toBe('')
+    expect(store.errorCode).toBe('')
+  })
+  it('hides a retained report when the server rejects its source integrity', async () => {
+    const store = useReportStore(),
+      record = reportFixture()
+    request.mockResolvedValueOnce(record)
+    await store.load(record.sessionId)
+    request.mockRejectedValueOnce(new ReportApiError('REPORT_SOURCE_MISMATCH', '来源不一致'))
+    await store.load(record.sessionId)
+    expect(store.report).toBeNull()
+    expect(store.status).toBe('error')
+  })
   it('ignores a late response after leaving or switching sessions', async () => {
     const store = useReportStore(),
       record = reportFixture()

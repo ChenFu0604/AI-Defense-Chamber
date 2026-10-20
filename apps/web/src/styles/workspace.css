@@ -1,0 +1,85 @@
+/* Shared workspace surfaces. Risk levels and judge role colors remain contextual. */
+.report-card,
+.history-card,
+.defense-start,
+.defense-current,
+.defense-report-finding,
+.defense-ended,
+.model-config-card {
+  padding: var(--space-card);
+  border-radius: var(--radius-card);
+  border-color: var(--border-card);
+  background-color: var(--surface-card);
+}
+.report-evidenceGaps {
+  border-top-color: #bd9256;
+}
+.report-weaknesses,
+.report-priorities {
+  border-top-color: #9f606c;
+}
+.report-strengths {
+  border-top-color: #598f84;
+}
+.report-card h2,
+.history-card h2,
+.defense-current h2,
+.defense-start h2,
+.defense-ended h2 {
+  font-size: 20px;
+  line-height: 1.5;
+}
+.view-heading h1,
+.breadcrumb,
+.defense-session-bar {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+div.notice:not(:has(> svg)) {
+  display: block;
+}
+.notice .defense-actions:last-child {
+  margin-bottom: 0;
+}
+.notice a:focus-visible,
+summary:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.app-button[aria-busy='true'] {
+  cursor: progress;
+}
+.app-button[aria-busy='true']:not(:has(svg))::before {
+  content: '';
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: workspace-spin 0.8s linear infinite;
+}
+@keyframes workspace-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (max-width: 760px) {
+  :root {
+    --space-card: 20px 16px;
+  }
+  .empty-state {
+    padding: 28px 16px;
+  }
+  .defense-session-bar {
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-button[aria-busy='true']::before {
+    animation: none;
+  }
+}

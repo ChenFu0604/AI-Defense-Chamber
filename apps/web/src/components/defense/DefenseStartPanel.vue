@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { judgeDefinitions, type AnalysisMode, type JudgeId, type Project } from '@defense/shared'
 import { useAnalysisStore } from '../../stores/analysis'
@@ -19,7 +19,10 @@ const recentError = ref('')
 watch(
   () => props.project,
   (project) => {
+    defense.prepare()
     confirmed.value = false
+    recent.value = []
+    recentError.value = ''
     analysisStore.restore(project)
     try {
       recent.value = recentDefenseSessions().filter((v) => v.projectId === project.id)
@@ -29,6 +32,7 @@ watch(
   },
   { immediate: true, deep: true },
 )
+onBeforeUnmount(defense.leave)
 async function start() {
   if (!confirmed.value || !analysis.value) return
   const session = await defense.start({
@@ -82,9 +86,12 @@ async function start() {
     </p>
     <p v-if="defense.error" role="alert" class="notice notice-error">{{ defense.error }}</p>
     <p v-if="defense.warning || recentError" role="status">{{ defense.warning || recentError }}</p>
-    <AppButton :disabled="!confirmed || !analysis || defense.busy" @click="start">{{
-      defense.busy ? '正在创建…' : '确认资料并开始答辩'
-    }}</AppButton>
+    <AppButton
+      :disabled="!confirmed || !analysis || defense.busy"
+      :busy="defense.busy"
+      @click="start"
+      >{{ defense.busy ? '正在创建…' : '确认资料并开始答辩' }}</AppButton
+    >
     <div v-if="recent.length" class="defense-recent">
       <h3>继续已有会话</h3>
       <RouterLink

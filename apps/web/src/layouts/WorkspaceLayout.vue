@@ -40,7 +40,7 @@ const stageDialog = ref<InstanceType<typeof StageDialog> | null>(null)
       <nav class="side-nav" aria-label="主导航">
         <RouterLink
           to="/history"
-          class="nav-item"
+          class="nav-item nav-history"
           :class="{ active: route.path.startsWith('/history') }"
           aria-label="历史记录与二次训练"
           ><BookOpen :size="18" />历史记录</RouterLink
@@ -51,13 +51,16 @@ const stageDialog = ref<InstanceType<typeof StageDialog> | null>(null)
             class="nav-active-dot"
           ></span
         ></RouterLink>
-        <RouterLink to="/#projects" class="nav-item"
+        <RouterLink to="/#projects" class="nav-item nav-shortcut"
           ><FolderOpen :size="18" />最近项目<ArrowUpRight :size="14" class="nav-end"
         /></RouterLink>
-        <RouterLink to="/defense" class="nav-item" :class="{ active: route.name === 'defense' }"
+        <RouterLink
+          to="/defense"
+          class="nav-item nav-prepare"
+          :class="{ active: route.path.startsWith('/defense') }"
           ><Route :size="18" />答辩准备<ArrowUpRight :size="14" class="nav-end"
         /></RouterLink>
-        <RouterLink to="/#judges" class="nav-item"
+        <RouterLink to="/#judges" class="nav-item nav-shortcut"
           ><Orbit :size="18" />认识评委团<ArrowUpRight :size="14" class="nav-end"
         /></RouterLink>
       </nav>
@@ -78,7 +81,7 @@ const stageDialog = ref<InstanceType<typeof StageDialog> | null>(null)
           <BookOpen :size="18" />开发指南<ArrowUpRight :size="14" class="nav-end" />
         </button>
         <div class="version">
-          <span class="status-dot online"></span>本地项目工作区<span>PHASE 08</span>
+          <span class="status-dot online"></span>本地项目工作区<span>PHASE 09</span>
         </div>
       </div>
     </aside>
@@ -102,7 +105,7 @@ const stageDialog = ref<InstanceType<typeof StageDialog> | null>(null)
         <footer class="page-footer">
           <span>AI DEFENSE CHAMBER <span class="footer-dot">·</span> 在质疑中，让项目更强。</span
           ><span
-            >阶段 08 / 历史与训练<span class="footer-dot">·</span
+            >阶段 09 / 流程整合<span class="footer-dot">·</span
             ><button @click="stageDialog?.open('guide')">开发说明<ArrowUpRight :size="12" /></button
           ></span>
         </footer>

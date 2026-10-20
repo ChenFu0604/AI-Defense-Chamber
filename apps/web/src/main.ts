@@ -11,5 +11,6 @@ import './styles/settings.css'
 import './styles/report.css'
 import './styles/risk-map.css'
 import './styles/history.css'
+import './styles/workspace.css'
 
 createApp(App).use(createPinia()).use(router).mount('#app')

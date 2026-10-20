@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { judgeDefinitions, type JudgeId } from '@defense/shared'
 import { useHistoryStore } from '../stores/history'
@@ -13,7 +13,16 @@ const id = computed(() => String(route.params.id)),
   entry = computed(() => history.archive.entries.find((e) => e.session.id === id.value))
 const judgeId = ref<JudgeId>('business'),
   confirmed = ref(false)
-onMounted(history.load)
+watch(
+  id,
+  () => {
+    defense.prepare()
+    confirmed.value = false
+    history.load()
+  },
+  { immediate: true },
+)
+onBeforeUnmount(defense.leave)
 async function start() {
   if (!confirmed.value || !entry.value?.report) return
   const record = await defense.retrain(id.value, judgeId.value)
@@ -60,7 +69,7 @@ async function start() {
         type="checkbox"
         :disabled="defense.busy"
       />确认沿用原项目资料与画像，并将新回答及训练重点发送到服务端配置的模型。</label
-    ><AppButton :disabled="!confirmed || defense.busy" @click="start">{{
+    ><AppButton :disabled="!confirmed || defense.busy" :busy="defense.busy" @click="start">{{
       defense.busy ? '正在创建新会话…' : '创建薄弱点训练会话'
     }}</AppButton>
     <p>后端从原始评分报告提取最多 5 项训练重点，创建时不调用模型；进入新会话后生成首问。</p>

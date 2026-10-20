@@ -3,13 +3,20 @@ withDefaults(
   defineProps<{
     variant?: 'primary' | 'secondary' | 'ghost'
     disabled?: boolean
+    busy?: boolean
     type?: 'button' | 'submit'
   }>(),
-  { variant: 'primary', disabled: false, type: 'button' },
+  { variant: 'primary', disabled: false, busy: false, type: 'button' },
 )
 </script>
 <template>
-  <button :type="type" :disabled="disabled" class="app-button" :class="'button-' + variant">
+  <button
+    :type="type"
+    :disabled="disabled || busy"
+    :aria-busy="busy || undefined"
+    class="app-button"
+    :class="'button-' + variant"
+  >
     <slot />
   </button>
 </template>
