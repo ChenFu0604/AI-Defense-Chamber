@@ -49,6 +49,17 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 describe('model settings form state', () => {
+  it('validates an extended deadline before save and blocks values over five minutes', async () => {
+    const settings = setup()
+    await settings.run('loading')
+    settings.form.timeoutMs = 180000
+    await settings.run('saving')
+    expect(vi.mocked(saveModelSettings).mock.calls[0]![0].timeoutMs).toBe(180000)
+    settings.form.timeoutMs = 300001
+    await settings.run('saving')
+    expect(settings.errors.value.timeoutMs).toBeTruthy()
+    expect(saveModelSettings).toHaveBeenCalledTimes(1)
+  })
   it('fetches without a model name and allows choosing a returned model before saving', async () => {
     const settings = setup()
     await settings.run('loading')

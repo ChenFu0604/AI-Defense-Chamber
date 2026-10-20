@@ -1,3 +1,4 @@
+import { MODEL_REQUEST_TIMEOUT_MS } from '@defense/shared'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   getModelSettings,
@@ -89,7 +90,7 @@ describe('model settings API client', () => {
       ),
     )
     const pending = expect(getModelSettings()).rejects.toThrow('请求超时')
-    await vi.advanceTimersByTimeAsync(130001)
+    await vi.advanceTimersByTimeAsync(MODEL_REQUEST_TIMEOUT_MS + 1)
     await pending
   })
 })

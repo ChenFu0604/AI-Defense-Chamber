@@ -1,5 +1,11 @@
 import { z } from 'zod'
 
+export const DEFAULT_MODEL_TIMEOUT_MS = 120000
+export const MAX_MODEL_TIMEOUT_MS = 300000
+// Allow the backend deadline and its error response to complete first.
+export const MODEL_REQUEST_TIMEOUT_MS = MAX_MODEL_TIMEOUT_MS + 10000
+export const modelTimeoutSchema = z.number().int().min(1000).max(MAX_MODEL_TIMEOUT_MS)
+
 export const modelBaseUrlSchema = z
   .string()
   .trim()
@@ -36,7 +42,7 @@ export const modelSettingsInputSchema = z.strictObject({
   baseUrl: modelBaseUrlSchema,
   model: z.string().trim().min(1, '请填写模型名称。').max(200),
   apiKey: modelApiKeySchema.default(''),
-  timeoutMs: z.number().int().min(1000).max(120000),
+  timeoutMs: modelTimeoutSchema,
   responseFormat: z.enum(['json_schema', 'json_object']),
 })
 export type ModelSettingsInput = z.infer<typeof modelSettingsInputSchema>
@@ -64,7 +70,7 @@ export const savedModelSettingsSchema = z.strictObject({
 export const publicModelSettingsSchema = z.strictObject({
   baseUrl: z.string().max(2048),
   model: z.string().max(200),
-  timeoutMs: z.number().int().min(1000).max(120000),
+  timeoutMs: modelTimeoutSchema,
   responseFormat: z.enum(['json_schema', 'json_object']),
   hasApiKey: z.boolean(),
   source: z.enum(['saved', 'environment', 'default']),

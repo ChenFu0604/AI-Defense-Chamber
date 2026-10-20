@@ -10,6 +10,8 @@ import { askJudge, type JudgeService } from './services/judge-service.js'
 import { createDefenseRouter } from './routes/defense.js'
 import { defenseService, type DefenseService } from './services/defense-service.js'
 import { createSettingsRouter } from './routes/settings.js'
+import { createReportsRouter } from './routes/reports.js'
+import { createReportService, type ReportService } from './services/report-service.js'
 import {
   modelSettingsService,
   type ModelSettingsService,
@@ -21,6 +23,7 @@ export function createApp(
     askJudge?: JudgeService
     defense?: DefenseService
     modelSettings?: ModelSettingsService
+    reports?: ReportService
   } = {},
 ) {
   const app = express()
@@ -33,6 +36,9 @@ export function createApp(
   app.use('/api', createJudgesRouter(options.askJudge ?? askJudge))
   app.use('/api/v1', createDefenseRouter(options.defense ?? defenseService))
   app.use('/api', createDefenseRouter(options.defense ?? defenseService))
+  const reports = options.reports ?? createReportService(options.defense ?? defenseService)
+  app.use('/api/v1', createReportsRouter(reports))
+  app.use('/api', createReportsRouter(reports))
   app.use('/api/v1', createSettingsRouter(options.modelSettings ?? modelSettingsService))
   app.use('/api', createSettingsRouter(options.modelSettings ?? modelSettingsService))
   app.use(notFound)

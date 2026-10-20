@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { analysisOutputSchema } from '@defense/shared'
+import {
+  analysisOutputSchema,
+  DEFAULT_MODEL_TIMEOUT_MS,
+  MAX_MODEL_TIMEOUT_MS,
+} from '@defense/shared'
 import { createAIClient } from '../services/ai-client.js'
 import { readAIConfig, getAIConfigurationStatus, type AIConfig } from '../config/ai.js'
 import { validAnalysisOutput } from '../../../../tests/fixtures/analysis.js'
@@ -50,7 +54,17 @@ describe('AI configuration', () => {
       model: 'local-model',
       baseUrl: 'http://127.0.0.1:11434/v1',
       responseFormat: 'json_object',
+      timeoutMs: DEFAULT_MODEL_TIMEOUT_MS,
     })
+  })
+  it('accepts the extended environment deadline and rejects an out-of-range value', () => {
+    const source = { OPENAI_API_KEY: 'test-key', OPENAI_MODEL: 'model' }
+    expect(readAIConfig({ ...source, AI_TIMEOUT_MS: String(MAX_MODEL_TIMEOUT_MS) }).timeoutMs).toBe(
+      MAX_MODEL_TIMEOUT_MS,
+    )
+    expect(() =>
+      readAIConfig({ ...source, AI_TIMEOUT_MS: String(MAX_MODEL_TIMEOUT_MS + 1) }),
+    ).toThrow('模型配置无效')
   })
   it.each([
     { OPENAI_BASE_URL: 'ftp://example.test' },
@@ -149,10 +163,35 @@ describe('unified structured AI transport', () => {
           )
         }),
     )
-    const pending = createAIClient({ ...config, timeoutMs: 30 }, transport).generate(task())
-    const assertion = expect(pending).rejects.toMatchObject({ code: 'AI_TIMEOUT', status: 504 })
-    await vi.advanceTimersByTimeAsync(30)
+    const pending = createAIClient({ ...config, timeoutMs: 180000 }, transport).generate(task())
+    const assertion = expect(pending).rejects.toMatchObject({
+      code: 'AI_TIMEOUT',
+      status: 504,
+      message: expect.stringContaining('180 秒'),
+    })
+    await vi.advanceTimersByTimeAsync(130000)
+    expect(transport.mock.calls[0]![1]!.signal!.aborted).toBe(false)
+    await vi.advanceTimersByTimeAsync(50000)
     await assertion
+    expect(transport.mock.calls[0]![1]!.signal!.aborted).toBe(true)
+    expect(transport).toHaveBeenCalledTimes(1)
+  })
+  it('accepts a valid model response taking longer than the old 45 second default', async () => {
+    vi.useFakeTimers()
+    const transport = vi.fn<typeof fetch>().mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          setTimeout(() => resolve(completion(validAnalysisOutput())), 90000)
+        }),
+    )
+    const pending = createAIClient(
+      { ...config, timeoutMs: DEFAULT_MODEL_TIMEOUT_MS },
+      transport,
+    ).generate(task())
+    await vi.advanceTimersByTimeAsync(90000)
+    expect((await pending).data).toEqual(validAnalysisOutput())
+    expect(transport.mock.calls[0]![1]!.signal!.aborted).toBe(false)
+    expect(vi.getTimerCount()).toBe(0)
   })
   it('does not call the provider when already cancelled', async () => {
     const controller = new AbortController()

@@ -1,3 +1,4 @@
+import { MODEL_REQUEST_TIMEOUT_MS } from '@defense/shared'
 import { apiErrorResponseSchema, defenseResponseSchema, type DefenseSession } from '@defense/shared'
 
 export class DefenseApiError extends Error {
@@ -11,7 +12,7 @@ export class DefenseApiError extends Error {
 }
 export async function defenseApi(path: string, body?: unknown): Promise<DefenseSession> {
   const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), 130000)
+  const timer = setTimeout(() => controller.abort(), MODEL_REQUEST_TIMEOUT_MS)
   try {
     const response = await fetch('/api/v1/defense/sessions' + path, {
       method: body === undefined ? 'GET' : 'POST',

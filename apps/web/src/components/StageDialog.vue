@@ -29,7 +29,8 @@ defineExpose({ open })
       <h2 id="dialog-title">你的项目，正在就位。</h2>
       <p>
         当前已开放项目创建、本地保存、画像分析、四角色提问与多轮答辩。AI
-        分析需要服务端模型配置；主动选择的演示始终标注为模拟。会话与消息可保存恢复，结束后可查看逐轮诊断；综合评分将在后续阶段接入。
+        分析需要服务端模型配置；主动选择的演示始终标注为模拟。会话与消息可保存恢复，真实答辩结束后可生成评分报告与五维雷达图，历史报告保存在后端。评分属于
+        AI 主观训练建议。
       </p>
       <div class="milestone">
         <Check :size="18" /><span>阶段 01 · 首页与基础服务</span><b>已完成</b>
@@ -45,6 +46,9 @@ defineExpose({ open })
       </div>
       <div class="milestone">
         <Check :size="18" /><span>阶段 05 · 动态答辩与多轮追问</span><b>已实现</b>
+      </div>
+      <div class="milestone">
+        <Check :size="18" /><span>阶段 06 · 评分报告与能力雷达图</span><b>已实现</b>
       </div>
     </template>
     <template v-else>

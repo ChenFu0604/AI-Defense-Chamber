@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted } from 'vue'
+import { DEFAULT_MODEL_TIMEOUT_MS, MAX_MODEL_TIMEOUT_MS } from '@defense/shared'
 import { PlugZap, Save, KeyRound, ServerCog, ListRestart } from 'lucide-vue-next'
 import AppButton from '../ui/AppButton.vue'
 import FormField from '../ui/FormField.vue'
@@ -132,14 +133,14 @@ async function save() {
           ><FormField
             id="model-timeout"
             label="请求超时（毫秒）"
-            hint="1000～120000，默认 45000。"
+            :hint="`1000～${MAX_MODEL_TIMEOUT_MS}，默认 ${DEFAULT_MODEL_TIMEOUT_MS}。分析较慢时可设为 180000（3 分钟），保存后生效。`"
             :error="errors.timeoutMs"
             ><input
               id="model-timeout"
               v-model.number="form.timeoutMs"
               type="number"
               min="1000"
-              max="120000"
+              :max="MAX_MODEL_TIMEOUT_MS"
               step="1000"
           /></FormField>
         </div>

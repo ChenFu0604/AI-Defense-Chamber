@@ -93,8 +93,12 @@ onBeforeUnmount(() => analyses.cancel(props.project.id))
       <div>
         <strong>{{ configError ? '需要配置模型服务' : '这次分析未完成' }}</strong>
         <p>{{ state.error }}</p>
-        <p v-if="configError">
-          在后端配置后重新启动服务，再点击“分析项目”。密钥只放在服务端环境变量中。
+        <p v-if="configError">在系统设置中保存模型配置后，再点击“分析项目”，无需重启服务。</p>
+        <p v-if="['AI_TIMEOUT', 'CLIENT_TIMEOUT'].includes(state.errorCode)">
+          可在模型配置中延长等待时间（最长 5 分钟）；若仍超时，请检查服务商状态或切换模型。
+        </p>
+        <p v-if="configError || ['AI_TIMEOUT', 'CLIENT_TIMEOUT'].includes(state.errorCode)">
+          <RouterLink to="/settings" class="text-button">前往系统设置 → 模型配置</RouterLink>
         </p>
         <p>已有项目和先前画像保留；不会自动切换成模拟结果。</p>
         <AppButton variant="secondary" @click="analyses.run(project, state.activeMode)"

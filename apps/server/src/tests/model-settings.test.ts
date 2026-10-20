@@ -8,6 +8,7 @@ import {
   modelSettingsInputSchema,
   modelSettingsResponseSchema,
   modelConnectionResponseSchema,
+  MAX_MODEL_TIMEOUT_MS,
 } from '@defense/shared'
 import { createApp } from '../app.js'
 import { readAIConfig } from '../config/ai.js'
@@ -44,6 +45,24 @@ afterEach(async () => {
   }
 })
 describe('persisted model settings', () => {
+  it('saves extended deadlines through HTTP, restores them and rejects overflow without overwriting', async () => {
+    const file = await path()
+    const app = createApp({ modelSettings: createModelSettingsService({ path: file, source: {} }) })
+    await request(app)
+      .put('/api/v1/settings/model')
+      .set('X-Settings-Request', '1')
+      .send({ ...input, timeoutMs: MAX_MODEL_TIMEOUT_MS })
+      .expect(200)
+    const restarted = createModelSettingsService({ path: file, source: {} })
+    expect(restarted.get().timeoutMs).toBe(MAX_MODEL_TIMEOUT_MS)
+    expect(readAIConfig(undefined, file).timeoutMs).toBe(MAX_MODEL_TIMEOUT_MS)
+    await request(app)
+      .put('/api/v1/settings/model')
+      .set('X-Settings-Request', '1')
+      .send({ ...input, timeoutMs: MAX_MODEL_TIMEOUT_MS + 1 })
+      .expect(400)
+    expect(restarted.get().timeoutMs).toBe(MAX_MODEL_TIMEOUT_MS)
+  })
   it('handles malformed URL input and redacts credentials from invalid environment URLs', async () => {
     expect(modelSettingsInputSchema.safeParse({ ...input, baseUrl: 'not-a-url' }).success).toBe(
       false,

@@ -1,3 +1,4 @@
+import { MODEL_REQUEST_TIMEOUT_MS } from '@defense/shared'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { JudgeQuestionRequest } from '@defense/shared'
 import { JudgeApiError, requestJudgeQuestion } from '../services/judges-api'
@@ -101,7 +102,7 @@ describe('judge API client', () => {
     const expected = expect(requestJudgeQuestion(input)).rejects.toMatchObject({
       code: 'CLIENT_TIMEOUT',
     })
-    await vi.advanceTimersByTimeAsync(130001)
+    await vi.advanceTimersByTimeAsync(MODEL_REQUEST_TIMEOUT_MS + 1)
     await expected
   })
   it('honors a pre-cancelled signal without sending', async () => {

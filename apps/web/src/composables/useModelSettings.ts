@@ -1,6 +1,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import {
   modelSettingsInputSchema,
+  DEFAULT_MODEL_TIMEOUT_MS,
   type ModelSettingsInput,
   type PublicModelSettings,
   type ModelConnectionResult,
@@ -18,7 +19,7 @@ export function useModelSettings() {
     baseUrl: 'https://api.openai.com/v1',
     model: '',
     apiKey: '',
-    timeoutMs: 45000,
+    timeoutMs: DEFAULT_MODEL_TIMEOUT_MS,
     responseFormat: 'json_schema',
   })
   const saved = ref<PublicModelSettings | null>(null),

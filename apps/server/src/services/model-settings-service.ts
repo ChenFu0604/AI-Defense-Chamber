@@ -4,6 +4,8 @@ import { randomUUID } from 'node:crypto'
 import { z } from 'zod'
 import {
   modelSettingsInputSchema,
+  DEFAULT_MODEL_TIMEOUT_MS,
+  modelTimeoutSchema,
   savedModelSettingsSchema,
   publicModelSettingsSchema,
   modelApiKeySchema,
@@ -36,7 +38,9 @@ export function createModelSettingsService(
       source.AI_RESPONSE_FORMAT === 'json_object'
         ? ('json_object' as const)
         : ('json_schema' as const)
-    const timeout = Number(source.AI_TIMEOUT_MS || 45000)
+    const timeout = modelTimeoutSchema.safeParse(
+      Number(source.AI_TIMEOUT_MS || DEFAULT_MODEL_TIMEOUT_MS),
+    )
     return {
       saved: null,
       config: {
@@ -46,8 +50,7 @@ export function createModelSettingsService(
         ),
         model: source.OPENAI_MODEL?.trim() || '',
         apiKey: source.OPENAI_API_KEY?.trim() || '',
-        timeoutMs:
-          Number.isInteger(timeout) && timeout >= 1000 && timeout <= 120000 ? timeout : 45000,
+        timeoutMs: timeout.success ? timeout.data : DEFAULT_MODEL_TIMEOUT_MS,
         responseFormat: format,
       },
       source: Object.keys(source).some(

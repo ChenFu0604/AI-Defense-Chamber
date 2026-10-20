@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { DEFAULT_MODEL_TIMEOUT_MS, modelTimeoutSchema } from '@defense/shared'
 import { AppError } from '../middleware/app-error.js'
 import { readSavedModelSettings } from './model-settings-file.js'
 
@@ -15,7 +16,7 @@ const configSchema = z.object({
       !url.hash
     )
   }),
-  AI_TIMEOUT_MS: z.coerce.number().int().min(1000).max(120000),
+  AI_TIMEOUT_MS: z.coerce.number().pipe(modelTimeoutSchema),
   AI_RESPONSE_FORMAT: z.enum(['json_schema', 'json_object']),
 })
 export interface AIConfig {
@@ -44,7 +45,7 @@ export function readAIConfig(source?: NodeJS.ProcessEnv, savedPath?: string): AI
     OPENAI_API_KEY: source.OPENAI_API_KEY,
     OPENAI_MODEL: source.OPENAI_MODEL,
     OPENAI_BASE_URL: source.OPENAI_BASE_URL?.trim() || 'https://api.openai.com/v1',
-    AI_TIMEOUT_MS: source.AI_TIMEOUT_MS || '45000',
+    AI_TIMEOUT_MS: source.AI_TIMEOUT_MS || String(DEFAULT_MODEL_TIMEOUT_MS),
     AI_RESPONSE_FORMAT: source.AI_RESPONSE_FORMAT || 'json_schema',
   })
   if (!parsed.success)

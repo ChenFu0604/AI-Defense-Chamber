@@ -1,3 +1,4 @@
+import { MODEL_REQUEST_TIMEOUT_MS } from '@defense/shared'
 import {
   apiErrorResponseSchema,
   judgeResponseSchema,
@@ -27,7 +28,7 @@ export async function requestJudgeQuestion(
   const timer = setTimeout(() => {
     timedOut = true
     controller.abort()
-  }, 130000)
+  }, MODEL_REQUEST_TIMEOUT_MS)
   try {
     controller.signal.throwIfAborted()
     const response = await fetch('/api/v1/judges/question', {

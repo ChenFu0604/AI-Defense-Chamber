@@ -1,3 +1,4 @@
+import { MODEL_REQUEST_TIMEOUT_MS } from '@defense/shared'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defenseApi } from '../services/defense-api'
 import { defenseFixture } from '../../../../tests/fixtures/defense'
@@ -51,7 +52,7 @@ describe('defense API transport', () => {
     const pending = expect(defenseApi('/' + defenseFixture().id)).rejects.toMatchObject({
       code: 'CLIENT_TIMEOUT',
     })
-    await vi.advanceTimersByTimeAsync(130001)
+    await vi.advanceTimersByTimeAsync(MODEL_REQUEST_TIMEOUT_MS + 1)
     await pending
   })
 })

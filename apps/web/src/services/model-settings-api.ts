@@ -1,3 +1,4 @@
+import { MODEL_REQUEST_TIMEOUT_MS } from '@defense/shared'
 import {
   apiErrorResponseSchema,
   modelSettingsResponseSchema,
@@ -17,7 +18,7 @@ async function request(
   const cancel = () => controller.abort()
   if (signal?.aborted) controller.abort()
   signal?.addEventListener('abort', cancel, { once: true })
-  const timer = setTimeout(cancel, 130000)
+  const timer = setTimeout(cancel, MODEL_REQUEST_TIMEOUT_MS)
   try {
     controller.signal.throwIfAborted()
     const response = await fetch('/api/v1/settings/model' + path, {

@@ -38,6 +38,7 @@ const judgeName = (id: string) => judgeDefinitions.find((v) => v.id === id)?.nam
     <article
       v-for="message in messages"
       :key="message.id"
+      :id="message.sender === 'user' ? 'answer-' + message.id : undefined"
       class="defense-message"
       :class="message.sender"
     >

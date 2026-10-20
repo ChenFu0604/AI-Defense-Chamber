@@ -173,7 +173,9 @@ export function createAIClient(
           throw new AppError(
             timedOut ? 504 : 499,
             timedOut ? 'AI_TIMEOUT' : 'REQUEST_CANCELLED',
-            timedOut ? '模型调用超时，已有资料和结果已保留，请重试。' : '本次模型调用已取消。',
+            timedOut
+              ? `模型调用超过 ${config.timeoutMs / 1000} 秒等待上限。请在“系统设置 → 模型配置”延长请求超时，或更换响应更快的模型后重试。已有资料和结果已保留。`
+              : '本次模型调用已取消。',
           )
         if (error instanceof AppError) throw error
         throw new AppError(

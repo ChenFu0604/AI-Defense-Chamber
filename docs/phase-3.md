@@ -50,7 +50,7 @@ styles/analysis.css、main.ts、ProjectDetailView、DefensePrepareView、HomeVie
 复制 apps/server/.env.example 为 apps/server/.env，填写服务商实际地址、密钥与模型名称后重启后端。
 模型地址是 base URL，客户端会追加 /chat/completions；不能填写完整方法地址或查询密钥。
 默认 response_format 为 json_schema；不支持的兼容服务可显式改 AI_RESPONSE_FORMAT=json_object。
-默认超时 45000ms。缺少配置时演示可用，真实模式返回 503。
+默认超时 120000ms（可设为 1000～300000ms；已保存的配置保留原值）。缺少配置时演示可用，真实模式返回 503。
 
 引用检查仅保证片段来自提交材料，不证明材料真实或模型结论可靠。用户仍需核对风险、缺口和建议。
 后续答辩会话、评委连续追问、评分、报告与风险地图不在本轮范围。

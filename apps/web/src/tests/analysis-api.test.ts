@@ -1,3 +1,4 @@
+import { MODEL_REQUEST_TIMEOUT_MS } from '@defense/shared'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AnalysisApiError, requestProjectAnalysis } from '../services/analysis-api'
 import { analysisFixture, analysisProject } from '../../../../tests/fixtures/analysis'
@@ -21,17 +22,15 @@ describe('analysis API client', () => {
   it('preserves actionable backend configuration errors', async () => {
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockResolvedValue(
-          new Response(
-            JSON.stringify({
-              success: false,
-              error: { code: 'AI_NOT_CONFIGURED', message: '请配置服务端模型' },
-            }),
-            { status: 503 },
-          ),
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            success: false,
+            error: { code: 'AI_NOT_CONFIGURED', message: '请配置服务端模型' },
+          }),
+          { status: 503 },
         ),
+      ),
     )
     await expect(requestProjectAnalysis(analysisProject, 'live')).rejects.toMatchObject({
       code: 'AI_NOT_CONFIGURED',
@@ -116,6 +115,35 @@ describe('analysis API client', () => {
     const pending = requestProjectAnalysis(analysisProject, 'live')
     const assertion = expect(pending).rejects.toMatchObject({ code: 'CLIENT_TIMEOUT' })
     await vi.advanceTimersByTimeAsync(130000)
+    expect(vi.mocked(fetch).mock.calls[0]![1]!.signal!.aborted).toBe(false)
+    await vi.advanceTimersByTimeAsync(MODEL_REQUEST_TIMEOUT_MS - 130000)
     await assertion
+  })
+  it('receives backend timeout guidance after the old browser deadline without an automatic retry', async () => {
+    vi.useFakeTimers()
+    const message = '模型调用超过 180 秒等待上限。请在系统设置中延长请求超时。'
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          setTimeout(
+            () =>
+              resolve(
+                Response.json(
+                  { success: false, error: { code: 'AI_TIMEOUT', message } },
+                  { status: 504 },
+                ),
+              ),
+            180000,
+          )
+        }),
+    )
+    vi.stubGlobal('fetch', fetcher)
+    const assertion = expect(requestProjectAnalysis(analysisProject, 'live')).rejects.toMatchObject(
+      { code: 'AI_TIMEOUT', message },
+    )
+    await vi.advanceTimersByTimeAsync(180000)
+    await assertion
+    expect(fetcher).toHaveBeenCalledTimes(1)
+    expect(vi.getTimerCount()).toBe(0)
   })
 })

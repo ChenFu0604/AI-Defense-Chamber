@@ -1,4 +1,6 @@
-# API · v0.1.0（第三阶段）
+# API · v0.1.0
+
+第六阶段新增报告生成与历史读取接口，类型、错误码和去重规则见 [评分报告接口说明](phase-6.md#api)。
 
 统一响应：成功为 `{ success: true, data }`，失败为 `{ success: false, error: { code, message } }`。
 共享类型与 Zod schema 位于 `packages/shared/src`。
