@@ -64,7 +64,7 @@ const stageDialog = ref<InstanceType<typeof StageDialog> | null>(null)
           <BookOpen :size="18" />开发指南<ArrowUpRight :size="14" class="nav-end" />
         </button>
         <div class="version">
-          <span class="status-dot online"></span>本地项目工作区<span>PHASE 03</span>
+          <span class="status-dot online"></span>本地项目工作区<span>PHASE 04</span>
         </div>
       </div>
     </aside>
@@ -85,7 +85,7 @@ const stageDialog = ref<InstanceType<typeof StageDialog> | null>(null)
         <footer class="page-footer">
           <span>AI DEFENSE CHAMBER <span class="footer-dot">·</span> 在质疑中，让项目更强。</span
           ><span
-            >阶段 03 / 项目分析<span class="footer-dot">·</span
+            >阶段 04 / 多角色评委<span class="footer-dot">·</span
             ><button @click="stageDialog?.open('guide')">开发说明<ArrowUpRight :size="12" /></button
           ></span>
         </footer>

@@ -1,5 +1,6 @@
+import type { JudgeId } from '@defense/shared'
 export interface JudgePreview {
-  id: string
+  id: JudgeId
   number: string
   name: string
   english: string

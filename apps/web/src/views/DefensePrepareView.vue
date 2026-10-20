@@ -4,8 +4,7 @@ import { useRoute } from 'vue-router'
 import { ArrowLeft, ArrowUpRight, FolderOpen, Check, Info, ArrowRight } from 'lucide-vue-next'
 import { difficultyLabels, difficultyDescriptions, projectTypeLabels } from '@defense/shared'
 import { useProjectsStore } from '../stores/projects'
-import { judges } from '../data/judges'
-import JudgeCard from '../components/JudgeCard.vue'
+import JudgeWorkbench from '../components/judges/JudgeWorkbench.vue'
 import StorageNotice from '../components/StorageNotice.vue'
 const route = useRoute()
 const projects = useProjectsStore()
@@ -24,10 +23,9 @@ const selected = computed(() => projects.findProject(selectedId.value))
   <div class="notice preparation-status">
     <Info :size="18" />
     <div>
-      <strong>当前可用：项目建档、画像分析与答辩准备</strong>
+      <strong>当前可用：项目建档、画像分析与四角色提问</strong>
       <p>
-        项目详情中已开放画像分析。AI
-        实时问答、动态追问和评分将在后续阶段接入，这里不会生成模拟会话或评分。
+        先在项目详情生成画像，再选择评委提问。模拟模式需主动选择并明确标注；动态追问与评分将在后续阶段接入。
       </p>
     </div>
   </div>
@@ -100,17 +98,6 @@ const selected = computed(() => projects.findProject(selectedId.value))
         /></RouterLink>
       </div>
     </template>
-    <section class="prepare-perspectives">
-      <div class="section-heading">
-        <div>
-          <div class="section-kicker">FOUR WAYS TO LOOK DEEPER</div>
-          <h2>把这些视角，带进你的准备。</h2>
-        </div>
-        <span class="preview-chip">静态提问示例</span>
-      </div>
-      <div class="judges-grid">
-        <JudgeCard v-for="judge in judges" :key="judge.id" :judge="judge" />
-      </div>
-    </section>
+    <JudgeWorkbench :project="selected" />
   </template>
 </template>

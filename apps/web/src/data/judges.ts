@@ -1,7 +1,8 @@
+import { judgeDefinitions } from '@defense/shared'
 import type { JudgePreview } from '../types/judge'
 
-// Editorial previews only. Runtime judge prompts belong to the backend in a later phase.
-export const judges: JudgePreview[] = [
+// Homepage editorial examples; runtime system prompts remain server-side.
+const previews: JudgePreview[] = [
   {
     id: 'business',
     number: '01',
@@ -13,7 +14,7 @@ export const judges: JudgePreview[] = [
     icon: 'business',
   },
   {
-    id: 'technology',
+    id: 'technical',
     number: '02',
     name: '技术评委',
     english: 'THE ARCHITECT',
@@ -43,3 +44,14 @@ export const judges: JudgePreview[] = [
     icon: 'devil',
   },
 ]
+
+export const judges: JudgePreview[] = previews.map((preview) => {
+  const role = judgeDefinitions.find((item) => item.id === preview.id)!
+  return {
+    ...preview,
+    name: role.name,
+    perspective: role.introduction,
+    color: role.color,
+    icon: role.icon,
+  }
+})

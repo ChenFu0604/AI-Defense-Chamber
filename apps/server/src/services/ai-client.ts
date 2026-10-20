@@ -127,11 +127,7 @@ export function createAIClient(config: AIConfig, transport: typeof fetch = fetch
           raw = JSON.parse(await readBoundedResponse(response))
         } catch (error) {
           if (error instanceof AppError || controller.signal.aborted) throw error
-          throw new AppError(
-            502,
-            'AI_INVALID_OUTPUT',
-            '模型返回格式异常，未生成有效项目画像，请重试。',
-          )
+          throw new AppError(502, 'AI_INVALID_OUTPUT', '模型返回格式异常，未生成有效结果，请重试。')
         }
         const completion = completionSchema.safeParse(raw)
         if (!completion.success)
@@ -142,12 +138,12 @@ export function createAIClient(config: AIConfig, transport: typeof fetch = fetch
           )
         const choice = completion.data.choices[0]!
         if (choice.message.refusal || choice.finish_reason === 'content_filter')
-          throw new AppError(422, 'AI_REFUSED', '模型未能分析这份资料。请检查内容，调整后重试。')
+          throw new AppError(422, 'AI_REFUSED', '模型未能处理这份资料。请检查内容，调整后重试。')
         if (choice.finish_reason === 'length')
           throw new AppError(
             502,
             'AI_INCOMPLETE_OUTPUT',
-            '模型输出被截断，未保存为有效画像，请缩短资料或更换模型后重试。',
+            '模型输出被截断，未接受此结果，请缩短资料或更换模型后重试。',
           )
         let content: unknown
         try {
@@ -156,7 +152,7 @@ export function createAIClient(config: AIConfig, transport: typeof fetch = fetch
           throw new AppError(
             502,
             'AI_INVALID_OUTPUT',
-            '模型输出不是有效的 JSON，未生成项目画像，请重试。',
+            '模型输出不是有效的 JSON，未接受此结果，请重试。',
           )
         }
         controller.signal.throwIfAborted()
@@ -165,7 +161,7 @@ export function createAIClient(config: AIConfig, transport: typeof fetch = fetch
           throw new AppError(
             502,
             'AI_INVALID_OUTPUT',
-            '模型输出不符合项目画像结构，未保存分析结果，请重试。',
+            '模型输出不符合要求的数据结构，未接受此结果，请重试。',
           )
         return { data: parsed.data, model: completion.data.model ?? config.model }
       } catch (error) {
@@ -173,7 +169,7 @@ export function createAIClient(config: AIConfig, transport: typeof fetch = fetch
           throw new AppError(
             timedOut ? 504 : 499,
             timedOut ? 'AI_TIMEOUT' : 'REQUEST_CANCELLED',
-            timedOut ? '模型分析超时，原项目资料和已有画像已保留，请重试。' : '本次分析已取消。',
+            timedOut ? '模型调用超时，已有资料和结果已保留，请重试。' : '本次模型调用已取消。',
           )
         if (error instanceof AppError) throw error
         throw new AppError(

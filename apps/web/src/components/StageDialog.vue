@@ -28,8 +28,8 @@ defineExpose({ open })
     <template v-if="mode === 'stage'">
       <h2 id="dialog-title">你的项目，正在就位。</h2>
       <p>
-        当前已开放项目创建、本地保存与项目智能分析。AI
-        分析需要服务端模型配置；主动选择的演示始终标注为模拟。实时问答与评分将在后续阶段接入。
+        当前已开放项目创建、本地保存、画像分析与四角色提问。AI
+        分析需要服务端模型配置；主动选择的演示始终标注为模拟。回答驱动的动态追问与评分将在后续阶段接入。
       </p>
       <div class="milestone">
         <Check :size="18" /><span>阶段 01 · 首页与基础服务</span><b>已完成</b>
@@ -38,7 +38,10 @@ defineExpose({ open })
         <CircleDashed :size="18" /><span>阶段 02 · 项目创建与本地保存</span><b>已完成</b>
       </div>
       <div class="milestone muted">
-        <CircleDashed :size="18" /><span>阶段 03 · 项目分析与统一 AI 服务</span>
+        <Check :size="18" /><span>阶段 03 · 项目分析与统一 AI 服务</span><b>已完成</b>
+      </div>
+      <div class="milestone">
+        <Check :size="18" /><span>阶段 04 · 四角色 AI 评委</span><b>已实现</b>
       </div>
     </template>
     <template v-else>

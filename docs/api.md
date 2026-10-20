@@ -82,3 +82,14 @@ provided 必须有原文引用，所有引用必须是对应资料字段中的�
 分析请求会发送所选资料；模型只收到八项必要资料，不包含浏览器存储的其他项目或历史记录。
 画像保存在独立的 `defense-chamber.analyses.v1`，真实与演示结果分别保留。
 答辩会话、回答、评分与报告接口仍未实现。
+
+## 第四阶段：评委提问
+
+`POST /api/v1/judges/question`，兼容 `POST /api/judges/question`。
+
+请求 `{ project: Project, analysis: AnalysisRecord, judgeId, mode?: "live" | "demo", history?: JudgeQuestion[] }`。judgeId 为 business / technical / user / devil。mode 默认 live；history 默认空，最多 32 条，客户端须传入本轮已有的所有角色问题。analysis 必须与项目资料快照及 mode 一致，否则返回 400 VALIDATION_ERROR。
+
+成功响应 `{ success: true, data: { id, projectId, analysisId, createdAt, mode, model, speech } }`。
+speech 为 `{ judgeId, question, questionType, riskLevel, focus, rationale }`。questionType 为 clarification / evidence / feasibility / tradeoff / challenge；riskLevel 为 low / medium / high，表示讨论风险的程度，不是事实核验结果。
+
+模拟返回 model:null，正文包含模拟标记；真实返回模型标识。复用统一 AI 配置、超时、取消与错误码。额外错误：AI_INVALID_OUTPUT（结构或角色错误）、422 DUPLICATE_QUESTION（问题文字近似）。请求失败不降级到模拟。响应均 no-store。重复校验仅覆盖本次提供的历史，不提供跨浏览器全局去重。
