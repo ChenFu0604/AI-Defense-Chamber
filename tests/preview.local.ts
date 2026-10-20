@@ -21,7 +21,7 @@ await sharp(
 )
   .png()
   .toFile(join(directory, 'sample-project.png'))
-const fixture = createWorkflowFixture(directory)
+const fixture = createWorkflowFixture(directory, { turnDelayMs: 1800 })
 const app = express()
 app.get(['/api/health', '/api/v1/health'], (_req, res) =>
   res.json({

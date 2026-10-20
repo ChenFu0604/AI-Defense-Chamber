@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { judgeDefinitions, type AnalysisMode, type JudgeId, type Project } from '@defense/shared'
+import { type AnalysisMode, type JudgeId, type Project } from '@defense/shared'
 import { useAnalysisStore } from '../../stores/analysis'
 import { useDefenseStore } from '../../stores/defense'
 import { recentDefenseSessions } from '../../services/defense-storage'
 import AppButton from '../ui/AppButton.vue'
 import { MessagesSquare, ArrowUpRight } from 'lucide-vue-next'
+import JudgeRolePicker from '../judges/JudgeRolePicker.vue'
+import DefenseModePicker from './DefenseModePicker.vue'
 const props = defineProps<{ project: Project }>()
 const analysisStore = useAnalysisStore(),
   defense = useDefenseStore(),
@@ -52,23 +54,8 @@ async function start() {
     <p>
       会话保存当前项目与画像快照。每次追问会参考实际回答及有限历史；真实模式会将这些内容发送至服务端配置的模型。
     </p>
-    <div class="defense-settings">
-      <div>
-        <label for="defense-mode">会话来源</label
-        ><select id="defense-mode" v-model="mode" :disabled="defense.busy">
-          <option value="live">真实模型</option>
-          <option value="demo">模拟演示 · 未调用模型</option>
-        </select>
-      </div>
-      <div>
-        <label for="defense-first-judge">首位评委</label
-        ><select id="defense-first-judge" v-model="judgeId" :disabled="defense.busy">
-          <option v-for="judge in judgeDefinitions" :key="judge.id" :value="judge.id">
-            {{ judge.name }}
-          </option>
-        </select>
-      </div>
-    </div>
+    <DefenseModePicker v-model="mode" :disabled="defense.busy" />
+    <JudgeRolePicker v-model="judgeId" :disabled="defense.busy" />
     <label class="defense-confirm"
       ><input
         v-model="confirmed"

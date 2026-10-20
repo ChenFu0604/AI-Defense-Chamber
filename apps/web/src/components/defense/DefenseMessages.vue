@@ -8,7 +8,16 @@ import {
   type DefenseMessage,
 } from '@defense/shared'
 import AttachmentGallery from '../attachments/AttachmentGallery.vue'
-const props = defineProps<{ messages: DefenseMessage[]; demo: boolean }>()
+import DefenseActivity from './DefenseActivity.vue'
+const props = withDefaults(
+  defineProps<{
+    messages: DefenseMessage[]
+    demo: boolean
+    activity?: 'generating' | 'processing' | null
+    judgeId?: import('@defense/shared').JudgeId
+  }>(),
+  { activity: null, judgeId: 'business' },
+)
 const feed = ref<HTMLElement | null>(null),
   follow = ref(true)
 function onScroll() {
@@ -16,7 +25,7 @@ function onScroll() {
     follow.value = feed.value.scrollHeight - feed.value.scrollTop - feed.value.clientHeight < 100
 }
 watch(
-  () => props.messages.length,
+  () => [props.messages.length, props.activity],
   async () => {
     await nextTick()
     if (follow.value && feed.value) feed.value.scrollTop = feed.value.scrollHeight
@@ -32,10 +41,14 @@ const judgeName = (id: string) => judgeDefinitions.find((v) => v.id === id)?.nam
     role="log"
     aria-label="答辩消息记录"
     aria-live="polite"
+    :aria-busy="!!activity"
     tabindex="0"
     @scroll="onScroll"
   >
-    <p v-if="!messages.length" class="judge-empty">会话已创建，等待首位评委生成问题。</p>
+    <div v-if="!messages.length && !activity" class="conversation-empty">
+      <span class="conversation-empty-mark">AI</span><strong>对话，即将开始</strong>
+      <p>生成首问后，评委的问题会显示在这里。</p>
+    </div>
     <article
       v-for="message in messages"
       :key="message.id"
@@ -73,5 +86,12 @@ const judgeName = (id: string) => judgeDefinitions.find((v) => v.id === id)?.nam
         </p>
       </details>
     </article>
+    <DefenseActivity
+      v-if="activity"
+      :judge-id="judgeId"
+      :phase="activity"
+      :has-messages="messages.length > 0"
+      :demo="demo"
+    />
   </div>
 </template>

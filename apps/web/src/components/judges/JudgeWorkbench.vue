@@ -13,6 +13,8 @@ import { useJudgesStore } from '../../stores/judges'
 import JudgeSeat from './JudgeSeat.vue'
 import JudgeDetails from './JudgeDetails.vue'
 import AppButton from '../ui/AppButton.vue'
+import DefenseModePicker from '../defense/DefenseModePicker.vue'
+import { MessageSquarePlus, ListOrdered } from 'lucide-vue-next'
 const props = defineProps<{ project?: Project }>()
 const analysisStore = useAnalysisStore()
 const judges = useJudgesStore()
@@ -71,25 +73,36 @@ function run(all = false) {
       />
     </div>
     <JudgeDetails :judge="selected" />
-    <div class="judge-controls">
-      <div class="judge-mode">
-        <label for="judge-source-mode">提问来源</label>
-        <select id="judge-source-mode" v-model="mode" :disabled="judges.busy">
-          <option value="live">真实模型</option>
-          <option value="demo">模拟演示 · 不调用模型</option>
-        </select>
+    <section class="judge-preview-controls" aria-label="单轮提问设置">
+      <div class="judge-preview-control-heading">
+        <span class="defense-preview-icon"><MessageSquarePlus :size="20" /></span>
+        <div>
+          <h3>准备好，听听不同的声音。</h3>
+          <p>选择提问来源，再邀请当前评委或依次预览四位评委的问题。</p>
+        </div>
       </div>
-      <AppButton :disabled="!analysis || judges.busy" @click="run()">{{
-        judges.busy ? '评委正在分析…' : `请${selected.name}提问`
-      }}</AppButton>
-      <AppButton variant="secondary" :disabled="!analysis || judges.busy" @click="run(true)"
-        >依次生成四位问题</AppButton
-      >
-      <AppButton v-if="judges.busy" variant="ghost" @click="judges.cancel()">取消提问</AppButton>
-      <AppButton v-else-if="judges.statements.length" variant="ghost" @click="judges.clear()"
-        >清空本轮</AppButton
-      >
-    </div>
+      <DefenseModePicker v-model="mode" label="提问来源" :disabled="judges.busy" />
+      <div class="judge-preview-actions">
+        <div class="judge-preview-target">
+          <span>本次提问</span><strong>{{ selected.name }}</strong>
+        </div>
+        <div class="judge-preview-buttons">
+          <AppButton :disabled="!analysis || judges.busy" @click="run()"
+            >{{ judges.busy ? '评委正在分析…' : `请${selected.name}提问`
+            }}<MessageSquarePlus :size="15"
+          /></AppButton>
+          <AppButton variant="secondary" :disabled="!analysis || judges.busy" @click="run(true)"
+            ><ListOrdered :size="16" />依次生成四位问题</AppButton
+          >
+          <AppButton v-if="judges.busy" variant="ghost" @click="judges.cancel()"
+            >取消提问</AppButton
+          >
+          <AppButton v-else-if="judges.statements.length" variant="ghost" @click="judges.clear()"
+            >清空本轮</AppButton
+          >
+        </div>
+      </div>
+    </section>
     <p v-if="!project" class="notice">选择一个项目后，即可根据画像生成角色问题。</p>
     <div v-else-if="!analysis" class="notice">
       <p>

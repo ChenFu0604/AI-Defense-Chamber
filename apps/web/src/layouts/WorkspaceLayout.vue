@@ -77,9 +77,6 @@ const stageDialog = ref<InstanceType<typeof StageDialog> | null>(null)
           :class="{ active: route.name === 'system-settings' }"
           ><Settings :size="18" />系统设置</RouterLink
         >
-        <button class="nav-item" @click="stageDialog?.open('guide')">
-          <BookOpen :size="18" />开发指南<ArrowUpRight :size="14" class="nav-end" />
-        </button>
         <div class="version">
           <span class="status-dot online"></span>本地项目工作区<span>PHASE 09</span>
         </div>

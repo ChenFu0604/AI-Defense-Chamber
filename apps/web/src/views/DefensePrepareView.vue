@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { ArrowLeft, ArrowUpRight, FolderOpen, Check, Info, ArrowRight } from 'lucide-vue-next'
+import {
+  ArrowLeft,
+  ArrowUpRight,
+  FolderOpen,
+  Check,
+  Info,
+  ArrowRight,
+  ScanEye,
+  ChevronDown,
+} from 'lucide-vue-next'
 import { difficultyLabels, difficultyDescriptions, projectTypeLabels } from '@defense/shared'
 import { useProjectsStore } from '../stores/projects'
 import JudgeWorkbench from '../components/judges/JudgeWorkbench.vue'
@@ -101,7 +110,17 @@ const selected = computed(() => projects.findProject(selectedId.value))
     </template>
     <DefenseStartPanel v-if="selected" :project="selected" />
     <details class="defense-preview">
-      <summary>查看单轮评委预览与角色规则</summary>
+      <summary class="defense-preview-heading">
+        <span class="defense-preview-icon"><ScanEye :size="21" /></span>
+        <span class="defense-preview-title"
+          ><strong>单轮评委预览与角色规则</strong
+          ><span>了解四种评审视角，预览针对项目画像的提问</span></span
+        >
+        <span class="defense-preview-toggle"
+          ><span class="preview-open-label">展开预览</span
+          ><span class="preview-close-label">收起预览</span><ChevronDown :size="17"
+        /></span>
+      </summary>
       <JudgeWorkbench :project="selected" />
     </details>
   </template>

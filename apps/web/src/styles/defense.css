@@ -161,11 +161,6 @@
 .defense-preview {
   margin-top: 28px;
 }
-.defense-preview > summary {
-  cursor: pointer;
-  color: #b6aacb;
-  padding: 16px 0;
-}
 @media (max-width: 600px) {
   .defense-start,
   .defense-current,

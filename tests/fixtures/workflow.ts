@@ -14,7 +14,7 @@ import { createModelSettingsService } from '../../apps/server/src/services/model
 import { createAttachmentService } from '../../apps/server/src/services/attachment-service.js'
 
 /** Local test adapter only: exercises the real JSON client without network/model access. */
-export function createWorkflowFixture(directory: string) {
+export function createWorkflowFixture(directory: string, options: { turnDelayMs?: number } = {}) {
   const calls = { project_analysis: 0, defense_turn: 0, defense_report: 0 }
   const modelInputs: { task: string; images: number; context: Record<string, unknown> }[] = []
   const failedAnswers = new Set<string>()
@@ -24,12 +24,14 @@ export function createWorkflowFixture(directory: string) {
       baseUrl: 'http://fixture.invalid/v1',
       apiKey: 'fixture-only',
       model: '测试固定响应-非真实模型',
-      timeoutMs: 1000,
+      timeoutMs: Math.max(1000, (options.turnDelayMs ?? 0) + 1000),
       responseFormat: 'json_schema',
     },
     async (_url, init) => {
       const body = JSON.parse(String(init?.body))
       const task = body.response_format.json_schema.name as keyof typeof calls
+      if (task === 'defense_turn' && options.turnDelayMs)
+        await new Promise((resolve) => setTimeout(resolve, options.turnDelayMs))
       calls[task]++
       const content = body.messages[1].content
       const input = (typeof content === 'string' ? content : content[0].text) as string

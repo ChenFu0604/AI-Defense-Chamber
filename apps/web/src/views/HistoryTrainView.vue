@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { judgeDefinitions, type JudgeId } from '@defense/shared'
+import { type JudgeId } from '@defense/shared'
 import { useHistoryStore } from '../stores/history'
 import { useDefenseStore } from '../stores/defense'
 import AppButton from '../components/ui/AppButton.vue'
+import JudgeRolePicker from '../components/judges/JudgeRolePicker.vue'
 const route = useRoute(),
   router = useRouter(),
   history = useHistoryStore(),
@@ -57,13 +58,8 @@ async function start() {
         {{ task.action }} · 完成标准：{{ task.acceptanceCriteria }}
       </li>
     </ul>
-    <label class="history-filter"
-      >首位评委<select v-model="judgeId" :disabled="defense.busy">
-        <option v-for="judge in judgeDefinitions" :key="judge.id" :value="judge.id">
-          {{ judge.name }}
-        </option>
-      </select></label
-    ><label class="defense-confirm"
+    <JudgeRolePicker v-model="judgeId" :disabled="defense.busy" />
+    <label class="defense-confirm"
       ><input
         v-model="confirmed"
         type="checkbox"
