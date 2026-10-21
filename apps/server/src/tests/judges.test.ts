@@ -49,7 +49,7 @@ describe('judge configuration and contracts', () => {
   it('has four complete unique roles and server-only distinct stances', () => {
     expect(judgeDefinitions.map((j) => j.id)).toEqual([...judgeIds])
     expect(new Set(judgeConfigs.map((j) => j.systemPrompt)).size).toBe(4)
-    const markers = ['单位经济模型', '威胁模型', '可访问性', '可证伪']
+    const markers = ['创业导师', '资深工程师', '普通使用者', '挑错者']
     judgeConfigs.forEach((judge, index) => {
       expect(judge.name).toBeTruthy()
       expect(judge.introduction).toBeTruthy()

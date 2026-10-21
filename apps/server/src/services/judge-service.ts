@@ -17,62 +17,62 @@ export type JudgeService = (
   signal?: AbortSignal,
 ) => Promise<JudgeStatement>
 function demoQuestion(request: JudgeQuestionRequest): JudgeQuestion {
-  const { project, judgeId, history, analysis } = request
+  const { project, judgeId, history } = request
   const candidates = {
     business: [
       [
         '需求样本',
-        `针对「${project.name}」，如何验证「${project.valueProposition.slice(0, 90)}」能持续创造价值？请给出样本和成本依据。`,
+        `关于「${project.name}」，你最想先帮哪一类人？可以先从最需要它的人想起。`,
       ],
       [
         '付费主体',
-        `你打算向谁收费，或由谁持续承担投入？针对「${project.targetUsers.slice(0, 80)}」，请区分使用者与付款方，并说明如何验证预算。`,
+        `要让「${project.name}」持续做下去，你准备先找谁提供资金或其他支持？`,
       ],
       [
         '竞争替代',
-        `如果同类服务免费，「${project.name}」依靠什么获得客户？请给出替代方案、获客渠道与可承受的获客成本。`,
+        `可以先比较一种现有做法：「${project.name}」最值得别人换过来的理由是什么？`,
       ],
     ],
     technical: [
       [
         '关键链路',
-        `在「${project.technicalPlan.slice(0, 90)}」方案中，关键链路如何支持「${project.coreFeatures.slice(0, 70)}」的可靠交付？准备怎样测试？`,
+        `「${project.name}」可以先做一个能试用的小版本，你会先选哪个核心功能？`,
       ],
       [
         '权限隔离',
-        `面向「${project.targetUsers.slice(0, 80)}」，你会如何划分数据访问权限？请解释鉴权失效时的泄露边界与验证办法。`,
+        `对于「${project.name}」，可以用两个测试账号检查数据保护，你准备先检查什么？`,
       ],
       [
         '故障恢复',
-        `「${project.name}」的核心依赖发生故障后，哪些操作需要降级？请说明恢复目标、备份与故障演练方法。`,
+        `假设「${project.name}」的一次操作失败了，你希望用户接下来还能做什么？`,
       ],
     ],
     user: [
       [
         '任务场景',
-        `对于「${project.targetUsers.slice(0, 90)}」，完成「${project.coreFeatures.slice(0, 70)}」时，为什么愿意选择「${project.name}」？`,
+        `讲讲用户会在什么具体时刻打开「${project.name}」？从他当时的麻烦说起就行。`,
       ],
       [
         '首次使用',
-        `新用户第一次接触「${project.name}」需要经过哪些步骤才能获得价值？你会怎样观察并降低学习成本？`,
+        `第一次用「${project.name}」的人可能哪里看不懂？你最想先改哪一步？`,
       ],
       [
         '替代习惯',
-        `若用户继续沿用现有方式而不采用你的产品，最可能的阻力是什么？请设计一次观察真实选择的对照访谈。`,
+        `可以请一位用户试试「${project.name}」，你最想观察哪个步骤是否比原来省事？`,
       ],
     ],
     devil: [
       [
         '关键假设',
-        `「${project.name}」中「${analysis.output.coreValue.summary.slice(0, 100)}」这一结论依赖哪些假设？出现什么反例时你会修正它？`,
+        `对于「${project.name}」，哪一句判断你还没验证过？可以先挑最影响成败的一句。`,
       ],
       [
         '证据链条',
-        `对于「${project.valueProposition.slice(0, 80)}」，你最缺少哪条直接证据？在取得它之前，哪些承诺需要收回或降低确定性？`,
+        `怎样的小测试会让你发现「${project.name}」可能没想象中有用？先想一个就行。`,
       ],
       [
         '失败边界',
-        `假设「${project.name}」试点没有达到预期，你会用什么可量化条件判断应继续投入、调整方向还是停止？`,
+        `假设「${project.name}」的第一次试用效果不好，你会先改哪里？`,
       ],
     ],
   }[judgeId]

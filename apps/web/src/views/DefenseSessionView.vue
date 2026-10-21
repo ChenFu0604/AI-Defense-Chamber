@@ -84,7 +84,7 @@ onBeforeUnmount(() => {
   <div class="view-heading">
     <div class="eyebrow">DYNAMIC DEFENSE</div>
     <h1>{{ store.session?.project.name ?? '恢复答辩会话' }}</h1>
-    <p>根据你的回答继续追问，记录每次推敲。</p>
+    <p>从一个具体问题开始，和评委一起梳理思路，找到项目下一步可以改进的地方。</p>
   </div>
   <p v-if="store.error" class="notice notice-error" role="alert">{{ store.error }}</p>
   <p v-if="store.warning" class="notice" role="status">{{ store.warning }}</p>

@@ -345,6 +345,146 @@ describe('bounded context and grounded model output', () => {
     expect(JSON.parse(capture.mock.calls[0]![0].user).latestAnswer).toBe('采用隔离设计')
     expect(capture.mock.calls[0]![0].system).toContain('技术评委')
   })
+  it('saves a naturally worded guided follow-up while keeping its exact answer evidence', async () => {
+    const quote = '还没找人试用',
+      guidedQuestion = '可以先从熟悉的人开始，你想请哪一类人来试一试？'
+    const client: AIClient = {
+      async generate(task) {
+        const context = JSON.parse(task.user)
+        return {
+          model: 'fixture',
+          data: task.schema.parse({
+            question: {
+              judgeId: 'business',
+              question: context.latestAnswer ? guidedQuestion : '你最想先帮哪一类人？',
+              questionType: 'clarification',
+              riskLevel: 'low',
+              focus: '第一批试用者',
+              rationale: '回答说明还没有试用，可以先缩小邀请范围，决定第一步。',
+            },
+            assessment: context.latestAnswer
+              ? {
+                  answerQuote: quote,
+                  evaluation: 'evidence_missing',
+                  feedback: '目前还缺真实使用反馈。可以先请一人完成最重要的任务，看看哪里卡住。',
+                  nextStrategy: 'change_direction',
+                  risks: [],
+                }
+              : null,
+          }),
+        }
+      },
+    }
+    const env = setup('live', createDefenseModel(client)),
+      first = await started(env),
+      next = await env.service.answer(first.id, answer(first, '目前还没找人试用，不知道先找谁。'))
+    const saved = await env.service.get(next.id)
+    expect(saved.messages.at(-1)).toMatchObject({
+      content: guidedQuestion,
+      assessment: { answerQuote: quote, evaluation: 'evidence_missing' },
+      replyTo: saved.messages.at(-2)!.id,
+    })
+    expect(guidedQuestion).not.toContain(quote)
+    expect(defenseResponseSchema.safeParse({ success: true, data: saved }).success).toBe(true)
+  })
+  it('permits a new detail in the same topic but still rejects a repeated question', async () => {
+    const session = defenseFixture(),
+      quote = '有两个测试账号',
+      previous = '你准备怎样检查账号之间的数据访问？'
+    session.messages = [
+      {
+        id: randomUUID(),
+        sender: 'judge',
+        content: previous,
+        createdAt: session.createdAt,
+        judgeId: 'technical',
+        status: 'sent',
+        question: {
+          judgeId: 'technical',
+          question: previous,
+          questionType: 'feasibility',
+          riskLevel: 'medium',
+          focus: '数据权限',
+          rationale: '检查账号之间的数据访问。',
+        },
+        assessment: null,
+        replyTo: null,
+        requestId: randomUUID(),
+        model: 'fixture',
+      },
+    ]
+    const generate = (question: string): AIClient => ({
+      async generate(task) {
+        return {
+          model: 'fixture',
+          data: task.schema.parse({
+            question: { ...session.messages[0]!.question, question },
+            assessment: {
+              answerQuote: quote,
+              evaluation: 'unclear',
+              feedback: '有测试账号，可以再选一个越权访问的情况检查。',
+              nextStrategy: 'test_boundary',
+              risks: [],
+            },
+          }),
+        }
+      },
+    })
+    const detail = '如果换成另一个账号的记录编号，你希望系统怎么处理？'
+    const result = await createDefenseModel(generate(detail))(
+      session, 'technical', session.messages[0]!.question, quote,
+    )
+    expect(result.data.question.question).toBe(detail)
+    await expect(
+      createDefenseModel(generate(previous))(
+        session, 'technical', session.messages[0]!.question, quote,
+      ),
+    ).rejects.toMatchObject({ code: 'DUPLICATE_QUESTION' })
+  })
+  it('still rejects a missing assessment and invented first-answer feedback', async () => {
+    const client: AIClient = {
+      async generate(task) {
+        return {
+          model: 'fixture',
+          data: task.schema.parse({
+            question: {
+              judgeId: 'business',
+              question: '你想先找哪一类人试用？',
+              questionType: 'clarification',
+              riskLevel: 'low',
+              focus: '试用人群',
+              rationale: '选择一个可以开始的方向。',
+            },
+            assessment: null,
+          }),
+        }
+      },
+    }
+    await expect(
+      createDefenseModel(client)(defenseFixture(), 'business', null, '暂时没有试用者'),
+    ).rejects.toMatchObject({ code: 'AI_UNGROUNDED_FOLLOWUP' })
+    const invented: AIClient = {
+      async generate(task) {
+        const result = await client.generate(task)
+        return {
+          ...result,
+          data: task.schema.parse({
+            ...(result.data as object),
+            assessment: {
+              answerQuote: '不存在的回答',
+              evaluation: 'unclear',
+              feedback: '测试',
+              nextStrategy: 'change_direction',
+              risks: [],
+            },
+          }),
+        }
+      },
+    }
+    await expect(
+      createDefenseModel(invented)(defenseFixture(), 'business', null, null),
+    ).rejects.toMatchObject({ code: 'AI_INVALID_OUTPUT' })
+  })
   it('rejects unrelated fabricated answer references and invalid model JSON', async () => {
     const fake: AIClient = {
       async generate(task) {

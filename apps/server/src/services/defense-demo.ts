@@ -10,29 +10,35 @@ export function createDemoDefenseTurn(
   const quote = answer?.slice(0, 40) ?? ''
   const templates = {
     business: [
-      `你提到「${quote}」，谁会为这项价值付费？请说明预算来源与验证样本。`,
-      `对于「${quote}」，请拆解获取一个用户的成本，以及哪些收入假设仍需试点。`,
-      `如果「${quote}」未带来预期收入，何种资源安排能维持服务？请给出止损条件。`,
+      `关于「${quote}」，可以先缩小范围：你最想先帮哪一类人？`,
+      `关于「${quote}」，先算一笔最小的投入：你准备先估哪项花费？`,
+      `关于「${quote}」，可以先做一次小尝试：你准备找谁确认是否愿意支持？`,
     ],
     technical: [
-      `基于你说的「${quote}」，关键组件在哪个负载下会失效？准备如何测量容量边界？`,
-      `围绕「${quote}」，请解释数据访问权限如何设计，如何测试权限绕过风险。`,
-      `你回答「${quote}」，如果依赖服务不可用，系统怎样降级与恢复？`,
+      `关于「${quote}」，先选一个最小功能：你准备怎样确认它能正常运行？`,
+      `关于「${quote}」，可以用两个测试账号试一试：你会怎样检查它们看不到对方的数据？`,
+      `关于「${quote}」，假设一次请求失败，你希望用户接下来还能做什么？`,
     ],
     user: [
-      `你描述了「${quote}」，能否还原一位用户完成任务的具体步骤，并说明最容易放弃的位置？`,
-      `针对「${quote}」，用户目前采用什么替代做法？请设计一次观察真实选择的访谈。`,
-      `你说「${quote}」，首次使用者需要学习什么？准备如何对照评估操作成本？`,
+      `关于「${quote}」，可以找一人试着完成任务：你最想观察哪一步是否顺手？`,
+      `关于「${quote}」，先和用户原来的做法比一比：你觉得哪一步最值得简化？`,
+      `关于「${quote}」，假设对方第一次使用，你会先改哪处说明让他更容易看懂？`,
     ],
     devil: [
-      `你声称「${quote}」，这项论证隐藏了什么假设？请提出能推翻它的反例。`,
-      `关于「${quote}」，哪些结论缺少直接证据？请给出可证伪的验证计划。`,
-      `若「${quote}」只在特定条件成立，你准备怎样界定边界并修正承诺？`,
+      `关于「${quote}」，换个角度想：出现什么情况，你会改变这个判断？`,
+      `关于「${quote}」，先挑最不确定的一点：你能做什么小测试来检查它？`,
+      `关于「${quote}」，如果结果不如预期，你会先修改项目的哪一部分？`,
     ],
   }
   const index =
     session.messages.filter((v) => v.sender === 'judge' && v.judgeId === judgeId && v.assessment)
       .length % 3
+  const opening: Record<DefenseQuestion['judgeId'], string> = {
+    business: '如果先只服务一类人，你会选谁？可以从最常遇到这个麻烦的人想起。',
+    technical: '你准备先做出哪个核心功能？可以先选一个最小、能试用的版本。',
+    user: '能讲一个用户会用到它的具体时刻吗？从当时遇到的麻烦说起就行。',
+    devil: '项目中哪一点你最没把握？可以先挑一句还没验证过的判断。',
+  }
   return {
     model: null,
     data: {
@@ -40,7 +46,7 @@ export function createDemoDefenseTurn(
         judgeId,
         question: answer
           ? '【模拟】' + templates[judgeId][index]
-          : `【模拟】关于「${session.project.name}」，请从${role.dimensions[0]}说明你的主要依据。`,
+          : `【模拟】关于「${session.project.name}」，${opening[judgeId]}`,
         questionType: answer ? ('evidence' as const) : ('clarification' as const),
         riskLevel: 'medium' as const,
         focus: role.dimensions[0]!,

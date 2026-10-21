@@ -113,7 +113,7 @@ speech 为 `{ judgeId, question, questionType, riskLevel, focus, rationale }`。
 
 DefenseSession 保存项目、画像、mode、currentJudgeId、currentQuestionId、status、messages、pending、completed 和时间戳。状态为 ready / generating / awaiting_answer / failed / ended。消息包含 ID、sender（user/judge）、content、createdAt、judgeId、status、question、assessment、replyTo、requestId 和 model。用户消息 pending/failed 表示追问尚未完成，回答本身已保存。
 
-assessment 包含最新回答连续原文 answerQuote、evaluation（evidence_missing/sufficient/unclear）、feedback、nextStrategy 与待验证风险。追问文本必须包含该引用，引用必须真实属于最新回答；否则返回 502 AI_UNGROUNDED_FOLLOWUP。此检查只证明文字关联，不证明模型理解与推理正确。
+assessment 包含最新回答连续原文 answerQuote、evaluation（evidence_missing/sufficient/unclear）、feedback、nextStrategy 与待验证风险。引用必须真实属于最新回答；缺少分析或引用不实返回 502 AI_UNGROUNDED_FOLLOWUP。追问文本允许用自然语言承接，不要求逐字复述引用；引用仍保存在分析依据中，rationale 按提示词说明追问与回答的联系。此检查只证明引用真实，不证明追问语义相关或模型推理正确；语义质量仍需真实对话验收。
 
 额外错误：SESSION_NOT_FOUND（404）、SESSION_STORAGE_ERROR / SESSION_STORAGE_CORRUPT（500）、PENDING_ACTION（409）、DUPLICATE_QUESTION（422）、TURN_LIMIT（409）、CONTEXT_TOO_LARGE（413）。模型错误、超时、认证和配置错误复用既有 AIClient。网络超时不能视为服务端撤销，请先 GET 会话并依据 pending/completed 恢复。
 
