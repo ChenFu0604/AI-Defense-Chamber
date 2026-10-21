@@ -14,5 +14,6 @@ import './styles/history.css'
 import './styles/workspace.css'
 import './styles/attachments.css'
 import './styles/defense-workspace.css'
+import './styles/project-workspace.css'
 
 createApp(App).use(createPinia()).use(router).mount('#app')

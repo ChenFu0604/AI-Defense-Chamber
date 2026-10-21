@@ -12,6 +12,7 @@ import {
 } from 'lucide-vue-next'
 import JudgeCard from '../components/JudgeCard.vue'
 import RecentProjects from '../components/RecentProjects.vue'
+import ContinueWorkspace from '../components/ContinueWorkspace.vue'
 import { judges } from '../data/judges'
 
 const features = [
@@ -45,6 +46,7 @@ const steps = [
 </script>
 <template>
   <div class="home-view">
+    <ContinueWorkspace />
     <div class="page-heading">
       <div>
         <div class="eyebrow"><span></span>THE REHEARSAL BEFORE THE REAL THING</div>

@@ -1,4 +1,4 @@
-import { projectCollectionSchema, type Project } from '@defense/shared'
+import { projectCollectionSchema, type Project, type ProjectWorkspace } from '@defense/shared'
 
 export const PROJECT_STORAGE_KEY = 'defense-chamber.projects.v1'
 export interface ProjectStorage {
@@ -29,16 +29,21 @@ export function getProjectStorage(): ProjectStorage {
 }
 
 export function readProjects(storage: ProjectStorage = getProjectStorage()): Project[] {
+  return readProjectWorkspace(storage).projects
+}
+
+export function readProjectWorkspace(storage: ProjectStorage = getProjectStorage()): ProjectWorkspace {
   let raw: string | null
   try {
     raw = storage.getItem(PROJECT_STORAGE_KEY)
   } catch {
     throw new ProjectStorageError('unavailable', '读取本地项目失败，请检查浏览器存储权限后重试。')
   }
-  if (raw === null) return []
+  if (raw === null) return { version: 1, projects: [], revisions: [], archivedIds: [] }
   try {
     const collection = projectCollectionSchema.parse(JSON.parse(raw))
-    return collection.projects.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
+    collection.projects.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
+    return collection
   } catch {
     throw new ProjectStorageError(
       'invalid',
@@ -51,7 +56,17 @@ export function writeProjects(
   projects: Project[],
   storage: ProjectStorage = getProjectStorage(),
 ): void {
-  const payload = JSON.stringify(projectCollectionSchema.parse({ version: 1, projects }))
+  const workspace = readProjectWorkspace(storage)
+  writeProjectWorkspace({ ...workspace, projects }, storage)
+}
+
+export function writeProjectWorkspace(
+  workspace: ProjectWorkspace,
+  storage: ProjectStorage = getProjectStorage(),
+): void {
+  const payload = JSON.stringify(projectCollectionSchema.parse(workspace))
+  if (payload.length * 2 > 3 * 1024 * 1024)
+    throw new ProjectStorageError('write', '项目与版本资料达到 3 MiB 上限，未覆盖已有记录，请先备份。')
   try {
     storage.setItem(PROJECT_STORAGE_KEY, payload)
   } catch {

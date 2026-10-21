@@ -31,7 +31,8 @@ app.get(['/api/health', '/api/v1/health'], (_req, res) =>
       service: 'ai-defense-chamber',
       version: '0.1.0',
       timestamp: new Date().toISOString(),
-      ai: 'not_configured',
+      // The isolated fixture adapter is ready; this does not configure a real model.
+      ai: 'configured',
     },
   }),
 )

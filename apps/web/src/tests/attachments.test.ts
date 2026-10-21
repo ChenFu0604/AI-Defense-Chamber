@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { createSSRApp, h } from 'vue'
 import { renderToString } from '@vue/server-renderer'
-import { createRouter, createMemoryHistory } from 'vue-router'
+import { createRouter, createMemoryHistory, RouterView } from 'vue-router'
 import { validateUploadFile, uploadAttachment } from '../services/attachments-api'
 import { useDefenseStore } from '../stores/defense'
 import { defenseApi } from '../services/defense-api'
@@ -37,11 +37,11 @@ describe('attachment frontend integration', () => {
   it('compiles and renders the project form with its upload controls', async () => {
     const router = createRouter({
       history: createMemoryHistory(),
-      routes: [{ path: '/', component: { render: () => null } }],
+      routes: [{ path: '/', component: ProjectForm }],
     })
     await router.push('/')
     const html = await renderToString(
-      createSSRApp({ render: () => h(ProjectForm) })
+      createSSRApp({ render: () => h(RouterView) })
         .use(createPinia())
         .use(router),
     )

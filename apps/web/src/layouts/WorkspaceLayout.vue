@@ -49,8 +49,8 @@ const stageDialog = ref<InstanceType<typeof StageDialog> | null>(null)
             class="nav-active-dot"
           ></span
         ></RouterLink>
-        <RouterLink to="/#projects" class="nav-item nav-shortcut"
-          ><FolderOpen :size="18" />最近项目<ArrowUpRight :size="14" class="nav-end"
+        <RouterLink to="/projects" class="nav-item nav-projects" aria-label="我的项目" :class="{ active: route.path.startsWith('/projects') }"
+          ><FolderOpen :size="18" />我的项目<ArrowUpRight :size="14" class="nav-end"
         /></RouterLink>
         <RouterLink
           to="/defense"

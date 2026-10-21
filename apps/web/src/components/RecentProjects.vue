@@ -38,8 +38,8 @@ const projects = useProjectsStore()
         :project="project"
       />
     </div>
-    <p v-if="projects.projects.length > 3" class="section-footnote">
-      展示最近 3 个项目。<RouterLink to="/defense">选择其他项目进入准备 →</RouterLink>
+    <p class="section-footnote">
+      展示最近创建的未归档项目。<RouterLink to="/projects">查看全部项目与草稿 →</RouterLink>
     </p>
   </section>
 </template>

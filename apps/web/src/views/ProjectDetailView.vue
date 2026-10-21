@@ -18,10 +18,12 @@ import StorageNotice from '../components/StorageNotice.vue'
 import ProjectAnalysisPanel from '../components/analysis/ProjectAnalysisPanel.vue'
 import { useAnalysisStore } from '../stores/analysis'
 import AttachmentGallery from '../components/attachments/AttachmentGallery.vue'
+import ProjectSnapshot from '../components/ProjectSnapshot.vue'
 const analyses = useAnalysisStore()
 const route = useRoute()
 const projects = useProjectsStore()
 const project = computed(() => projects.findProject(String(route.params.id)))
+const versions = computed(() => projects.revisions.find((v) => v.projectId === project.value?.id)?.snapshots ?? [])
 const analysisStatus = computed(() => {
   if (!project.value) return '待分析'
   const state = analyses.stateFor(project.value.id)
@@ -29,7 +31,7 @@ const analysisStatus = computed(() => {
 })
 </script>
 <template>
-  <RouterLink to="/#projects" class="back-link"><ArrowLeft :size="15" />返回最近项目</RouterLink>
+  <RouterLink to="/projects" class="back-link"><ArrowLeft :size="15" />返回我的项目</RouterLink>
   <StorageNotice />
   <div v-if="!projects.loaded && !projects.loadError" class="empty-state" role="status">
     正在读取项目…
@@ -48,11 +50,14 @@ const analysisStatus = computed(() => {
           ><span class="difficulty-tag">{{ difficultyLabels[project.difficulty] }}难度</span>
         </div>
       </div>
+      <div class="defense-actions">
+      <RouterLink :to="{ name: 'project-edit', params: { id: project.id } }" class="app-button button-secondary">编辑资料</RouterLink>
       <RouterLink
         :to="{ name: 'defense', query: { project: project.id } }"
         class="app-button button-primary"
         >开始答辩<ArrowUpRight :size="17"
       /></RouterLink>
+      </div>
     </div>
     <div class="notice notice-success">
       <CheckCircle2 :size="18" />
@@ -62,6 +67,15 @@ const analysisStatus = computed(() => {
       </div>
     </div>
     <ProjectAnalysisPanel :project="project" />
+    <details v-if="versions.length" class="history-card project-versions">
+      <summary>资料版本 · 当前第 {{ versions.length + 1 }} 版，查看 {{ versions.length }} 份旧资料</summary>
+      <p>旧版只读展示；已有会话与报告不会被编辑覆盖。</p>
+      <details v-for="(version, index) in versions" :key="version.updatedAt" class="history-card">
+        <summary>第 {{ index + 1 }} 版 · {{ version.name }} · {{ new Date(version.updatedAt).toLocaleString('zh-CN') }}</summary>
+        <ProjectSnapshot :project="version" />
+        <AttachmentGallery v-if="version.attachments?.length" :items="version.attachments" />
+      </details>
+    </details>
     <section v-if="project.attachments?.length" class="history-card">
       <h2>项目图片与文档</h2>
       <AttachmentGallery :items="project.attachments" />

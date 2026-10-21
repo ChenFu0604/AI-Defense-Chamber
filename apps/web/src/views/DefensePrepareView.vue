@@ -55,6 +55,7 @@ const selected = computed(() => projects.findProject(selectedId.value))
         </div>
       </div>
       <div class="selected-project-actions">
+        <RouterLink :to="{ name: 'project-edit', params: { id: selected.id }, query: { prepare: '1' } }" class="app-button button-secondary">编辑后回到训练</RouterLink>
         <RouterLink
           :to="{ name: 'project-detail', params: { id: selected.id } }"
           class="app-button button-secondary"
@@ -82,9 +83,9 @@ const selected = computed(() => projects.findProject(selectedId.value))
           >创建新项目<ArrowUpRight :size="14"
         /></RouterLink>
       </div>
-      <div v-if="projects.projects.length" class="project-picker">
+      <div v-if="projects.activeProjects.length" class="project-picker">
         <RouterLink
-          v-for="project in projects.projects"
+          v-for="project in projects.activeProjects"
           :key="project.id"
           :to="{ name: 'defense', query: { project: project.id } }"
           class="project-choice"
@@ -108,7 +109,7 @@ const selected = computed(() => projects.findProject(selectedId.value))
         /></RouterLink>
       </div>
     </template>
-    <DefenseStartPanel v-if="selected" :project="selected" />
+    <DefenseStartPanel v-if="selected" :key="selected.id" :project="selected" />
     <details class="defense-preview">
       <summary class="defense-preview-heading">
         <span class="defense-preview-icon"><ScanEye :size="21" /></span>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { nextTick, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeRouteLeave } from 'vue-router'
 import {
   ArrowUpRight,
   Check,
@@ -34,8 +35,27 @@ const uploading = ref(false),
   importField = ref<(typeof projectTextFields)[number]['key']>('description'),
   importError = ref('')
 
+const props = defineProps<{ project?: Project }>()
 const emit = defineEmits<{ created: [project: Project] }>()
-const { form, errors, errorSummary, hasContent, validateField, submit } = useProjectForm()
+const { form, errors, errorSummary, hasContent, validateField, submit,
+  draftError, draftSavedAt, draftPending, restored, saveDraft } = useProjectForm({ drafts: true, project: props.project })
+const expanded = ref(!!props.project || !!form.coreFeatures || !!form.technicalPlan || !!form.valueProposition)
+const visibleFields = computed(() => projectTextFields.filter((field, index) => expanded.value || index < 2))
+function protectUnload(event: BeforeUnloadEvent) {
+  if (draftPending.value) saveDraft()
+  if (draftError.value && hasContent.value && !savedProject.value) {
+    event.preventDefault()
+    event.returnValue = ''
+  }
+}
+onMounted(() => window.addEventListener('beforeunload', protectUnload))
+onBeforeUnmount(() => window.removeEventListener('beforeunload', protectUnload))
+onBeforeRouteLeave(() => {
+  if (savedProject.value) return true
+  if (draftPending.value) saveDraft()
+  if (draftError.value && hasContent.value) return window.confirm('草稿尚未确认保存，离开会丢失本页输入。仍要离开吗？')
+  return true
+})
 const projects = useProjectsStore()
 const confirmExample = ref(false)
 const savedProject = ref<Project | null>(null)
@@ -47,6 +67,7 @@ function applyExample() {
   errors.value = {}
   projects.saveError = ''
   confirmExample.value = false
+  expanded.value = true
 }
 function loadExample() {
   if (hasContent.value) confirmExample.value = true
@@ -64,6 +85,7 @@ function onInput(field: ProjectField) {
 }
 async function save() {
   if (savedProject.value || projects.saving || uploading.value) return
+  expanded.value = true
   const project = await submit()
   if (!project) {
     const firstError = Object.keys(errors.value)[0]
@@ -86,6 +108,7 @@ function appendImport() {
     return
   }
   form[importField.value] = next
+  if (['coreFeatures', 'technicalPlan', 'valueProposition'].includes(importField.value)) expanded.value = true
   importError.value = ''
   importText.value = ''
   onInput(importField.value)
@@ -111,8 +134,8 @@ function importDocument() {
     <div class="form-panel-heading">
       <div>
         <span class="section-kicker">PROJECT BRIEF</span>
-        <h2>先把你的项目，讲清楚。</h2>
-        <p>八项项目资料均为必填，图片与文档选填；尚未确定的内容可注明“待验证”。</p>
+        <h2>{{ project ? '修改项目，保留每次进步。' : '先从一个想法开始。' }}</h2>
+        <p>先写名称、简介和目标用户，草稿会自动保存。准备分析前，再补齐核心功能、技术方案与应用价值。</p>
       </div>
       <div class="project-form-heading-actions">
         <AppButton
@@ -131,6 +154,13 @@ function importDocument() {
           ><FileText :size="14" />载入示例</AppButton
         >
       </div>
+    </div>
+    <div class="draft-status" role="status">
+      <span v-if="draftError" class="field-error">{{ draftError }}</span>
+      <span v-else-if="draftPending">正在保存草稿…</span>
+      <span v-else-if="draftSavedAt">{{ restored ? '已恢复草稿 · ' : '' }}草稿保存于 {{ new Date(draftSavedAt).toLocaleString('zh-CN') }}</span>
+      <span v-else>输入后自动保存到当前浏览器</span>
+      <AppButton v-if="!savedProject" variant="ghost" @click="saveDraft">{{ draftError ? '重试保存草稿' : '保存草稿' }}</AppButton>
     </div>
     <details
       class="project-materials"
@@ -266,7 +296,7 @@ function importDocument() {
           </option>
         </select>
       </FormField>
-      <template v-for="(field, index) in projectTextFields" :key="field.key">
+      <template v-for="(field, index) in visibleFields" :key="field.key">
         <div v-if="index === 1" class="form-section-label"><span>02</span>用户、方案与价值</div>
         <FormField
           :id="'project-' + field.key"
@@ -295,8 +325,9 @@ function importDocument() {
           <span class="field-counter">{{ form[field.key].length }} / {{ field.max }}</span>
         </FormField>
       </template>
-      <div class="form-section-label"><span>03</span>选择你的答辩强度</div>
-      <fieldset class="difficulty-fieldset">
+      <AppButton v-if="!expanded" variant="secondary" @click="expanded = true">继续补充方案与价值 →</AppButton>
+      <div v-if="expanded" class="form-section-label"><span>03</span>选择你的答辩强度</div>
+      <fieldset v-if="expanded" class="difficulty-fieldset">
         <legend>答辩难度<span class="required-mark" aria-hidden="true">*</span></legend>
         <p id="difficulty-hint" class="field-hint">答辩提问将参考此难度设置。</p>
         <div class="difficulty-options">
@@ -336,7 +367,7 @@ function importDocument() {
       </p>
       <AppButton type="submit" :disabled="projects.saving || !!savedProject || uploading"
         ><LoaderCircle v-if="projects.saving" :size="16" class="spinning" />{{
-          projects.saving ? '正在保存…' : savedProject ? '已保存' : '创建项目'
+          projects.saving ? '正在保存…' : savedProject ? '已保存' : project ? '保存项目新版本' : '保存项目并继续'
         }}<ArrowUpRight v-if="!projects.saving && !savedProject" :size="17"
       /></AppButton>
     </div>

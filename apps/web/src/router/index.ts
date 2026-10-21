@@ -17,6 +17,14 @@ export const router = createRouter({
       component: WorkspaceLayout,
       children: [
         {
+          path: 'projects', name: 'projects',
+          component: () => import('../views/ProjectsView.vue'), meta: { title: '我的项目' },
+        },
+        {
+          path: 'projects/:id/edit', name: 'project-edit',
+          component: () => import('../views/ProjectEditView.vue'), meta: { title: '编辑项目' },
+        },
+        {
           path: 'history/projects/:id',
           name: 'history-project',
           component: () => import('../views/HistoryProjectView.vue'),

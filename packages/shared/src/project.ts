@@ -80,6 +80,8 @@ export const projectCollectionSchema = z
   .object({
     version: z.literal(1),
     projects: z.array(projectSchema),
+    revisions: z.array(z.object({ projectId: z.uuid(), snapshots: z.array(projectSchema) })).default([]),
+    archivedIds: z.array(z.uuid()).default([]),
   })
   .refine(
     ({ projects }) => new Set(projects.map((project) => project.id)).size === projects.length,
@@ -87,6 +89,35 @@ export const projectCollectionSchema = z
       message: '项目记录存在重复标识。',
     },
   )
+  .superRefine((value, context) => {
+    const ids = new Set(value.projects.map((project) => project.id))
+    if (
+      new Set(value.archivedIds).size !== value.archivedIds.length ||
+      value.archivedIds.some((id) => !ids.has(id)) ||
+      new Set(value.revisions.map((entry) => entry.projectId)).size !== value.revisions.length ||
+      value.revisions.some((entry) => !ids.has(entry.projectId) || entry.snapshots.some((p) => p.id !== entry.projectId))
+    ) context.addIssue({ code: 'custom', message: '项目版本或归档关联无效。' })
+  })
+
+// Drafts allow unfinished fields; formal project/API validation stays unchanged.
+export const projectDraftInputSchema = projectInputSchema.extend({
+  name: z.string().max(projectTextLimits.name),
+  description: z.string().max(projectTextLimits.description),
+  targetUsers: z.string().max(projectTextLimits.targetUsers),
+  coreFeatures: z.string().max(projectTextLimits.coreFeatures),
+  technicalPlan: z.string().max(projectTextLimits.technicalPlan),
+  valueProposition: z.string().max(projectTextLimits.valueProposition),
+})
+export const projectDraftSchema = z.strictObject({
+  key: z.string().regex(/^(new|edit:[0-9a-f-]{36})$/),
+  input: projectDraftInputSchema,
+  baseProject: projectSchema.nullable(),
+  updatedAt: z.iso.datetime(),
+}).refine((draft) => draft.key === (draft.baseProject ? `edit:${draft.baseProject.id}` : 'new'), {
+  message: '草稿与原项目关联不一致。',
+})
+export type ProjectDraft = z.infer<typeof projectDraftSchema>
+export type ProjectWorkspace = z.infer<typeof projectCollectionSchema>
 
 export type ProjectType = (typeof projectTypes)[number]
 export type DefenseDifficulty = (typeof defenseDifficulties)[number]
