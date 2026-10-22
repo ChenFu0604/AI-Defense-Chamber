@@ -1,4 +1,35 @@
 /* Hide the sidebar's rail while keeping wheel, touch and keyboard scrolling. */
+.training-preferences { min-width: 0; margin: 24px 0; padding: 20px; border: 1px solid var(--border-card); border-radius: 14px; }
+.training-preferences legend { padding: 0 8px; font-weight: 600; }
+.training-style-options, .training-selects { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.training-style-options label { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 8px 12px; padding: 16px; background: #11141c; border: 1px solid #303544; border-radius: 12px; cursor: pointer; }
+.training-style-options label.selected { border-color: var(--accent); background: #bca3ff0a; }
+.training-style-options small { grid-column: 2; color: #a9adbc; line-height: 1.7; }
+.training-selects { margin-top: 18px; }
+.training-selects label { display: grid; gap: 10px; font-size: 13px; }
+.training-selects select { min-width: 0; width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #363b49; background: #0c0e14; color: #e9eaee; font: inherit; }
+.training-preferences > p, .assistance-panel > p, .training-summary { color: #a9adbc; font-size: 13px; line-height: 1.8; margin-top: 14px; }
+.training-summary { margin-bottom: 20px; }
+.training-summary small { display: block; color: #d9bd87; }
+.assistance-panel { padding: 20px; margin-bottom: 24px; border: 1px solid #bca3ff30; border-radius: 14px; background: #bca3ff06; }
+.assistance-panel h3, .answer-feedback h3 { font-size: 15px; }
+.assistance-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 15px 0; }
+.assistance-record { margin-top: 14px; padding: 14px; border-radius: 10px; background: #11151e; border: 1px solid var(--border-card); }
+.assistance-record strong { color: var(--accent); font-size: 13px; }
+.assistance-record p, .answer-feedback p, .saved-assistance p { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.8; margin: 10px 0; }
+.assistance-record small, .answer-feedback small { color: #a9adbc; font-size: 12px; }
+.answer-feedback { padding: 22px; border: 1px solid #91d7bd40; border-radius: 14px; background: #91d7bd06; margin: 22px 0; }
+.answer-feedback h3 { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.answer-feedback h3 span { color: var(--mint); font-size: 12px; font-weight: 400; }
+.answer-feedback details { color: #a9adbc; font-size: 13px; margin: 14px 0; }
+.answer-feedback summary, .saved-assistance summary { cursor: pointer; }
+.feedback-next { color: #c7b8ec; font-size: 13px; }
+.saved-assistance { border-left: 2px solid #bca3ff60; padding-left: 14px; margin-top: 14px; }
+@media (max-width: 600px) {
+  .training-style-options, .training-selects { grid-template-columns: minmax(0, 1fr); }
+  .training-preferences, .assistance-panel, .answer-feedback { padding: 16px; }
+  .assistance-actions > .app-button { width: 100%; white-space: normal; }
+}
 .sidebar {
   scrollbar-width: none;
   -ms-overflow-style: none;

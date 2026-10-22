@@ -6,6 +6,7 @@ import { useHistoryStore } from '../stores/history'
 import { useDefenseStore } from '../stores/defense'
 import AppButton from '../components/ui/AppButton.vue'
 import JudgeRolePicker from '../components/judges/JudgeRolePicker.vue'
+import TrainingSummary from '../components/defense/TrainingSummary.vue'
 const route = useRoute(),
   router = useRouter(),
   history = useHistoryStore(),
@@ -46,6 +47,8 @@ async function start() {
   <section v-if="entry?.report && entry.session.status === 'ended'" class="history-card">
     <h2>{{ entry.session.project.name }}</h2>
     <p>沿用这场答辩保存的项目和画像快照。若需修改项目资料，可回到项目页面另行创建训练。</p>
+    <TrainingSummary :session="entry.session" />
+    <p v-if="entry.session.preferences">新会话沿用以上训练方式、目标和题数上限；原会话的提示记录不会当作新回答。</p>
     <h3>原报告中的薄弱点</h3>
     <ul>
       <li v-for="item in entry.report.output.weaknesses" :key="item.title">

@@ -1,4 +1,4 @@
-import type { DefenseSession, DefenseQuestion } from '@defense/shared'
+import { trainingSettings, type DefenseSession, type DefenseQuestion } from '@defense/shared'
 import { AppError } from '../middleware/app-error.js'
 import type { Attachment } from '@defense/shared'
 
@@ -18,6 +18,11 @@ export function buildDefenseContext(
     task: latestAnswer ? 'follow_up' : 'initial',
     judgeId,
     difficulty: project.difficulty,
+    trainingPreferences: trainingSettings(session),
+    recentAssistance: (session.assistance ?? []).slice(-6).map((v) => ({
+      questionId: v.questionId, kind: v.kind, content: clip(v.content, 450),
+      source: 'system_assistance_not_user_evidence',
+    })),
     retraining: session.training ?? null,
     project: {
       name: project.name,

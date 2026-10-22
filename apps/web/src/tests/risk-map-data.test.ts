@@ -9,6 +9,20 @@ function input() {
   return { project: session.project, analysis: session.analysis, session, report: reportFixture() }
 }
 describe('risk map projection and contracts', () => {
+  it('includes final-answer risks and their actual answer reference', () => {
+    const source = input(), answer = source.session.messages.find(v => v.sender === 'user')!
+    source.session.closingFeedback = {answerMessageId: answer.id, model: 'test-model', assessment: {
+      answerQuote: answer.content.slice(0, 20), evaluation: 'evidence_missing', feedback: '尚需核对试点记录。', nextStrategy: 'change_direction',
+      risks: [{title: '最后回答中的待核对假设', severity: 'high'}],
+    }}
+    const graph = buildRiskGraph({...source, report: null})
+    const node = graph.nodes.find(v => v.name === '最后回答中的待核对假设')!
+    expect(node.source).toBe('ai_inference')
+    expect(node.evidence[0]).toMatchObject({locator: answer.id, quote: answer.content.slice(0, 20)})
+    expect(node.verification).toBeNull()
+    source.session.closingFeedback.assessment.answerQuote = '不存在的引文'
+    expect(() => buildRiskGraph({...source, report: null})).toThrow()
+  })
   it('projects real saved risks and report gaps with unique stable IDs and unmodified descriptions', () => {
     const source = input(),
       first = buildRiskGraph(source),

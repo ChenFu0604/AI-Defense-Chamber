@@ -5,6 +5,7 @@ import { createAIClient } from '../../apps/server/src/services/ai-client.js'
 import { createProjectAnalysisService } from '../../apps/server/src/services/project-analysis-service.js'
 import { createDefenseService } from '../../apps/server/src/services/defense-service.js'
 import { createDefenseModel } from '../../apps/server/src/services/defense-model.js'
+import { createAssistanceModel, createClosingAssessmentModel } from '../../apps/server/src/services/defense-guidance.js'
 import { createDefenseRepository } from '../../apps/server/src/services/defense-repository.js'
 import { createReportRepository } from '../../apps/server/src/services/report-repository.js'
 import { createReportService } from '../../apps/server/src/services/report-service.js'
@@ -15,7 +16,7 @@ import { createAttachmentService } from '../../apps/server/src/services/attachme
 
 /** Local test adapter only: exercises the real JSON client without network/model access. */
 export function createWorkflowFixture(directory: string, options: { turnDelayMs?: number } = {}) {
-  const calls = { project_analysis: 0, defense_turn: 0, defense_report: 0 }
+  const calls = { project_analysis: 0, defense_turn: 0, defense_report: 0, defense_assistance: 0, defense_assessment: 0 }
   const modelInputs: { task: string; images: number; context: Record<string, unknown> }[] = []
   const failedAnswers = new Set<string>()
   const failures = new Map<string, 'http' | 'invalid'>()
@@ -100,6 +101,10 @@ export function createWorkflowFixture(directory: string, options: { turnDelayMs?
               }
             : null,
         }
+      } else if (task === 'defense_assistance') {
+        output = { content: '【测试数据】可以先回想一位实际遇到这个问题的人，说明当时最麻烦的一步；尚未验证的部分如实说明。' }
+      } else if (task === 'defense_assessment') {
+        output = { answerQuote: context.latestAnswer.slice(0, 100), evaluation: 'unclear', feedback: '【测试数据】最后回答已保存，建议下一步做小范围验证。', nextStrategy: 'change_direction', risks: [] }
       } else if (task === 'defense_report') {
         const report = reportOutputFixture()
         report.summary = '【测试数据】固定评分用于图表与历史验收，不能代表真实能力。'
@@ -125,6 +130,7 @@ export function createWorkflowFixture(directory: string, options: { turnDelayMs?
     createDefenseModel(client, attachments),
     reportRepository,
     attachments,
+    { assistance: createAssistanceModel(client), closing: createClosingAssessmentModel(client, attachments) },
   )
   const reports = createReportService(defense, reportRepository, client, attachments)
   const app = createApp({

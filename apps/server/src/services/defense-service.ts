@@ -1,6 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto'
 import {
-  MAX_DEFENSE_QUESTIONS,
   retrainingFocusSchema,
   reportEvidenceIsValid,
   type RetrainRequest,
@@ -9,6 +8,8 @@ import {
   type AnswerRequest,
   type SwitchJudgeRequest,
   type JudgeId,
+  type AssistanceRequest,
+  trainingSettings,
 } from '@defense/shared'
 import { AppError } from '../middleware/app-error.js'
 import { createDefenseRepository, type DefenseRepository } from './defense-repository.js'
@@ -18,6 +19,7 @@ import { createReportRepository, type ReportRepository } from './report-reposito
 import { reportSourceFingerprint } from './report-context.js'
 import { attachmentService, type AttachmentService } from './attachment-service.js'
 import type { Attachment } from '@defense/shared'
+import { createAssistanceModel, createClosingAssessmentModel } from './defense-guidance.js'
 
 const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex')
 export function createDefenseService(
@@ -25,7 +27,10 @@ export function createDefenseService(
   model = createDefenseModel(),
   reports: ReportRepository = createReportRepository(),
   attachments: AttachmentService = attachmentService,
+  guidance: { assistance?: ReturnType<typeof createAssistanceModel>; closing?: ReturnType<typeof createClosingAssessmentModel> } = {},
 ) {
+  const assist = guidance.assistance ?? createAssistanceModel()
+  const assessClosing = guidance.closing ?? createClosingAssessmentModel(undefined, attachments)
   const locks = new Set<string>()
   async function lock<T>(id: string, task: () => Promise<T>) {
     if (locks.has(id))
@@ -75,6 +80,8 @@ export function createDefenseService(
         return session
       }
       assertOpen(session)
+      if (session.assistance?.some((v) => v.requestId === payload.requestId))
+        throw new AppError(409, 'IDEMPOTENCY_CONFLICT', '请求 ID 已用于提示，请使用原操作重试。')
       if (session.pending) {
         if (
           session.pending.requestId !== payload.requestId ||
@@ -90,7 +97,7 @@ export function createDefenseService(
           (!session.currentQuestionId || session.currentQuestionId !== payload.questionId)
         )
           throw new AppError(409, 'STALE_QUESTION', '当前问题已变化，请刷新后回答。')
-        if (type !== 'answer' && questionCount(session) >= MAX_DEFENSE_QUESTIONS)
+        if (type !== 'answer' && questionCount(session) >= trainingSettings(session).questionLimit)
           throw new AppError(409, 'TURN_LIMIT', '已达问题上限，请回答当前问题或结束答辩。')
         const judgeId = payload.judgeId ?? session.currentJudgeId
         if (type === 'switch' && judgeId === session.currentJudgeId)
@@ -131,7 +138,13 @@ export function createDefenseService(
         const latestAnswer = action.answerMessageId
           ? session.messages.find((v) => v.id === action.answerMessageId)!
           : session.messages.filter((v) => v.sender === 'user' && v.status === 'sent').at(-1)
-        if (type === 'answer' && questionCount(session) >= MAX_DEFENSE_QUESTIONS) {
+        if (type === 'answer' && questionCount(session) >= trainingSettings(session).questionLimit) {
+          // New finite training evaluates its last answer without creating an extra question.
+          // Legacy sessions keep their original final-answer behavior.
+          if (session.preferences && latestAnswer) {
+            const feedback = await assessClosing(session, latestAnswer)
+            session.closingFeedback = { answerMessageId: latestAnswer.id, assessment: feedback.data, model: feedback.model }
+          }
           session.status = 'ended'
           session.endedAt = new Date().toISOString()
         } else {
@@ -210,12 +223,38 @@ export function createDefenseService(
         createFingerprint: fingerprint,
         error: null,
         training: training ?? null,
+        ...(request.preferences ? { preferences: request.preferences, assistance: [] } : {}),
       }
       return save(session)
     })
   }
   return {
     create,
+    async help(id: string, input: AssistanceRequest) {
+      return lock(id, async () => {
+        const session = await read(id)
+        const existing = session.assistance?.find((v) => v.requestId === input.requestId)
+        if (existing) {
+          if (existing.questionId !== input.questionId || existing.kind !== input.kind)
+            throw new AppError(409, 'IDEMPOTENCY_CONFLICT', '提示请求 ID 已用于其他内容。')
+          return session
+        }
+        assertOpen(session)
+        if (session.completed.some((v) => v.requestId === input.requestId) || session.pending?.requestId === input.requestId)
+          throw new AppError(409, 'IDEMPOTENCY_CONFLICT', '请求 ID 已用于答辩操作。')
+        if (session.pending || session.status !== 'awaiting_answer')
+          throw new AppError(409, 'PENDING_ACTION', '请先完成或重试当前答辩操作，再获取提示。')
+        if (session.currentQuestionId !== input.questionId)
+          throw new AppError(409, 'STALE_QUESTION', '问题已变化，请刷新后查看当前问题。')
+        if (session.assistance?.some((v) => v.questionId === input.questionId && v.kind === input.kind)) return session
+        const generated = await assist(session, input)
+        session.assistance = [...(session.assistance ?? []), {
+          ...input, judgeId: session.currentJudgeId, content: generated.data.content,
+          createdAt: new Date().toISOString(), mode: session.mode, model: generated.model,
+        }]
+        return save(session)
+      })
+    },
     async retrain(id: string, input: RetrainRequest) {
       const source = await read(id)
       if (source.status !== 'ended' || source.mode !== 'live')
@@ -252,6 +291,7 @@ export function createDefenseService(
           analysis: source.analysis,
           mode: source.mode,
           judgeId: input.judgeId,
+          ...(source.preferences ? { preferences: source.preferences } : {}),
         },
         training,
       )

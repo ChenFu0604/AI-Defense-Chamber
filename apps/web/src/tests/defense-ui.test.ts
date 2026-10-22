@@ -5,9 +5,47 @@ import JudgeRolePicker from '../components/judges/JudgeRolePicker.vue'
 import DefenseModePicker from '../components/defense/DefenseModePicker.vue'
 import DefenseSessionStatus from '../components/defense/DefenseSessionStatus.vue'
 import DefenseMessages from '../components/defense/DefenseMessages.vue'
+import AssistancePanel from '../components/defense/AssistancePanel.vue'
+import AnswerFeedback from '../components/defense/AnswerFeedback.vue'
+import TrainingPreferencesPicker from '../components/defense/TrainingPreferencesPicker.vue'
+import { latestAnswerFeedback } from '../utils/defense-feedback'
+import { endedReportSession } from '../../../../tests/fixtures/report'
 const render = (component: Parameters<typeof h>[0], props: Record<string, unknown>) =>
   renderToString(createSSRApp({ render: () => h(component, props) }))
 describe('defense workspace visual states', () => {
+  it('never labels feedback for an earlier answer as feedback for a failed latest answer', () => {
+    const session = endedReportSession(), answer = session.messages.at(-1)!, original = session.messages[0]!
+    const assessment = {answerQuote: answer.content.slice(0, 20), evaluation: 'unclear' as const, feedback: '先补一个例子', nextStrategy: 'probe_evidence' as const, risks: []}
+    const question = {...original, id: crypto.randomUUID(), replyTo: answer.id, assessment}
+    session.messages.push(question)
+    session.currentQuestionId = question.id
+    expect(latestAnswerFeedback(session)?.assessment).toEqual(assessment)
+    expect(latestAnswerFeedback(session, true)).toBeNull()
+    session.messages.push({...answer, id: crypto.randomUUID(), status: 'failed', replyTo: question.id})
+    expect(latestAnswerFeedback(session)).toBeNull()
+  })
+  it('renders independent training settings, disables help while loading and exposes retry/cancel', async () => {
+    const settings = await render(TrainingPreferencesPicker, {modelValue: {style: 'guided', goal: 'users', questionLimit: 5}, disabled: true})
+    expect(settings).toContain('项目梳理')
+    expect(settings).toContain('答辩演练')
+    expect(settings).toContain('短练 · 最多 5 题')
+    expect(settings).toMatch(/<fieldset\b[^>]*\bdisabled/)
+    const helping = await render(AssistancePanel, {records: [], disabled: true, loading: true, failed: false, demo: false})
+    expect(helping.match(/disabled/g)).toHaveLength(3)
+    expect(helping).toContain('评委正在把问题拆小一点')
+    expect(helping).not.toContain('重试提示')
+    const failed = await render(AssistancePanel, {records: [], disabled: true, loading: false, failed: true, demo: false})
+    expect(failed).toContain('重试提示')
+    expect(failed).toContain('继续自己回答')
+  })
+  it('shows answer feedback immediately and uses the selected question limit', async () => {
+    const feedback = await render(AnswerFeedback, {assessment: {evaluation: 'sufficient', feedback: '已说明一个具体场景，可以进一步核对适用范围。', answerQuote: '一位具体用户'}, demo: false, rationale: '检查刚才场景的边界'})
+    expect(feedback.indexOf('已说明一个具体场景')).toBeLessThan(feedback.indexOf('<details'))
+    expect(feedback).toContain('接下来为什么问')
+    const status = await render(DefenseSessionStatus, {mode: 'live', status: 'awaiting_answer', questions: 3, answers: 2, limit: 5})
+    expect(status).toContain('aria-valuemax="5"')
+    expect(status).toContain('width:60%')
+  })
   it('renders four actual roles, one selection, dimensions and a disabled fieldset during requests', async () => {
     const html = await render(JudgeRolePicker, { modelValue: 'technical', disabled: true })
     expect(html.match(/type="radio"/g)).toHaveLength(4)

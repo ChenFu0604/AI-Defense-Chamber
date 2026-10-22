@@ -83,7 +83,7 @@ provided 必须有原文引用，所有引用必须是对应资料字段中的�
 项目建档仍只保存在浏览器，不增加服务端项目数据库。
 分析请求会发送所选资料；模型只收到八项必要资料，不包含浏览器存储的其他项目或历史记录。
 画像保存在独立的 `defense-chamber.analyses.v1`，真实与演示结果分别保留。
-答辩会话、回答、评分与报告接口仍未实现。
+答辩会话、回答、评分与报告接口见下方对应章节；此处仅说明项目画像的本地保存。
 
 ## 第四阶段：评委提问
 
@@ -102,10 +102,11 @@ speech 为 `{ judgeId, question, questionType, riskLevel, focus, rationale }`。
 
 | 方法及路径（省略前缀） | 请求 | 行为 |
 | --- | --- | --- |
-| POST /defense/sessions | `{requestId,project,analysis,mode?,judgeId?}` | 创建并保存 ready 会话，201；会话 ID 为创建请求 UUID。项目为浏览器中的完整资料，画像必须匹配快照和来源。mode 默认 live，judgeId 默认 business |
+| POST /defense/sessions | `{requestId,project,analysis,mode?,judgeId?,preferences?}` | 创建并保存 ready 会话，201；会话 ID 为创建请求 UUID。项目为浏览器中的完整资料，画像必须匹配快照和来源。mode 默认 live，judgeId 默认 business |
 | GET /defense/sessions/:id | 无 | 读取完整快照、消息、当前问题、评委、状态与待重试操作 |
 | POST /defense/sessions/:id/question | `{requestId}` | 生成首问；失败可复用同一请求重试 |
 | POST /defense/sessions/:id/answer | `{requestId,questionId,answer}` | 回答 trim 后 1～4000 字；先保存，再生成与回答关联的追问 |
+| POST /defense/sessions/:id/help | `{requestId,questionId,kind}` | 对当前问题获取提示；kind 为 hint / rephrase / no_evidence；独立保存 assistance，不提交回答，不改变问题或题数 |
 | POST /defense/sessions/:id/judge | `{requestId,questionId,judgeId}` | 保留历史，标记当前未答问题为 superseded，生成新评委问题 |
 | POST /defense/sessions/:id/end | `{}` | 结束并保存，可重复调用；不存在返回 404 |
 
@@ -118,6 +119,16 @@ assessment 包含最新回答连续原文 answerQuote、evaluation（evidence_mi
 额外错误：SESSION_NOT_FOUND（404）、SESSION_STORAGE_ERROR / SESSION_STORAGE_CORRUPT（500）、PENDING_ACTION（409）、DUPLICATE_QUESTION（422）、TURN_LIMIT（409）、CONTEXT_TOO_LARGE（413）。模型错误、超时、认证和配置错误复用既有 AIClient。网络超时不能视为服务端撤销，请先 GET 会话并依据 pending/completed 恢复。
 
 当前单进程本地文件存储；未实现账号鉴权、多进程共享锁或云数据库。完整会话地址和本地数据目录应按项目资料保护，不能直接将该本地开发服务开放为公网多用户服务。
+
+### 2A 训练设置与辅助记录
+
+`preferences` 为 `{style:"guided"|"rehearsal",goal:"general"|"value"|"technical"|"users",questionLimit:5|10}`。训练方式与 live/demo 来源独立；guided 主动提供简短思考支点，rehearsal 在主动求助时提供提示。省略 preferences 保留旧会话规则（30 题），读取不会给旧记录补写默认字段。新二次训练继承原会话已保存设置。
+
+`assistance` 是可选数组，每项保存 requestId、questionId、kind、judgeId、content、createdAt、mode 与 model。引用必须指向实际评委问题，角色/来源必须一致；真实提示含模型标识，模拟提示 model 为 null 且有模拟标记。同一问题同类成功提示复用，最多每题三份；同 requestId 不同内容或跨回答/求助复用返回 409。已结束会话只允许重放已完成的相同请求，不生成新提示。
+
+求助与普通回答/结束操作共用会话锁；模型失败不会写入假提示或把会话推进一题。失败可以用原 UUID 重试；GET 会话读取已保存的提示，客户端本地保存未完成的 help 操作以便刷新重试。取消提示重试只撤下本地操作，不承诺取消服务端正在执行的模型请求。求助请求不包含输入框中尚未提交的草稿。
+
+达到新训练的题数上限后，提交最后回答调用独立评价任务，不额外生成问题；结果保存到 `closingFeedback:{answerMessageId,assessment,model}`。失败保留同一回答与 pending，可重试，避免重复写回答。旧会话沿用原结束行为。报告、历史与漏洞地图支持最后回答反馈；评分上下文标注训练设置及求助次数，提示不作为用户证据或回答。
 
 ## 系统设置：OpenAI 兼容模型
 

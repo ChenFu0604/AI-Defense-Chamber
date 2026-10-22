@@ -14,6 +14,8 @@ import AnalysisResults from '../components/analysis/AnalysisResults.vue'
 import AppButton from '../components/ui/AppButton.vue'
 import AttachmentGallery from '../components/attachments/AttachmentGallery.vue'
 import ProjectSnapshot from '../components/ProjectSnapshot.vue'
+import TrainingSummary from '../components/defense/TrainingSummary.vue'
+import AnswerFeedback from '../components/defense/AnswerFeedback.vue'
 const route = useRoute(),
   store = useHistoryStore()
 const id = computed(() => String(route.params.id)),
@@ -48,6 +50,7 @@ watch(id, store.load)
   </div>
   <p v-if="store.error" role="alert" class="notice notice-error">{{ store.error }}</p>
   <template v-else-if="entry">
+    <TrainingSummary :session="entry.session" />
     <div class="history-card">
       <h2>{{ entry.session.project.name }}</h2>
       <p>
@@ -113,7 +116,8 @@ watch(id, store.load)
       <p v-else-if="!risks.nodes.length">原记录未发现可整理风险，不能据此推断项目没有风险。</p>
     </section>
     <h2>完整答辩消息</h2>
-    <DefenseMessages :messages="entry.session.messages" :demo="entry.session.mode === 'demo'" />
+    <AnswerFeedback v-if="entry.session.closingFeedback" :assessment="entry.session.closingFeedback.assessment" :demo="entry.session.mode === 'demo'" />
+    <DefenseMessages :messages="entry.session.messages" :demo="entry.session.mode === 'demo'" :assistance="entry.session.assistance" />
   </template>
   <div v-else class="empty-state">
     <h2>尚未找到本地完整历史</h2>

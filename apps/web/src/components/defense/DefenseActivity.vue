@@ -5,7 +5,7 @@ import JudgeAvatar from '../judges/JudgeAvatar.vue'
 const props = defineProps<{
   judgeId: JudgeId
   hasMessages: boolean
-  phase: 'generating' | 'processing'
+  phase: 'generating' | 'processing' | 'reviewing'
   demo: boolean
 }>()
 const judge = computed(() => judgeDefinitions.find((item) => item.id === props.judgeId)!)
@@ -16,7 +16,9 @@ const judge = computed(() => judgeDefinitions.find((item) => item.id === props.j
     <div>
       <strong
         >{{
-          phase === 'processing'
+          phase === 'reviewing'
+            ? '正在评价最后一答'
+            : phase === 'processing'
             ? '正在保存并同步会话'
             : hasMessages
               ? `${judge.name}正在推敲下一问`
@@ -25,7 +27,9 @@ const judge = computed(() => judgeDefinitions.find((item) => item.id === props.j
       ></strong>
       <p>
         {{
-          phase === 'processing'
+          phase === 'reviewing'
+            ? '回答已保存，反馈完成后自动结束，不再生成新问题。'
+            : phase === 'processing'
             ? '请稍候，操作完成后会更新当前记录。'
             : demo
               ? '正在准备模拟模板，不调用真实模型。'

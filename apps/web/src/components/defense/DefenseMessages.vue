@@ -6,6 +6,8 @@ import {
   answerEvaluationLabels,
   severityLabels,
   type DefenseMessage,
+  type AssistanceRecord,
+  assistanceKindLabels,
 } from '@defense/shared'
 import AttachmentGallery from '../attachments/AttachmentGallery.vue'
 import DefenseActivity from './DefenseActivity.vue'
@@ -13,8 +15,9 @@ const props = withDefaults(
   defineProps<{
     messages: DefenseMessage[]
     demo: boolean
-    activity?: 'generating' | 'processing' | null
+    activity?: 'generating' | 'processing' | 'reviewing' | null
     judgeId?: import('@defense/shared').JudgeId
+    assistance?: AssistanceRecord[]
   }>(),
   { activity: null, judgeId: 'business' },
 )
@@ -74,6 +77,10 @@ const judgeName = (id: string) => judgeDefinitions.find((v) => v.id === id)?.nam
         追问未完成；该回答已保存在服务端，可重试。
       </p>
       <p v-if="message.status === 'superseded'">已切换评委，本题未作答。</p>
+      <details v-for="help in assistance?.filter(v => v.questionId === message.id)" :key="help.requestId" class="saved-assistance">
+        <summary>{{ assistanceKindLabels[help.kind] }} · {{ help.mode === 'demo' ? '模拟提示' : '系统辅助记录' }}</summary>
+        <p>{{ help.content }}</p><small>提示不属于用户回答，不作为用户已提供的证据。</small>
+      </details>
       <details v-if="message.assessment">
         <summary>
           回答分析 · {{ answerEvaluationLabels[message.assessment.evaluation]

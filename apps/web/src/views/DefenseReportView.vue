@@ -7,6 +7,8 @@ import { useReportStore } from '../stores/report'
 import AppButton from '../components/ui/AppButton.vue'
 import ReportResults from '../components/report/ReportResults.vue'
 import DefenseMessages from '../components/defense/DefenseMessages.vue'
+import TrainingSummary from '../components/defense/TrainingSummary.vue'
+import AnswerFeedback from '../components/defense/AnswerFeedback.vue'
 const route = useRoute(),
   store = useDefenseStore(),
   reports = useReportStore()
@@ -53,6 +55,7 @@ const answers = computed(
     {{ store.warning || reports.warning }}
   </p>
   <template v-if="store.session?.status === 'ended'">
+    <TrainingSummary :session="store.session" />
     <div class="defense-session-bar">
       <strong>{{ store.session.project.name }}</strong
       ><span>{{
@@ -128,8 +131,9 @@ const answers = computed(
       </p>
     </div>
     <p v-if="!assessments.length" class="notice">尚无成功保存的回答分析，可以查看完整问答记录。</p>
+    <AnswerFeedback v-if="store.session.closingFeedback" :assessment="store.session.closingFeedback.assessment" :demo="store.session.mode === 'demo'" />
     <h2>完整答辩记录</h2>
-    <DefenseMessages :messages="store.session.messages" :demo="store.session.mode === 'demo'" />
+    <DefenseMessages :messages="store.session.messages" :demo="store.session.mode === 'demo'" :assistance="store.session.assistance" />
   </template>
   <p v-else-if="store.session" class="notice">会话尚未结束，请返回会话结束答辩后查看报告。</p>
 </template>

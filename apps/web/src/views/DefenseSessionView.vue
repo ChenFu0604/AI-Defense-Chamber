@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { judgeDefinitions, MAX_DEFENSE_QUESTIONS, questionTypeLabels } from '@defense/shared'
+import { judgeDefinitions, trainingSettings, questionTypeLabels } from '@defense/shared'
 import { useDefenseStore } from '../stores/defense'
 import DefenseMessages from '../components/defense/DefenseMessages.vue'
 import AppButton from '../components/ui/AppButton.vue'
@@ -10,14 +10,23 @@ import AttachmentGallery from '../components/attachments/AttachmentGallery.vue'
 import JudgeRolePicker from '../components/judges/JudgeRolePicker.vue'
 import JudgeAvatar from '../components/judges/JudgeAvatar.vue'
 import DefenseSessionStatus from '../components/defense/DefenseSessionStatus.vue'
+import AssistancePanel from '../components/defense/AssistancePanel.vue'
+import AnswerFeedback from '../components/defense/AnswerFeedback.vue'
+import TrainingSummary from '../components/defense/TrainingSummary.vue'
+import { useDefenseDraftGuard } from '../composables/useDefenseDraftGuard'
+import { latestAnswerFeedback } from '../utils/defense-feedback'
 const uploading = ref(false)
 const route = useRoute(),
   store = useDefenseStore()
+useDefenseDraftGuard()
 const id = computed(() => String(route.params.id ?? ''))
 const current = computed(() =>
   store.session?.messages.find((v) => v.id === store.session?.currentQuestionId),
 )
 const judge = computed(() => judgeDefinitions.find((v) => v.id === store.session?.currentJudgeId))
+const limit = computed(() => store.session ? trainingSettings(store.session).questionLimit : 30)
+const helpRecords = computed(() => store.session?.assistance?.filter(v => v.questionId === current.value?.id) ?? [])
+const feedback = computed(() => latestAnswerFeedback(store.session, store.operation?.kind === 'answer'))
 const questions = computed(
   () => store.session?.messages.filter((v) => v.sender === 'judge').length ?? 0,
 )
@@ -26,8 +35,10 @@ const answers = computed(
   () => store.session?.messages.filter((message) => message.sender === 'user').length ?? 0,
 )
 const activity = computed(() =>
-  !blocked.value
+  !blocked.value || store.operation?.kind === 'help'
     ? null
+    : questions.value >= limit.value && (store.operation?.kind === 'answer' || store.session?.pending?.type === 'answer')
+      ? 'reviewing'
     : store.session?.status === 'generating' || store.session?.status === 'ready' || store.operation
       ? 'generating'
       : 'processing',
@@ -41,7 +52,7 @@ const activeJudgeId = computed(
     'business',
 )
 const displayStatus = computed(() =>
-  activity.value === 'generating' ? 'generating' : (store.session?.status ?? 'ready'),
+  activity.value === 'generating' || activity.value === 'reviewing' ? 'generating' : (store.session?.status ?? 'ready'),
 )
 let poll: ReturnType<typeof setInterval> | undefined
 watch(
@@ -97,7 +108,9 @@ onBeforeUnmount(() => {
       :status="displayStatus"
       :questions="questions"
       :answers="answers"
+      :limit="limit"
     />
+    <TrainingSummary :session="store.session" />
     <section v-if="store.session.training" class="defense-current">
       <h2>本次训练重点</h2>
       <p>基于上一场已保存报告，不预设本次成绩。</p>
@@ -105,6 +118,7 @@ onBeforeUnmount(() => {
         <li v-for="focus in store.session.training.focus" :key="focus">{{ focus }}</li>
       </ul>
     </section>
+    <AnswerFeedback v-if="feedback" :assessment="feedback.assessment" :demo="store.session.mode === 'demo'" :rationale="feedback.rationale" />
     <section class="current-question-card" aria-label="当前问题">
       <div class="current-question-header">
         <JudgeAvatar :id="store.session.currentJudgeId" />
@@ -141,7 +155,7 @@ onBeforeUnmount(() => {
         uploading ||
         !!store.operation ||
         store.session.status !== 'awaiting_answer' ||
-        questions >= MAX_DEFENSE_QUESTIONS
+        questions >= limit
       "
       @update:model-value="store.switchJudge"
     />
@@ -153,8 +167,13 @@ onBeforeUnmount(() => {
       :demo="store.session.mode === 'demo'"
       :activity="activity"
       :judge-id="activeJudgeId"
+      :assistance="store.session.assistance"
     />
     <div v-if="store.session.status !== 'ended'" class="defense-composer">
+      <AssistancePanel v-if="store.session.status === 'awaiting_answer'" :records="helpRecords"
+        :disabled="blocked || uploading || !!store.operation" :loading="store.busy && store.operation?.kind === 'help'"
+        :failed="!store.busy && store.operation?.kind === 'help'" :demo="store.session.mode === 'demo'"
+        @help="store.help" @retry="store.retry" @cancel="store.cancelHelp" />
       <label for="defense-answer"
         >你的回答 <span>{{ store.draft.length }} / 4000</span></label
       >
@@ -180,9 +199,9 @@ onBeforeUnmount(() => {
           :disabled="blocked || uploading || !store.draft.trim()"
           :busy="store.busy"
           @click="store.answer"
-          >提交回答并追问</AppButton
+          >{{ questions >= limit ? '提交最后回答并结束' : '提交回答并追问' }}</AppButton
         ><AppButton
-          v-if="store.operation && !store.busy && store.session.status !== 'generating'"
+          v-if="store.operation && store.operation.kind !== 'help' && !store.busy && store.session.status !== 'generating'"
           :disabled="blocked"
           @click="store.retry"
           >重试上次操作</AppButton
@@ -197,7 +216,7 @@ onBeforeUnmount(() => {
           >刷新会话状态</AppButton
         >
       </div>
-      <p class="judge-disclaimer">
+      <p v-if="store.operation?.kind !== 'help'" class="judge-disclaimer">
         提交失败会保留输入和原请求。若回答已保存，请使用“重试上次操作”，避免产生重复回答。
       </p>
     </div>

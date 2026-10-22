@@ -34,6 +34,17 @@ function setup() {
   return { source, report, records, service, model, getReport }
 }
 describe('targeted retraining', () => {
+  it('retains the selected training preferences in an independent retraining session', async () => {
+    const env = setup()
+    env.source.preferences = {style: 'guided', goal: 'users', questionLimit: 5}
+    env.records.set(env.source.id, structuredClone(env.source))
+    env.report.sourceFingerprint = reportSourceFingerprint(env.source)
+    const session = await env.service.retrain(env.source.id, {requestId: crypto.randomUUID(), judgeId: 'user'})
+    expect(session.preferences).toEqual(env.source.preferences)
+    expect(session.assistance).toEqual([])
+    expect(session.id).not.toBe(env.source.id)
+    expect(session.messages).toEqual([])
+  })
   it('finishes a new round, generates its own report and keeps the old report unchanged', async () => {
     const env = setup(),
       original = structuredClone(env.report)

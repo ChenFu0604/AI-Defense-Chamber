@@ -3,6 +3,7 @@ import { attachmentListSchema } from './attachments.js'
 import { judgeIds, judgeQuestionSchema, type JudgeDefinition } from './judges.js'
 import { projectSchema } from './project.js'
 import { analysisRecordSchema, analysisMatchesProject } from './analysis.js'
+import { trainingPreferencesSchema, assistanceRecordSchema, assistanceRequestSchema, trainingSettings } from './training.js'
 
 export const MAX_DEFENSE_QUESTIONS = 30
 export const retrainingFocusSchema = z.strictObject({
@@ -80,6 +81,12 @@ export const defenseSessionSchema = z
     createFingerprint: text(64),
     error: z.strictObject({ code: text(100), message: text(1200) }).nullable(),
     training: retrainingFocusSchema.nullable().optional(),
+    preferences: trainingPreferencesSchema.optional(),
+    assistance: z.array(assistanceRecordSchema).max(90).optional(),
+    closingFeedback: z.strictObject({
+      answerMessageId: z.uuid(), assessment: answerAssessmentSchema,
+      model: text(200).nullable(),
+    }).optional(),
   })
   .superRefine((session, context) => {
     const current = session.messages.find((v) => v.id === session.currentQuestionId)
@@ -99,7 +106,20 @@ export const defenseSessionSchema = z
           pendingAnswer.requestId !== session.pending.requestId)) ||
       (session.pending?.type === 'switch' && !session.pending.questionId) ||
       new Set(session.completed.map((v) => v.requestId)).size !== session.completed.length ||
-      session.messages.filter((v) => v.sender === 'judge').length > MAX_DEFENSE_QUESTIONS ||
+      session.messages.filter((v) => v.sender === 'judge').length > trainingSettings(session).questionLimit ||
+      new Set(session.assistance?.map((v) => v.requestId)).size !== (session.assistance?.length ?? 0) ||
+      new Set(session.assistance?.map((v) => `${v.questionId}:${v.kind}`)).size !== (session.assistance?.length ?? 0) ||
+      session.assistance?.some((v) => {
+        const question = session.messages.find((m) => m.id === v.questionId && m.sender === 'judge')
+        return !question || question.judgeId !== v.judgeId || v.mode !== session.mode ||
+          (v.mode === 'demo' ? v.model !== null : v.model === null) ||
+          session.completed.some((c) => c.requestId === v.requestId) || session.pending?.requestId === v.requestId
+      }) ||
+      (session.closingFeedback && (() => {
+        const answer = session.messages.find((m) => m.id === session.closingFeedback!.answerMessageId && m.sender === 'user')
+        return session.status !== 'ended' || !answer?.content.includes(session.closingFeedback.assessment.answerQuote) ||
+          (session.mode === 'demo' ? session.closingFeedback.model !== null : session.closingFeedback.model === null)
+      })()) ||
       new Set(session.messages.map((v) => v.id)).size !== session.messages.length ||
       session.messages.some((v) =>
         v.sender === 'judge'
@@ -120,6 +140,7 @@ export const createDefenseRequestSchema = z
     analysis: analysisRecordSchema,
     mode: z.enum(['live', 'demo']).default('live'),
     judgeId: z.enum(judgeIds).default('business'),
+    preferences: trainingPreferencesSchema.optional(),
   })
   .superRefine((request, context) => {
     if (
@@ -155,6 +176,7 @@ export const defenseOperationSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('question'), body: initialQuestionRequestSchema }),
   z.object({ kind: z.literal('answer'), body: answerRequestSchema }),
   z.object({ kind: z.literal('judge'), body: switchJudgeRequestSchema }),
+  z.object({ kind: z.literal('help'), body: assistanceRequestSchema }),
 ])
 export type DefenseOperation = z.infer<typeof defenseOperationSchema>
 export const defenseStatusLabels: Record<DefenseStatus, string> = {

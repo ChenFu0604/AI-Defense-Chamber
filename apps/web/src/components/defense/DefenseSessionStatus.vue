@@ -12,9 +12,11 @@ const props = defineProps<{
   status: DefenseStatus
   questions: number
   answers: number
+  limit?: number
 }>()
-const count = computed(() => Math.max(0, Math.min(MAX_DEFENSE_QUESTIONS, props.questions)))
-const percent = computed(() => (count.value / MAX_DEFENSE_QUESTIONS) * 100)
+const limit = computed(() => props.limit ?? MAX_DEFENSE_QUESTIONS)
+const count = computed(() => Math.max(0, Math.min(limit.value, props.questions)))
+const percent = computed(() => (count.value / limit.value) * 100)
 </script>
 <template>
   <section class="session-overview" aria-label="本场答辩状态">
@@ -32,7 +34,7 @@ const percent = computed(() => (count.value / MAX_DEFENSE_QUESTIONS) * 100)
         <span class="session-round-label">本轮提问</span
         ><strong
           >{{ count.toString().padStart(2, '0')
-          }}<small>/ {{ MAX_DEFENSE_QUESTIONS }}</small></strong
+          }}<small>/ {{ limit }}</small></strong
         >
       </div>
       <div class="session-track-copy">
@@ -45,9 +47,9 @@ const percent = computed(() => (count.value / MAX_DEFENSE_QUESTIONS) * 100)
           role="progressbar"
           aria-label="本次答辩问题数量"
           :aria-valuemin="0"
-          :aria-valuemax="MAX_DEFENSE_QUESTIONS"
+          :aria-valuemax="limit"
           :aria-valuenow="count"
-          :aria-valuetext="`${count} 个问题，上限 ${MAX_DEFENSE_QUESTIONS} 个；不是评分或完成率`"
+          :aria-valuetext="`${count} 个问题，上限 ${limit} 个；不是评分或完成率`"
         >
           <span :style="{ width: percent + '%' }" />
         </div>

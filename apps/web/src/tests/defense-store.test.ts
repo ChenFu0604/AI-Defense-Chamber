@@ -77,6 +77,75 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals())
 
 describe('defense session frontend lifecycle', () => {
+  it('keeps help separate from answers, preserves the draft and blocks double sends', async () => {
+    const record = ready(), store = useDefenseStore()
+    api.mockResolvedValueOnce(record)
+    await store.load(record.id)
+    store.updateDraft('这段文字还没提交，不应发送给提示接口。')
+    let complete!: (value: DefenseSession) => void
+    api.mockImplementationOnce(() => new Promise(resolve => { complete = resolve }))
+    const pending = store.help('hint')
+    await store.help('hint')
+    await store.answer()
+    expect(api).toHaveBeenCalledTimes(2)
+    const input = api.mock.calls[1]![1] as {requestId: string; questionId: string; kind: 'hint'}
+    expect(input).not.toHaveProperty('answer')
+    expect(api.mock.calls[1]![0]).toBe('/' + record.id + '/help')
+    const helped: DefenseSession = {...record, assistance: [{...input, judgeId: 'business', content: '【模拟】先想一位具体用户。', createdAt: record.updatedAt, mode: 'demo', model: null}]}
+    complete(helped)
+    await pending
+    expect(store.operation).toBeNull()
+    expect(store.session?.messages).toEqual(record.messages)
+    expect(store.draft).toContain('还没提交')
+    setActivePinia(createPinia())
+    api.mockResolvedValueOnce(helped)
+    const restored = useDefenseStore()
+    await restored.load(record.id)
+    expect(restored.draft).toContain('还没提交')
+    expect(restored.session?.assistance).toEqual(helped.assistance)
+  })
+  it('restores a failed help request on refresh, retries its ID and can cancel without clearing text', async () => {
+    const record = ready(), store = useDefenseStore()
+    api.mockResolvedValueOnce(record)
+    await store.load(record.id)
+    store.updateDraft('暂未提交的回答。')
+    api.mockRejectedValueOnce(new DefenseApiError('AI_TIMEOUT', '超时')).mockResolvedValueOnce(record)
+    await store.help('rephrase')
+    const action = structuredClone(JSON.parse(JSON.stringify(store.operation)))
+    expect(action.kind).toBe('help')
+    setActivePinia(createPinia())
+    api.mockResolvedValueOnce(record)
+    const restored = useDefenseStore()
+    await restored.load(record.id)
+    expect(restored.operation).toEqual(action)
+    api.mockRejectedValueOnce(new DefenseApiError('AI_TIMEOUT', '超时')).mockResolvedValueOnce(record)
+    await restored.retry()
+    expect(api.mock.calls[4]![1]).toEqual(action.body)
+    restored.cancelHelp()
+    expect(restored.operation).toBeNull()
+    expect(restored.draft).toBe('暂未提交的回答。')
+    expect(restored.error).toBe('')
+  })
+  it('ignores help responses after leaving and reports unconfirmed draft saves', async () => {
+    const record = ready(), store = useDefenseStore()
+    api.mockResolvedValueOnce(record)
+    await store.load(record.id)
+    storage.denyWrites = true
+    store.updateDraft('请保留这段输入')
+    expect(store.draftSaved).toBe(false)
+    let complete!: (value: DefenseSession) => void
+    api.mockImplementationOnce(() => new Promise(resolve => {complete = resolve}))
+    const pending = store.help('hint')
+    store.leave()
+    complete({...record, assistance: []})
+    await pending
+    expect(store.operation?.kind).toBe('help')
+    expect(store.draft).toBe('请保留这段输入')
+    expect(store.session?.assistance).toBeUndefined()
+    storage.denyWrites = false
+    store.updateDraft('继续修改')
+    expect(store.draftSaved).toBe(true)
+  })
   it('ignores a creation response after leaving the preparation page and preserves its retry ID', async () => {
     const store = useDefenseStore(),
       base = defenseFixture('demo')

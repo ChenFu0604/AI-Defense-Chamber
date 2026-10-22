@@ -43,6 +43,7 @@ const label = (entry: (typeof records.value)[number]) =>
     <div class="eyebrow">COMPARE SAVED RESULTS</div>
     <h1>两次答辩评分对比</h1>
     <p>仅使用同一项目两场实际保存的报告，变化值 = 对比场次 − 基准场次。</p>
+    <p>请同时核对训练方式、题数和求助情况，提示辅助后的评分不能直接当作独立作答能力变化。</p>
   </div>
   <p v-if="store.error || comparison.error" role="alert" class="notice notice-error">
     {{ store.error || comparison.error }}

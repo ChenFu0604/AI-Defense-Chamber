@@ -38,6 +38,15 @@ beforeEach(() => {
 afterEach(() => { scopes.splice(0).forEach((scope) => scope.stop()); vi.unstubAllGlobals() })
 
 describe('continuous training preparation', () => {
+  it('includes selected preferences in creation and resets confirmation when choices change', async () => {
+    const {preparation} = setup()
+    preparation.confirmed.value = true
+    preparation.preferences.value = {style: 'rehearsal', goal: 'technical', questionLimit: 10}
+    expect(preparation.confirmed.value).toBe(false)
+    preparation.confirmed.value = true
+    await preparation.start()
+    expect(api.mock.calls[0]![1]).toMatchObject({preferences: {style: 'rehearsal', goal: 'technical', questionLimit: 10}})
+  })
   it('requires confirmation, then analyzes and creates a session without another page', async () => {
     const { preparation } = setup()
     expect(await preparation.start()).toBeNull()

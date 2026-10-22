@@ -8,6 +8,7 @@ import {
   type DefenseOperation,
   type JudgeId,
   type Attachment,
+  type AssistanceKind,
 } from '@defense/shared'
 import { defenseApi, DefenseApiError } from '../services/defense-api'
 import { rememberDefense, readDefenseDraft, saveDefenseDraft } from '../services/defense-storage'
@@ -25,6 +26,7 @@ export const useDefenseStore = defineStore('defense-session', () => {
     warning = ref('')
   const operation = ref<DefenseOperation | null>(null)
   const draftAttachments = ref<Attachment[]>([])
+  const draftSaved = ref(true)
   let loadedId = '',
     epoch = 0
   let draftWritable = true
@@ -32,10 +34,12 @@ export const useDefenseStore = defineStore('defense-session', () => {
   const message = (failure: unknown) =>
     failure instanceof Error ? failure.message : '答辩操作失败。'
   function persist() {
-    if (!session.value || !draftWritable) return
+    if (!session.value || !draftWritable) { draftSaved.value = false; return }
     try {
       saveDefenseDraft(session.value.id, draft.value, operation.value, draftAttachments.value)
+      draftSaved.value = true
     } catch {
+      draftSaved.value = false
       warning.value = '浏览器草稿保存失败。已提交的记录仍保存在服务端，未提交输入请暂勿刷新。'
     }
   }
@@ -51,6 +55,9 @@ export const useDefenseStore = defineStore('defense-session', () => {
     persist()
   }
   function apply(record: DefenseSession) {
+    const action = operation.value
+    const helpCompleted = action?.kind === 'help' && record.assistance?.some((v) =>
+      v.questionId === action.body.questionId && v.kind === action.body.kind)
     session.value = record
     if (record.status === 'failed' && record.error) error.value = record.error.message
     const pending = record.pending
@@ -82,7 +89,7 @@ export const useDefenseStore = defineStore('defense-session', () => {
         }
     } else if (
       operation.value &&
-      record.completed.some((v) => v.requestId === operation.value!.body.requestId)
+      (record.completed.some((v) => v.requestId === operation.value!.body.requestId) || helpCompleted)
     ) {
       if (operation.value.kind === 'answer' && draft.value.trim() === operation.value.body.answer) {
         draft.value = ''
@@ -92,6 +99,10 @@ export const useDefenseStore = defineStore('defense-session', () => {
       error.value = ''
     }
     if (record.status === 'ended') operation.value = null
+    if (operation.value?.kind === 'help' && operation.value.body.questionId !== record.currentQuestionId) {
+      operation.value = null
+      error.value = '问题已变化，上次提示请求已停止；回答草稿保留，请核对当前问题。'
+    }
     try {
       rememberDefense(record)
     } catch {
@@ -261,6 +272,7 @@ export const useDefenseStore = defineStore('defense-session', () => {
           'TURN_LIMIT',
           'ATTACHMENT_NOT_FOUND',
           'ATTACHMENT_MISMATCH',
+          'SESSION_ENDED',
         ].includes(failure.code)
       ) {
         operation.value = null
@@ -301,6 +313,16 @@ export const useDefenseStore = defineStore('defense-session', () => {
   async function retry() {
     if (operation.value) await send(operation.value)
   }
+  async function help(kind: AssistanceKind) {
+    if (!session.value?.currentQuestionId || operation.value || session.value.status !== 'awaiting_answer') return
+    await send({ kind: 'help', body: { requestId: crypto.randomUUID(), questionId: session.value.currentQuestionId, kind } })
+  }
+  function cancelHelp() {
+    if (busy.value || operation.value?.kind !== 'help') return
+    operation.value = null
+    error.value = ''
+    persist()
+  }
   async function end() {
     if (!session.value || busy.value || session.value.status === 'generating') return
     busy.value = true
@@ -330,6 +352,7 @@ export const useDefenseStore = defineStore('defense-session', () => {
     session,
     draft,
     draftAttachments,
+    draftSaved,
     busy,
     error,
     warning,
@@ -341,6 +364,8 @@ export const useDefenseStore = defineStore('defense-session', () => {
     answer,
     switchJudge,
     retry,
+    help,
+    cancelHelp,
     end,
     updateDraft,
     updateAttachments,

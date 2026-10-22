@@ -131,6 +131,17 @@ export function buildRiskGraph(input: RiskMapInput): RiskGraph {
       )
     })
   }
+  if (session?.closingFeedback) {
+    const closing = session.closingFeedback
+    closing.assessment.risks.forEach((risk, index) => nodes.push({
+      id: `closing-${session.id}-${index}`, name: risk.title, description: closing.assessment.feedback,
+      level: risk.severity, levelReason: '沿用最后回答反馈的建议等级，尚待核实。',
+      source: 'ai_inference', category: 'answer',
+      evidence: [doc('defense_answer', session.id, closing.answerMessageId, closing.assessment.answerQuote)],
+      evidenceGaps: closing.assessment.evaluation === 'evidence_missing' ? [closing.assessment.feedback] : [],
+      suggestions: [], verification: null,
+    }))
+  }
   if (report) {
     const level = { high: 'high', medium: 'medium', low: 'low' } as const
     for (const section of ['weaknesses', 'priorities', 'evidenceGaps'] as const) {

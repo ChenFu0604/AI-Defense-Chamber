@@ -8,6 +8,7 @@ import AppButton from '../ui/AppButton.vue'
 import { MessagesSquare, ArrowUpRight } from 'lucide-vue-next'
 import JudgeRolePicker from '../judges/JudgeRolePicker.vue'
 import DefenseModePicker from './DefenseModePicker.vue'
+import TrainingPreferencesPicker from './TrainingPreferencesPicker.vue'
 import ModelConfigCard from '../settings/ModelConfigCard.vue'
 import { useSystemStore } from '../../stores/system'
 import { useTrainingPreparation } from '../../composables/useTrainingPreparation'
@@ -15,7 +16,7 @@ const props = defineProps<{ project: Project }>()
 const defense = useDefenseStore(),
   router = useRouter()
 const system = useSystemStore()
-const { mode, judgeId, confirmed, state, analysis, busy, error, start: prepareAndStart } = useTrainingPreparation(toRef(props, 'project'))
+const { mode, judgeId, preferences, confirmed, state, analysis, busy, error, start: prepareAndStart } = useTrainingPreparation(toRef(props, 'project'))
 const settingsOpen = ref(false), navigationError = ref('')
 const recent = ref<ReturnType<typeof recentDefenseSessions>>([])
 const recentError = ref('')
@@ -62,6 +63,7 @@ async function start() {
       会话保存当前项目与画像快照。每次追问会参考实际回答及有限历史；真实模式会将这些内容发送至服务端配置的模型。
     </p>
     <DefenseModePicker v-model="mode" :disabled="busy || settingsOpen" />
+    <TrainingPreferencesPicker v-model="preferences" :disabled="busy || settingsOpen" />
     <JudgeRolePicker v-model="judgeId" :disabled="busy || settingsOpen" />
     <label class="defense-confirm"
       ><input
