@@ -7,6 +7,7 @@ import {
   initialQuestionRequestSchema,
   retrainRequestSchema,
   assistanceRequestSchema,
+  topicStateRequestSchema, topicQuestionRequestSchema,
 } from '@defense/shared'
 import type { DefenseService } from '../services/defense-service.js'
 import { AppError } from '../middleware/app-error.js'
@@ -69,6 +70,14 @@ export function createDefenseRouter(service: DefenseService) {
         parse(switchJudgeRequestSchema, request.body),
       ),
     })
+  })
+  router.post('/defense/sessions/:id/topic-state', async (request, response) => {
+    response.set('Cache-Control', 'no-store').json({success: true,
+      data: await service.updateTopic(request.params.id!, parse(topicStateRequestSchema, request.body))})
+  })
+  router.post('/defense/sessions/:id/topic', async (request, response) => {
+    response.set('Cache-Control', 'no-store').json({success: true,
+      data: await service.changeTopic(request.params.id!, parse(topicQuestionRequestSchema, request.body))})
   })
   router.post('/defense/sessions/:id/end', async (request, response) => {
     response

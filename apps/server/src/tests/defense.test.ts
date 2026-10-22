@@ -434,7 +434,7 @@ describe('bounded context and grounded model output', () => {
     const result = await createDefenseModel(generate(detail))(
       session, 'technical', session.messages[0]!.question, quote,
     )
-    expect(result.data.question.question).toBe(detail)
+    expect(result.data).toMatchObject({question: {question: detail}})
     await expect(
       createDefenseModel(generate(previous))(
         session, 'technical', session.messages[0]!.question, quote,

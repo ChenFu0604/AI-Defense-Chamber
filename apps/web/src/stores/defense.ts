@@ -9,6 +9,7 @@ import {
   type JudgeId,
   type Attachment,
   type AssistanceKind,
+  type TopicStateRequest, type TopicQuestionRequest,
 } from '@defense/shared'
 import { defenseApi, DefenseApiError } from '../services/defense-api'
 import { rememberDefense, readDefenseDraft, saveDefenseDraft } from '../services/defense-storage'
@@ -58,6 +59,8 @@ export const useDefenseStore = defineStore('defense-session', () => {
     const action = operation.value
     const helpCompleted = action?.kind === 'help' && record.assistance?.some((v) =>
       v.questionId === action.body.questionId && v.kind === action.body.kind)
+    if (session.value?.currentQuestionId && session.value.currentQuestionId !== record.currentQuestionId && draft.value.trim() && action?.kind !== 'answer')
+      warning.value = '当前问题已变化，未提交的草稿保留，请核对后再回答。'
     session.value = record
     if (record.status === 'failed' && record.error) error.value = record.error.message
     const pending = record.pending
@@ -78,6 +81,8 @@ export const useDefenseStore = defineStore('defense-session', () => {
         }
       } else if (pending.type === 'initial')
         operation.value = { kind: 'question', body: { requestId: pending.requestId } }
+      else if (pending.type === 'topic')
+        operation.value = {kind: 'topic', body: {requestId: pending.requestId, questionId: pending.questionId!, topicId: pending.topicId!, expectedRevision: pending.expectedRevision!}}
       else
         operation.value = {
           kind: 'judge',
@@ -273,6 +278,7 @@ export const useDefenseStore = defineStore('defense-session', () => {
           'ATTACHMENT_NOT_FOUND',
           'ATTACHMENT_MISMATCH',
           'SESSION_ENDED',
+          'STALE_TOPIC', 'SAME_TOPIC', 'TOPICS_UNAVAILABLE', 'TOPIC_EDIT_LIMIT', 'TOPIC_REOPEN_REQUIRED',
         ].includes(failure.code)
       ) {
         operation.value = null
@@ -316,6 +322,14 @@ export const useDefenseStore = defineStore('defense-session', () => {
   async function help(kind: AssistanceKind) {
     if (!session.value?.currentQuestionId || operation.value || session.value.status !== 'awaiting_answer') return
     await send({ kind: 'help', body: { requestId: crypto.randomUUID(), questionId: session.value.currentQuestionId, kind } })
+  }
+  async function updateTopic(input: Omit<TopicStateRequest, 'requestId'>) {
+    if (operation.value || !session.value?.discussion || session.value.status !== 'awaiting_answer') return
+    await send({kind: 'topic-state', body: {...input, requestId: crypto.randomUUID()}})
+  }
+  async function changeTopic(input: Pick<TopicQuestionRequest, 'topicId' | 'expectedRevision'>) {
+    if (operation.value || !session.value?.discussion || !session.value.currentQuestionId || session.value.status !== 'awaiting_answer') return
+    await send({kind: 'topic', body: {...input, questionId: session.value.currentQuestionId, requestId: crypto.randomUUID()}})
   }
   function cancelHelp() {
     if (busy.value || operation.value?.kind !== 'help') return
@@ -365,6 +379,8 @@ export const useDefenseStore = defineStore('defense-session', () => {
     switchJudge,
     retry,
     help,
+    updateTopic,
+    changeTopic,
     cancelHelp,
     end,
     updateDraft,

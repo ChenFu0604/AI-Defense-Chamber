@@ -76,7 +76,7 @@ const judgeName = (id: string) => judgeDefinitions.find((v) => v.id === id)?.nam
       <p v-if="message.status === 'failed'" class="defense-source">
         追问未完成；该回答已保存在服务端，可重试。
       </p>
-      <p v-if="message.status === 'superseded'">已切换评委，本题未作答。</p>
+      <p v-if="message.status === 'superseded'">已切换评委或议题，本题未作答。</p>
       <details v-for="help in assistance?.filter(v => v.questionId === message.id)" :key="help.requestId" class="saved-assistance">
         <summary>{{ assistanceKindLabels[help.kind] }} · {{ help.mode === 'demo' ? '模拟提示' : '系统辅助记录' }}</summary>
         <p>{{ help.content }}</p><small>提示不属于用户回答，不作为用户已提供的证据。</small>

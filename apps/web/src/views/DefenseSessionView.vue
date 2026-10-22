@@ -15,6 +15,8 @@ import AnswerFeedback from '../components/defense/AnswerFeedback.vue'
 import TrainingSummary from '../components/defense/TrainingSummary.vue'
 import { useDefenseDraftGuard } from '../composables/useDefenseDraftGuard'
 import { latestAnswerFeedback } from '../utils/defense-feedback'
+import DiscussionBoard from '../components/defense/DiscussionBoard.vue'
+import DiscussionSummary from '../components/defense/DiscussionSummary.vue'
 const uploading = ref(false)
 const route = useRoute(),
   store = useDefenseStore()
@@ -111,6 +113,7 @@ onBeforeUnmount(() => {
       :limit="limit"
     />
     <TrainingSummary :session="store.session" />
+    <DiscussionBoard :session="store.session" :disabled="blocked || uploading || !!store.operation" :read-only="store.session.status === 'ended'" @update="store.updateTopic" @focus="store.changeTopic" />
     <section v-if="store.session.training" class="defense-current">
       <h2>本次训练重点</h2>
       <p>基于上一场已保存报告，不预设本次成绩。</p>
@@ -222,6 +225,7 @@ onBeforeUnmount(() => {
     </div>
     <div v-else class="defense-ended">
       <h2>答辩已结束，完整记录已保存。</h2>
+      <DiscussionSummary :session="store.session" />
       <RouterLink :to="{ name: 'defense-report', params: { id } }" class="app-button button-primary"
         >查看诊断报告 →</RouterLink
       >

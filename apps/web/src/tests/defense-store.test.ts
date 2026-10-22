@@ -5,6 +5,7 @@ import { useDefenseStore } from '../stores/defense'
 import { defenseApi, DefenseApiError } from '../services/defense-api'
 import { MemoryStorage } from './project-fixtures'
 import { defenseFixture } from '../../../../tests/fixtures/defense'
+import { withDiscussion } from '../../../../tests/fixtures/discussion'
 
 vi.mock('../services/defense-api', async (original) => ({
   ...(await original<typeof import('../services/defense-api')>()),
@@ -77,6 +78,50 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals())
 
 describe('defense session frontend lifecycle', () => {
+  it('restores a server-persisted topic retry with its original revision and preserves drafts after a question change', async () => {
+    const record = withDiscussion(ready()), store = useDefenseStore()
+    const originalRevision = record.discussion!.revision
+    record.status = 'failed'
+    record.pending = {type: 'topic', topicId: 'solution', expectedRevision: originalRevision, questionId: record.currentQuestionId,
+      requestId: crypto.randomUUID(), judgeId: 'business', answerMessageId: null, fingerprint: 'x'.repeat(64)}
+    record.discussion!.revision++
+    api.mockResolvedValueOnce(record)
+    await store.load(record.id)
+    store.updateDraft('这段草稿尚未提交，切换问题后也要保留。')
+    expect(store.operation).toMatchObject({kind: 'topic', body: {expectedRevision: originalRevision, requestId: record.pending.requestId}})
+    const recovered = structuredClone(record)
+    recovered.status = 'awaiting_answer'; recovered.pending = null
+    recovered.completed.push({requestId: record.pending.requestId, fingerprint: 'x'.repeat(64)})
+    const question = {...recovered.messages[0]!, id: crypto.randomUUID(), topicId: 'solution' as const}
+    recovered.messages.push(question); recovered.currentQuestionId = question.id
+    recovered.discussion!.currentTopicId = 'solution'
+    recovered.discussion!.topics[1]!.questionIds.push(question.id)
+    api.mockResolvedValueOnce(recovered)
+    await store.retry()
+    expect(api.mock.calls[1]![1]).toEqual({requestId: record.pending.requestId, questionId: record.pending.questionId, topicId: 'solution', expectedRevision: originalRevision})
+    expect(store.operation).toBeNull()
+    expect(store.draft).toContain('尚未提交')
+    expect(store.warning).toContain('当前问题已变化')
+    setActivePinia(createPinia())
+    api.mockResolvedValueOnce(recovered)
+    const refreshed = useDefenseStore()
+    await refreshed.load(record.id)
+    expect(refreshed.draft).toBe(store.draft)
+    expect(refreshed.session?.discussion).toEqual(recovered.discussion)
+  })
+  it('handles a stale topic correction without trapping the user in a retry or losing text', async () => {
+    const record = withDiscussion(ready()), store = useDefenseStore()
+    api.mockResolvedValueOnce(record)
+    await store.load(record.id)
+    store.updateDraft('保留正在写的回答。')
+    const changed = structuredClone(record); changed.discussion!.revision++
+    api.mockRejectedValueOnce(new DefenseApiError('STALE_TOPIC', '其他页面已更新议题，请刷新核对。')).mockResolvedValueOnce(changed)
+    await store.updateTopic({topicId: 'needs', expectedRevision: record.discussion!.revision, status: 'paused', note: '先补材料'})
+    expect(store.operation).toBeNull()
+    expect(store.error).toContain('其他页面已更新')
+    expect(store.session?.discussion?.revision).toBe(changed.discussion!.revision)
+    expect(store.draft).toBe('保留正在写的回答。')
+  })
   it('keeps help separate from answers, preserves the draft and blocks double sends', async () => {
     const record = ready(), store = useDefenseStore()
     api.mockResolvedValueOnce(record)

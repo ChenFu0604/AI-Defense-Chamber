@@ -1,4 +1,29 @@
-/* Hide the sidebar's rail while keeping wheel, touch and keyboard scrolling. */
+/* Discussion progress and its saved evidence. */
+.discussion-board, .discussion-summary { margin: 24px 0; padding: 22px; border: 1px solid var(--border-card); border-radius: 14px; background: var(--surface-card); min-width: 0; }
+.discussion-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.discussion-heading h2, .discussion-summary h2 { font-size: 18px; margin: 10px 0; }
+.discussion-heading > span, .discussion-topic small { color: #a8aebf; font-size: 12px; }
+.discussion-board > p, .discussion-summary > p { color: #a8aebf; line-height: 1.8; font-size: 13px; }
+.discussion-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+.discussion-chips > span { border: 1px solid #343b4a; border-radius: 8px; padding: 7px 10px; font-size: 12px; color: #b5bac7; }
+.discussion-chips > .clarified { color: #9edec0; border-color: #39594c; }
+.discussion-chips > .awaiting_evidence { color: #dec28f; border-color: #685434; }
+.discussion-chips > .discussing { color: var(--accent); border-color: #65537f; }
+.discussion-details > summary, .discussion-topic summary { cursor: pointer; color: #b8a2e6; font-size: 13px; margin: 12px 0; }
+.discussion-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }
+.discussion-topic, .discussion-summary article { padding: 18px; min-width: 0; border: 1px solid #303744; border-radius: 12px; background: #11151c; }
+.discussion-topic.current { border-color: #8d72ba; }
+.discussion-topic-heading { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.discussion-topic-heading h3, .discussion-summary h3 { font-size: 15px; }
+.discussion-topic-heading span { font-size: 12px; color: var(--accent); }
+.discussion-topic p, .discussion-summary li p, .discussion-observation blockquote { overflow-wrap: anywhere; white-space: pre-wrap; line-height: 1.8; color: #b5bac7; font-size: 13px; margin: 12px 0; }
+.discussion-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.discussion-editor label { display: grid; gap: 8px; margin: 14px 0; font-size: 13px; }
+.discussion-editor select, .discussion-editor textarea { min-width: 0; width: 100%; border-radius: 8px; padding: 10px; border: 1px solid #42485b; color: #ececf0; background: #0a0d14; font: inherit; }
+.discussion-observation { border-left: 2px solid #8d72ba; padding-left: 12px; margin: 14px 0; }
+.discussion-observation a { font-size: 12px; color: #b8a2e6; }
+.discussion-summary li { margin: 16px 0; }
+@media (max-width: 600px) { .discussion-grid {grid-template-columns: minmax(0, 1fr)} .discussion-board, .discussion-summary {padding: 16px} }
 .training-preferences { min-width: 0; margin: 24px 0; padding: 20px; border: 1px solid var(--border-card); border-radius: 14px; }
 .training-preferences legend { padding: 0 8px; font-weight: 600; }
 .training-style-options, .training-selects { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }

@@ -4,6 +4,7 @@ import { judgeIds, judgeQuestionSchema, type JudgeDefinition } from './judges.js
 import { projectSchema } from './project.js'
 import { analysisRecordSchema, analysisMatchesProject } from './analysis.js'
 import { trainingPreferencesSchema, assistanceRecordSchema, assistanceRequestSchema, trainingSettings } from './training.js'
+import { discussionMemorySchema, discussionTopicIdSchema, discussionLinksAreValid, topicQuestionRequestSchema, topicStateRequestSchema } from './discussion.js'
 
 export const MAX_DEFENSE_QUESTIONS = 30
 export const retrainingFocusSchema = z.strictObject({
@@ -32,6 +33,9 @@ export const defenseTurnSchema = z.strictObject({
   question: judgeQuestionSchema,
   assessment: answerAssessmentSchema.nullable(),
 })
+export const discussionTurnSchema = defenseTurnSchema.extend({
+  question: judgeQuestionSchema.nullable(), topicId: discussionTopicIdSchema.nullable(),
+})
 export const defenseMessageSchema = z.strictObject({
   id: z.uuid(),
   sender: z.enum(['user', 'judge']),
@@ -45,6 +49,7 @@ export const defenseMessageSchema = z.strictObject({
   requestId: z.uuid(),
   model: text(200).nullable(),
   attachments: attachmentListSchema.optional(),
+  topicId: discussionTopicIdSchema.optional(),
 })
 export type DefenseMessage = z.infer<typeof defenseMessageSchema>
 export const defenseStatusSchema = z.enum([
@@ -58,10 +63,12 @@ export type DefenseStatus = z.infer<typeof defenseStatusSchema>
 export const pendingDefenseActionSchema = z.strictObject({
   requestId: z.uuid(),
   fingerprint: text(64),
-  type: z.enum(['initial', 'answer', 'switch']),
+  type: z.enum(['initial', 'answer', 'switch', 'topic']),
   questionId: z.uuid().nullable(),
   judgeId: z.enum(judgeIds),
   answerMessageId: z.uuid().nullable(),
+  topicId: discussionTopicIdSchema.optional(),
+  expectedRevision: z.number().int().min(0).optional(),
 })
 export const defenseSessionSchema = z
   .strictObject({
@@ -82,6 +89,7 @@ export const defenseSessionSchema = z
     error: z.strictObject({ code: text(100), message: text(1200) }).nullable(),
     training: retrainingFocusSchema.nullable().optional(),
     preferences: trainingPreferencesSchema.optional(),
+    discussion: discussionMemorySchema.optional(),
     assistance: z.array(assistanceRecordSchema).max(90).optional(),
     closingFeedback: z.strictObject({
       answerMessageId: z.uuid(), assessment: answerAssessmentSchema,
@@ -93,6 +101,7 @@ export const defenseSessionSchema = z
     const pendingAnswer = session.messages.find((v) => v.id === session.pending?.answerMessageId)
     if (
       session.analysis.mode !== session.mode ||
+      !discussionLinksAreValid(session) ||
       !analysisMatchesProject(session.analysis, session.project) ||
       (session.currentQuestionId !== null &&
         (!current?.question || current.judgeId !== session.currentJudgeId)) ||
@@ -104,7 +113,8 @@ export const defenseSessionSchema = z
         (!session.pending.questionId ||
           pendingAnswer?.sender !== 'user' ||
           pendingAnswer.requestId !== session.pending.requestId)) ||
-      (session.pending?.type === 'switch' && !session.pending.questionId) ||
+      (['switch', 'topic'].includes(session.pending?.type ?? '') && !session.pending?.questionId) ||
+      (session.pending?.type === 'topic' && (!session.discussion || !session.pending.topicId || session.pending.expectedRevision === undefined)) ||
       new Set(session.completed.map((v) => v.requestId)).size !== session.completed.length ||
       session.messages.filter((v) => v.sender === 'judge').length > trainingSettings(session).questionLimit ||
       new Set(session.assistance?.map((v) => v.requestId)).size !== (session.assistance?.length ?? 0) ||
@@ -177,6 +187,8 @@ export const defenseOperationSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('answer'), body: answerRequestSchema }),
   z.object({ kind: z.literal('judge'), body: switchJudgeRequestSchema }),
   z.object({ kind: z.literal('help'), body: assistanceRequestSchema }),
+  z.object({ kind: z.literal('topic'), body: topicQuestionRequestSchema }),
+  z.object({ kind: z.literal('topic-state'), body: topicStateRequestSchema }),
 ])
 export type DefenseOperation = z.infer<typeof defenseOperationSchema>
 export const defenseStatusLabels: Record<DefenseStatus, string> = {

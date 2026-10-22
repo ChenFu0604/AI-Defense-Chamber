@@ -16,6 +16,8 @@ import AttachmentGallery from '../components/attachments/AttachmentGallery.vue'
 import ProjectSnapshot from '../components/ProjectSnapshot.vue'
 import TrainingSummary from '../components/defense/TrainingSummary.vue'
 import AnswerFeedback from '../components/defense/AnswerFeedback.vue'
+import DiscussionBoard from '../components/defense/DiscussionBoard.vue'
+import DiscussionSummary from '../components/defense/DiscussionSummary.vue'
 const route = useRoute(),
   store = useHistoryStore()
 const id = computed(() => String(route.params.id)),
@@ -51,6 +53,8 @@ watch(id, store.load)
   <p v-if="store.error" role="alert" class="notice notice-error">{{ store.error }}</p>
   <template v-else-if="entry">
     <TrainingSummary :session="entry.session" />
+    <DiscussionSummary v-if="entry.session.status === 'ended'" :session="entry.session" />
+    <DiscussionBoard :session="entry.session" read-only />
     <div class="history-card">
       <h2>{{ entry.session.project.name }}</h2>
       <p>

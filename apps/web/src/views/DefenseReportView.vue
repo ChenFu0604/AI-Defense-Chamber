@@ -9,6 +9,7 @@ import ReportResults from '../components/report/ReportResults.vue'
 import DefenseMessages from '../components/defense/DefenseMessages.vue'
 import TrainingSummary from '../components/defense/TrainingSummary.vue'
 import AnswerFeedback from '../components/defense/AnswerFeedback.vue'
+import DiscussionSummary from '../components/defense/DiscussionSummary.vue'
 const route = useRoute(),
   store = useDefenseStore(),
   reports = useReportStore()
@@ -56,6 +57,7 @@ const answers = computed(
   </p>
   <template v-if="store.session?.status === 'ended'">
     <TrainingSummary :session="store.session" />
+    <DiscussionSummary :session="store.session" />
     <div class="defense-session-bar">
       <strong>{{ store.session.project.name }}</strong
       ><span>{{

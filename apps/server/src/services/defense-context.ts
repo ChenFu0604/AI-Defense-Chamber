@@ -1,6 +1,7 @@
 import { trainingSettings, type DefenseSession, type DefenseQuestion } from '@defense/shared'
 import { AppError } from '../middleware/app-error.js'
 import type { Attachment } from '@defense/shared'
+import { discussionPlan } from './defense-discussion.js'
 
 export const MAX_DEFENSE_CONTEXT_CHARS = 32000
 export function buildDefenseContext(
@@ -18,6 +19,7 @@ export function buildDefenseContext(
     task: latestAnswer ? 'follow_up' : 'initial',
     judgeId,
     difficulty: project.difficulty,
+    discussion: discussionPlan(session),
     trainingPreferences: trainingSettings(session),
     recentAssistance: (session.assistance ?? []).slice(-6).map((v) => ({
       questionId: v.questionId, kind: v.kind, content: clip(v.content, 450),

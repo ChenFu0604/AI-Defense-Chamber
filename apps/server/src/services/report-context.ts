@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { projectInputSchema, trainingSettings, type DefenseSession } from '@defense/shared'
+import { projectInputSchema, trainingSettings, discussionSummary, type DefenseSession } from '@defense/shared'
 import { AppError } from '../middleware/app-error.js'
 
 export const MAX_REPORT_CONTEXT_CHARS = 180000
@@ -13,6 +13,7 @@ export function buildReportContext(
   if (!answers.length)
     throw new AppError(422, 'REPORT_EMPTY_SESSION', '尚无已保存的用户回答，无法生成评分报告。')
   const context = {
+    discussionSummary: discussionSummary(session),
     training: {
       ...trainingSettings(session),
       assistanceCount: session.assistance?.length ?? 0,
@@ -79,6 +80,7 @@ export function reportSourceFingerprint(session: DefenseSession) {
         messages: session.messages,
         ...(session.preferences ? { preferences: session.preferences } : {}),
         ...(session.assistance?.length ? { assistance: session.assistance } : {}),
+        ...(session.discussion ? {discussion: session.discussion} : {}),
       }),
     )
     .digest('hex')

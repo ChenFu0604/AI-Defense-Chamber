@@ -10,6 +10,8 @@ import {
   type JudgeId,
   type AssistanceRequest,
   trainingSettings,
+  type TopicStateRequest, type TopicQuestionRequest,
+  type DiscussionTopicId,
 } from '@defense/shared'
 import { AppError } from '../middleware/app-error.js'
 import { createDefenseRepository, type DefenseRepository } from './defense-repository.js'
@@ -20,6 +22,7 @@ import { reportSourceFingerprint } from './report-context.js'
 import { attachmentService, type AttachmentService } from './attachment-service.js'
 import type { Attachment } from '@defense/shared'
 import { createAssistanceModel, createClosingAssessmentModel } from './defense-guidance.js'
+import { createDiscussionMemory, recordDiscussionAssessment, attachDiscussionQuestion, finishDiscussion, availableTopics } from './defense-discussion.js'
 
 const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex')
 export function createDefenseService(
@@ -61,13 +64,15 @@ export function createDefenseService(
   }
   async function execute(
     id: string,
-    type: 'initial' | 'answer' | 'switch',
+    type: 'initial' | 'answer' | 'switch' | 'topic',
     payload: {
       requestId: string
       questionId?: string
       answer?: string
       judgeId?: JudgeId
       attachments?: Attachment[]
+      topicId?: DiscussionTopicId
+      expectedRevision?: number
     },
   ) {
     return lock(id, async () => {
@@ -89,6 +94,13 @@ export function createDefenseService(
         )
           throw new AppError(409, 'PENDING_ACTION', '上次操作已保存，请先重试该操作或结束答辩。')
       } else {
+        if (type === 'topic') {
+          if (!session.discussion) throw new AppError(409, 'TOPICS_UNAVAILABLE', '旧会话没有议题进度，请新建训练使用。')
+          if (session.discussion.revision !== payload.expectedRevision) throw new AppError(409, 'STALE_TOPIC', '议题状态已更新，请刷新后核对。')
+          const topic = session.discussion.topics.find(t => t.id === payload.topicId)
+          if (!topic) throw new AppError(400, 'VALIDATION_ERROR', '议题不存在。')
+          if (topic.id === session.discussion.currentTopicId && topic.status === 'discussing') throw new AppError(409, 'SAME_TOPIC', '这个议题正在讨论，可先回答当前问题。')
+        }
         if (type === 'answer') await attachments.validate(payload.attachments)
         if (type === 'initial' && session.currentQuestionId)
           throw new AppError(409, 'QUESTION_EXISTS', '首问已生成，请刷新会话。')
@@ -102,6 +114,8 @@ export function createDefenseService(
         const judgeId = payload.judgeId ?? session.currentJudgeId
         if (type === 'switch' && judgeId === session.currentJudgeId)
           throw new AppError(409, 'SAME_JUDGE', '该评委已在提问。')
+        if (type === 'switch' && session.discussion && !availableTopics(session).length)
+          throw new AppError(409, 'TOPIC_REOPEN_REQUIRED', '没有可自动提问的议题。请重新讨论某个议题、回答当前问题或结束训练。')
         const answerMessageId = type === 'answer' ? randomUUID() : null
         if (answerMessageId)
           session.messages.push({
@@ -117,6 +131,7 @@ export function createDefenseService(
             requestId: payload.requestId,
             model: null,
             ...(payload.attachments?.length ? { attachments: payload.attachments } : {}),
+            ...(session.discussion ? {topicId: session.discussion.currentTopicId!} : {}),
           })
         session.pending = {
           requestId: payload.requestId,
@@ -125,6 +140,13 @@ export function createDefenseService(
           questionId: session.currentQuestionId,
           judgeId,
           answerMessageId,
+          ...(type === 'topic' ? {topicId: payload.topicId, expectedRevision: payload.expectedRevision} : {}),
+        }
+        if (type === 'topic') {
+          const topic = session.discussion!.topics.find(t => t.id === payload.topicId)!
+          topic.budgetStart = topic.questionIds.length
+          topic.status = 'pending'; topic.source = 'user'; topic.note = '用户主动选择重新讨论。'
+          session.discussion!.revision++
         }
       }
       session.status = 'generating'
@@ -137,13 +159,14 @@ export function createDefenseService(
         const previousQuestion = session.messages.find((v) => v.id === session.currentQuestionId)
         const latestAnswer = action.answerMessageId
           ? session.messages.find((v) => v.id === action.answerMessageId)!
-          : session.messages.filter((v) => v.sender === 'user' && v.status === 'sent').at(-1)
+          : session.discussion ? undefined : session.messages.filter((v) => v.sender === 'user' && v.status === 'sent').at(-1)
         if (type === 'answer' && questionCount(session) >= trainingSettings(session).questionLimit) {
           // New finite training evaluates its last answer without creating an extra question.
           // Legacy sessions keep their original final-answer behavior.
           if (session.preferences && latestAnswer) {
             const feedback = await assessClosing(session, latestAnswer)
             session.closingFeedback = { answerMessageId: latestAnswer.id, assessment: feedback.data, model: feedback.model }
+            recordDiscussionAssessment(session, latestAnswer, feedback.data)
           }
           session.status = 'ended'
           session.endedAt = new Date().toISOString()
@@ -154,31 +177,46 @@ export function createDefenseService(
             previousQuestion?.question ?? null,
             latestAnswer?.content ?? null,
           )
-          const messageId = randomUUID()
-          session.messages.push({
-            id: messageId,
-            sender: 'judge',
-            content: generated.data.question.question,
-            createdAt: new Date().toISOString(),
-            judgeId: action.judgeId,
-            status: 'sent',
-            question: generated.data.question,
-            assessment: generated.data.assessment,
-            replyTo: latestAnswer?.id ?? null,
-            requestId: payload.requestId,
-            model: generated.model,
-          })
-          session.currentQuestionId = messageId
-          session.currentJudgeId = action.judgeId
-          session.status = 'awaiting_answer'
+          if (session.discussion && type === 'answer' && latestAnswer && generated.data.assessment)
+            recordDiscussionAssessment(session, latestAnswer, generated.data.assessment)
+          const topicId = 'topicId' in generated.data ? generated.data.topicId : null
+          if (session.discussion && generated.data.question && (!topicId || !availableTopics(session, generated.data.assessment).includes(topicId)))
+            throw new AppError(502, 'AI_INVALID_TOPIC', '生成的问题未对应可用议题，回答已保留。')
+          if (!generated.data.question) {
+            if (!session.discussion || topicId !== null || type !== 'answer' || !latestAnswer || !generated.data.assessment || availableTopics(session, generated.data.assessment).length)
+              throw new AppError(502, 'AI_INVALID_TOPIC', '议题尚未完成，不能跳过提问或虚构小结。')
+            session.closingFeedback = {answerMessageId: latestAnswer.id, assessment: generated.data.assessment, model: generated.model}
+            session.status = 'ended'; session.endedAt = new Date().toISOString()
+          } else {
+            const messageId = randomUUID()
+            const message: DefenseSession['messages'][number] = {
+              id: messageId,
+              sender: 'judge',
+              content: generated.data.question.question,
+              createdAt: new Date().toISOString(),
+              judgeId: action.judgeId,
+              status: 'sent',
+              question: generated.data.question,
+              assessment: generated.data.assessment,
+              replyTo: latestAnswer?.id ?? null,
+              requestId: payload.requestId,
+              model: generated.model,
+            }
+            if (session.discussion) attachDiscussionQuestion(session, message, topicId!)
+            session.messages.push(message)
+            session.currentQuestionId = messageId
+            session.currentJudgeId = action.judgeId
+            session.status = 'awaiting_answer'
+          }
         }
         if (previousQuestion)
-          previousQuestion.status = type === 'switch' ? 'superseded' : 'answered'
+          previousQuestion.status = type === 'switch' || type === 'topic' ? 'superseded' : 'answered'
         if (action.answerMessageId)
           session.messages.find((v) => v.id === action.answerMessageId)!.status = 'sent'
         session.completed.push({ requestId: payload.requestId, fingerprint })
         session.pending = null
         session.error = null
+        if (session.status === 'ended') finishDiscussion(session)
         return await save(session)
       } catch (failure) {
         // Reload the last confirmed write: never expose a generated but unsaved question as success.
@@ -224,12 +262,38 @@ export function createDefenseService(
         error: null,
         training: training ?? null,
         ...(request.preferences ? { preferences: request.preferences, assistance: [] } : {}),
+        ...(request.preferences ? {discussion: createDiscussionMemory()} : {}),
       }
       return save(session)
     })
   }
   return {
     create,
+    async updateTopic(id: string, input: TopicStateRequest) {
+      return lock(id, async () => {
+        const session = await read(id), fingerprint = hash({type: 'topic-state', ...input})
+        const done = session.completed.find(c => c.requestId === input.requestId)
+        if (done) {
+          if (done.fingerprint !== fingerprint) throw new AppError(409, 'IDEMPOTENCY_CONFLICT', '请求 ID 已用于不同操作。')
+          return session
+        }
+        assertOpen(session)
+        if (session.pending || session.status !== 'awaiting_answer') throw new AppError(409, 'PENDING_ACTION', '请先完成当前请求再更正议题。')
+        if (session.assistance?.some(h => h.requestId === input.requestId)) throw new AppError(409, 'IDEMPOTENCY_CONFLICT', '请求 ID 已用于求助。')
+        const memory = session.discussion
+        if (!memory) throw new AppError(409, 'TOPICS_UNAVAILABLE', '旧会话没有议题进度，请新建训练使用。')
+        if (memory.revision !== input.expectedRevision) throw new AppError(409, 'STALE_TOPIC', '其他页面已更新议题，请刷新核对。')
+        if (memory.edits.length >= 40) throw new AppError(409, 'TOPIC_EDIT_LIMIT', '本场已达议题更正次数上限，记录仍可查看。')
+        const topic = memory.topics.find(t => t.id === input.topicId)!
+        topic.status = input.status; topic.source = 'user'; topic.note = input.note
+        if (input.status === 'pending') topic.budgetStart = topic.questionIds.length
+        memory.revision++
+        memory.edits.push({requestId: input.requestId, topicId: input.topicId, status: input.status, note: input.note, createdAt: new Date().toISOString()})
+        session.completed.push({requestId: input.requestId, fingerprint})
+        return save(session)
+      })
+    },
+    changeTopic: (id: string, input: TopicQuestionRequest) => execute(id, 'topic', input),
     async help(id: string, input: AssistanceRequest) {
       return lock(id, async () => {
         const session = await read(id)
@@ -330,6 +394,7 @@ export function createDefenseService(
         session.pending = null
         for (const message of session.messages)
           if (message.status === 'pending') message.status = 'failed'
+        finishDiscussion(session)
         return save(session)
       })
     },

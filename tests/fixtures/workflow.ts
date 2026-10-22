@@ -74,6 +74,14 @@ export function createWorkflowFixture(directory: string, options: { turnDelayMs?
         }
         const quote = answer?.slice(0, 120)
         const judgeId: JudgeId = context.judgeId
+        const topicId = context.discussion?.recommendedTopicId ?? null
+        const priorObservation = context.discussion?.topics.find((t: {id: string}) => t.id === topicId)?.observations.at(-1)
+        const topicOpeners: Record<string, string> = {
+          needs: '先选一类需要预约的人，哪个实际使用场景最麻烦？',
+          solution: '原型准备怎样处理时间冲突和异常恢复？',
+          value: '使用前后的任务差别，打算用什么记录衡量？',
+          assumptions: '尚未验证的假设中，你最担心哪一个反例？',
+        }
         const topics = {
           business: '需求与付费意愿',
           technical: '采集准确性与故障边界',
@@ -81,11 +89,16 @@ export function createWorkflowFixture(directory: string, options: { turnDelayMs?
           devil: '假设与反例',
         }
         output = {
-          question: {
+          ...(context.discussion ? {topicId} : {}),
+          question: context.discussion && !topicId ? null : {
             judgeId,
             question: answer
               ? `【测试数据】${topics[judgeId]}：你提到「${quote}」，下一步怎样验证？本轮记录 ${context.earlierQuestions.length + 1}。`
-              : `【测试数据】请说明${topics[judgeId]}有哪些待验证证据？`,
+              : priorObservation
+                ? `【测试数据 · 重新讨论】上次记录「${priorObservation.quote}」，现在你准备先调整哪个步骤？`
+                : context.discussion && topicId
+                  ? `【测试数据】${topicOpeners[topicId]}`
+                  : `【测试数据】请说明${topics[judgeId]}有哪些待验证证据？`,
             questionType: 'evidence',
             riskLevel: 'medium',
             focus: topics[judgeId],
