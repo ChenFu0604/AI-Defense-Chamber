@@ -7,7 +7,7 @@ import { defenseSessionSchema, discussionSummary, type DefenseSession, type Topi
 import { createWorkflowFixture } from '../../../../tests/fixtures/workflow.js'
 import { analysisProject, analysisFixture } from '../../../../tests/fixtures/analysis.js'
 import { defenseFixture } from '../../../../tests/fixtures/defense.js'
-import { availableTopics, recordDiscussionAssessment } from '../services/defense-discussion.js'
+import { availableTopics, recordDiscussionAssessment, discussionPlan } from '../services/defense-discussion.js'
 import { createDefenseModel } from '../services/defense-model.js'
 import { createDefenseService } from '../services/defense-service.js'
 import { createDefenseRepository } from '../services/defense-repository.js'
@@ -42,6 +42,37 @@ async function answer(env: Awaited<ReturnType<typeof setup>>, session: DefenseSe
 }
 
 describe('discussion memory and topic workflow', () => {
+  it('gives explicit next-topic branches matching post-assessment validation', async () => {
+    const env = await setup(), s = env.session
+    s.pending = {type: 'answer', requestId: crypto.randomUUID(), fingerprint: 'x'.repeat(64), questionId: s.currentQuestionId, judgeId: 'business', answerMessageId: crypto.randomUUID()}
+    const assessment = {answerQuote: '回答', evaluation: 'sufficient' as const, feedback: '已说清', nextStrategy: 'test_boundary' as const, risks: []}
+    const plan = discussionPlan(s)!
+    expect(plan.recommendedTopicId).toBe('needs')
+    expect(plan.afterSufficientOrChangeDirection.availableTopicIds).toEqual(availableTopics(s, assessment))
+    expect(plan.afterSufficientOrChangeDirection.availableTopicIds).not.toContain(plan.currentTopicId)
+    s.discussion!.topics.slice(1).forEach(t => {t.status = 'paused'})
+    expect(discussionPlan(s)!.afterSufficientOrChangeDirection).toMatchObject({availableTopicIds: [], recommendedTopicId: null, endIfEmpty: true})
+  })
+  it('carries a rejected topic into retry guidance and saves a valid replacement once', async () => {
+    const env = await setup(), payload = {requestId: crypto.randomUUID(), questionId: env.session.currentQuestionId!, answer: '先用一个具体场景把需求说明白，再核对是否真的省时。'}
+    const generate = vi.fn().mockResolvedValueOnce({model: 'test', data: {
+      question: env.session.messages[0]!.question, topicId: 'needs',
+      assessment: {answerQuote: payload.answer, evaluation: 'sufficient', feedback: '场景已澄清。', nextStrategy: 'change_direction', risks: []},
+    }}).mockImplementationOnce(async (task: {system: string; user: string}) => {
+      expect(task.system).toContain('上次结果因议题选择不符合规则被拒绝')
+      expect(JSON.parse(task.user).discussion.afterSufficientOrChangeDirection.availableTopicIds).not.toContain('needs')
+      return {model: 'test', data: {topicId: 'solution', question: {...env.session.messages[0]!.question, question: '原型出错时准备怎样恢复刚才的操作？'},
+        assessment: {answerQuote: payload.answer, evaluation: 'sufficient', feedback: '场景已澄清。', nextStrategy: 'change_direction', risks: []}}}
+    })
+    const service = createDefenseService(env.repository, createDefenseModel({generate} as AIClient, env.attachments))
+    await expect(service.answer(env.session.id, payload)).rejects.toMatchObject({code: 'AI_INVALID_TOPIC'})
+    const restored = await service.answer(env.session.id, payload)
+    expect(restored.error).toBeNull()
+    expect(restored.discussion?.currentTopicId).toBe('solution')
+    expect(restored.messages.filter(m => m.sender === 'user')).toHaveLength(1)
+    await service.answer(env.session.id, payload)
+    expect(generate).toHaveBeenCalledTimes(2)
+  })
   it('does not persist an impossible judge switch when all topics are closed and allows an explicit reopen', async () => {
     const env = await setup()
     let session = env.session

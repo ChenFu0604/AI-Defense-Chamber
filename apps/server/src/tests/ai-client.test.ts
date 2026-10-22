@@ -79,6 +79,14 @@ describe('AI configuration', () => {
 })
 
 describe('unified structured AI transport', () => {
+  it('reports the upstream HTTP status without exposing provider body or headers', async () => {
+    const transport = vi.fn<typeof fetch>().mockResolvedValue(new Response('private provider diagnostic test-secret-never-expose', {status: 504, headers: {'x-request-id':'private-token'}}))
+    const error = await createAIClient(config, transport).generate(task()).catch(e => e)
+    expect(error).toMatchObject({code:'AI_UNAVAILABLE', message: expect.stringContaining('HTTP 504')})
+    expect(error.message).not.toContain('private')
+    expect(error.message).not.toContain(config.apiKey)
+    expect(transport).toHaveBeenCalledTimes(1)
+  })
   it('sends a server-side credential and strict JSON schema, and validates the response', async () => {
     const transport = vi.fn<typeof fetch>().mockResolvedValue(completion(validAnalysisOutput()))
     const result = await createAIClient(config, transport).generate(task())

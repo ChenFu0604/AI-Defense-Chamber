@@ -140,7 +140,7 @@ export function createAIClient(
           throw new AppError(
             502,
             'AI_UNAVAILABLE',
-            '模型服务暂时不可用，请检查模型名称、服务地址或稍后重试。',
+            `模型服务返回 HTTP ${response.status}，本次没有生成可用结果。请稍后重试，或在模型设置中检查服务商与模型。`,
           )
         }
         let raw: unknown

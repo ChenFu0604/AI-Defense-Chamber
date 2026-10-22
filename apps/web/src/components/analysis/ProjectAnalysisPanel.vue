@@ -13,6 +13,7 @@ import { projectInputSchema, type Project } from '@defense/shared'
 import { useAnalysisStore } from '../../stores/analysis'
 import AppButton from '../ui/AppButton.vue'
 import AnalysisResults from './AnalysisResults.vue'
+import RequestWait from '../ui/RequestWait.vue'
 
 const props = defineProps<{ project: Project }>()
 const analyses = useAnalysisStore()
@@ -76,6 +77,7 @@ onBeforeUnmount(() => analyses.cancel(props.project.id))
         <strong>{{
           state.activeMode === 'demo' ? '正在准备模拟结构示例' : '正在分析项目，请稍候'
         }}</strong>
+        <RequestWait :active="state.status === 'loading' && state.activeMode === 'live'" :request-key="project.id" />
         <p>
           {{
             state.activeMode === 'demo'

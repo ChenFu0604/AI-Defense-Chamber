@@ -37,12 +37,15 @@ export function createDefenseModel(
       judgeId,
       materials.documents,
     )
+    const retryGuidance = session.error?.code === 'AI_INVALID_TOPIC'
+      ? '\n上次结果因议题选择不符合规则被拒绝。这次先评价最新回答，再核对候选分支：sufficient/change_direction 必须排除 currentTopicId。不要重复原选择，也不要更改用户回答或事实。'
+      : ''
     const role = judgeConfigs.find((v) => v.id === judgeId)!
     const demo = session.mode === 'demo' ? createDemoDefenseTurn(session, judgeId, latestAnswer) : null
     const result = demo ?? await client.generate<unknown>({
             name: 'defense_turn',
             schema: session.discussion ? discussionTurnSchema : defenseTurnSchema,
-            system: role.systemPrompt + '\n' + defenseTurnSystemPrompt,
+            system: role.systemPrompt + '\n' + defenseTurnSystemPrompt + retryGuidance,
             images: materials.images,
             user: JSON.stringify(context),
           })

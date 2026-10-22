@@ -1,4 +1,13 @@
 /* Discussion progress and its saved evidence. */
+.request-wait { margin: 12px 0; color: #b9c1d2; font-size: 13px; line-height: 1.7; font-variant-numeric: tabular-nums; }
+.request-wait p { padding: 12px 14px; background: #20202b; border-left: 2px solid var(--accent); border-radius: 6px; }
+.session-tools { margin: 20px 0; padding: 18px; border: 1px solid var(--border-card); border-radius: var(--radius-card); background: var(--surface-card); min-width: 0; }
+.session-tools > summary { cursor: pointer; font-size: 14px; color: #d8c9f4; }
+.session-tools > p { color: #adb4c6; font-size: 13px; line-height: 1.8; }
+.end-defense-control { margin-top: 18px; border-top: 1px solid var(--border-card); padding-top: 16px; }
+.end-defense-confirm { padding: 16px; border: 1px solid #6c5941; border-radius: 10px; background: #211c18; }
+.end-defense-confirm p { font-size: 13px; line-height: 1.8; color: #d1c4b4; }
+.defense-ended textarea { width: 100%; box-sizing: border-box; background: #11151c; color: #d8deeb; border: 1px solid var(--border-card); border-radius: 8px; padding: 12px; }
 .discussion-board, .discussion-summary { margin: 24px 0; padding: 22px; border: 1px solid var(--border-card); border-radius: 14px; background: var(--surface-card); min-width: 0; }
 .discussion-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
 .discussion-heading h2, .discussion-summary h2 { font-size: 18px; margin: 10px 0; }

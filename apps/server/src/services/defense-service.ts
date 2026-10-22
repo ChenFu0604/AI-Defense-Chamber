@@ -150,7 +150,7 @@ export function createDefenseService(
         }
       }
       session.status = 'generating'
-      session.error = null
+      // Preserve the last validation failure during a retry so the model can correct it.
       if (session.pending.answerMessageId)
         session.messages.find((v) => v.id === session.pending!.answerMessageId)!.status = 'pending'
       await save(session)

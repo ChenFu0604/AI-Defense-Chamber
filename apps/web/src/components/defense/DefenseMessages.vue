@@ -18,6 +18,7 @@ const props = withDefaults(
     activity?: 'generating' | 'processing' | 'reviewing' | null
     judgeId?: import('@defense/shared').JudgeId
     assistance?: AssistanceRecord[]
+    retryableAnswerId?: string
   }>(),
   { activity: null, judgeId: 'business' },
 )
@@ -74,7 +75,9 @@ const judgeName = (id: string) => judgeDefinitions.find((v) => v.id === id)?.nam
       <AttachmentGallery v-if="message.attachments?.length" :items="message.attachments" />
       <p v-if="message.status === 'pending'">回答已保存，正在生成追问…</p>
       <p v-if="message.status === 'failed'" class="defense-source">
-        追问未完成；该回答已保存在服务端，可重试。
+        {{ message.id === retryableAnswerId
+          ? '追问未完成；回答已保存在服务端，可通过“重试上次操作”继续。'
+          : '该回答已保存，但逐轮评价未完成；记录保留，不补造反馈。' }}
       </p>
       <p v-if="message.status === 'superseded'">已切换评委或议题，本题未作答。</p>
       <details v-for="help in assistance?.filter(v => v.questionId === message.id)" :key="help.requestId" class="saved-assistance">

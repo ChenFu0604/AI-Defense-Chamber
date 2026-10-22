@@ -28,7 +28,7 @@ const judge = computed(() => judgeDefinitions.find((item) => item.id === props.j
       <p>
         {{
           phase === 'reviewing'
-            ? '回答已保存，反馈完成后自动结束，不再生成新问题。'
+            ? '正在提交并评价最后回答，确认保存后自动结束，不再生成新问题。'
             : phase === 'processing'
             ? '请稍候，操作完成后会更新当前记录。'
             : demo

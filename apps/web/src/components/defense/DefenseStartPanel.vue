@@ -10,6 +10,7 @@ import JudgeRolePicker from '../judges/JudgeRolePicker.vue'
 import DefenseModePicker from './DefenseModePicker.vue'
 import TrainingPreferencesPicker from './TrainingPreferencesPicker.vue'
 import ModelConfigCard from '../settings/ModelConfigCard.vue'
+import RequestWait from '../ui/RequestWait.vue'
 import { useSystemStore } from '../../stores/system'
 import { useTrainingPreparation } from '../../composables/useTrainingPreparation'
 const props = defineProps<{ project: Project }>()
@@ -90,6 +91,7 @@ async function start() {
       @click="start"
       >{{ state.status === 'loading' ? '正在分析资料…' : busy ? '正在创建会话…' : analysis ? '开始答辩' : '分析资料并开始答辩' }}</AppButton
     >
+    <RequestWait :active="busy && mode === 'live'" :request-key="project.id" label="正在准备本次训练" />
     <div v-if="recent.length" class="defense-recent">
       <h3>继续已有会话</h3>
       <RouterLink

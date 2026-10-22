@@ -10,6 +10,7 @@ import DefenseMessages from '../components/defense/DefenseMessages.vue'
 import TrainingSummary from '../components/defense/TrainingSummary.vue'
 import AnswerFeedback from '../components/defense/AnswerFeedback.vue'
 import DiscussionSummary from '../components/defense/DiscussionSummary.vue'
+import RequestWait from '../components/ui/RequestWait.vue'
 const route = useRoute(),
   store = useDefenseStore(),
   reports = useReportStore()
@@ -87,6 +88,7 @@ const answers = computed(
         aria-live="polite"
       >
         <h2>正在生成诊断报告…</h2>
+        <RequestWait :active="reports.status === 'generating'" :request-key="id" />
         <p>正在评价真实回答、核对评分范围与原文引用，完成保存后展示。等待期间可查看下方问答。</p>
       </div>
       <div v-if="reports.status === 'missing'" class="report-card">

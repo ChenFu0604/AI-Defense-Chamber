@@ -17,6 +17,9 @@ import { useDefenseDraftGuard } from '../composables/useDefenseDraftGuard'
 import { latestAnswerFeedback } from '../utils/defense-feedback'
 import DiscussionBoard from '../components/defense/DiscussionBoard.vue'
 import DiscussionSummary from '../components/defense/DiscussionSummary.vue'
+import DefenseActivity from '../components/defense/DefenseActivity.vue'
+import EndDefenseControl from '../components/defense/EndDefenseControl.vue'
+import RequestWait from '../components/ui/RequestWait.vue'
 const uploading = ref(false)
 const route = useRoute(),
   store = useDefenseStore()
@@ -112,8 +115,6 @@ onBeforeUnmount(() => {
       :answers="answers"
       :limit="limit"
     />
-    <TrainingSummary :session="store.session" />
-    <DiscussionBoard :session="store.session" :disabled="blocked || uploading || !!store.operation" :read-only="store.session.status === 'ended'" @update="store.updateTopic" @focus="store.changeTopic" />
     <section v-if="store.session.training" class="defense-current">
       <h2>本次训练重点</h2>
       <p>基于上一场已保存报告，不预设本次成绩。</p>
@@ -121,8 +122,7 @@ onBeforeUnmount(() => {
         <li v-for="focus in store.session.training.focus" :key="focus">{{ focus }}</li>
       </ul>
     </section>
-    <AnswerFeedback v-if="feedback" :assessment="feedback.assessment" :demo="store.session.mode === 'demo'" :rationale="feedback.rationale" />
-    <section class="current-question-card" aria-label="当前问题">
+    <section v-if="store.session.status !== 'ended'" class="current-question-card" aria-label="当前问题">
       <div class="current-question-header">
         <JudgeAvatar :id="store.session.currentJudgeId" />
         <div>
@@ -138,40 +138,14 @@ onBeforeUnmount(() => {
         {{
           store.session.status === 'failed'
             ? '首问生成失败，请重试上次操作。'
-            : store.session.status === 'ended'
-              ? '本场答辩未生成问题。'
-              : '正在准备本轮的第一个问题。'
+            : '正在准备本轮的第一个问题。'
         }}
       </p>
       <p class="current-judge-perspective">{{ judge?.introduction }}</p>
     </section>
-    <details v-if="store.session.project.attachments?.length" class="history-card">
-      <summary>本项目附带的图片与文档</summary>
-      <AttachmentGallery :items="store.session.project.attachments" />
-    </details>
-    <JudgeRolePicker
-      :model-value="store.session.currentJudgeId"
-      label="评委席 · 选择不同视角"
-      active
-      :disabled="
-        blocked ||
-        uploading ||
-        !!store.operation ||
-        store.session.status !== 'awaiting_answer' ||
-        questions >= limit
-      "
-      @update:model-value="store.switchJudge"
-    />
-    <p class="judge-disclaimer">
-      切换评委会保留记录并将当前未作答问题标记为跳过。回答分析与风险为模型判断，仍需核实。
-    </p>
-    <DefenseMessages
-      :messages="store.session.messages"
-      :demo="store.session.mode === 'demo'"
-      :activity="activity"
-      :judge-id="activeJudgeId"
-      :assistance="store.session.assistance"
-    />
+    <AnswerFeedback v-if="feedback" :assessment="feedback.assessment" :demo="store.session.mode === 'demo'" :rationale="feedback.rationale" />
+    <DefenseActivity v-if="activity" :judge-id="activeJudgeId" :phase="activity" :has-messages="!!questions" :demo="store.session.mode === 'demo'" />
+    <RequestWait :active="blocked && !!store.operation && store.session.mode === 'live'" :request-key="store.operation?.body.requestId" />
     <div v-if="store.session.status !== 'ended'" class="defense-composer">
       <AssistancePanel v-if="store.session.status === 'awaiting_answer'" :records="helpRecords"
         :disabled="blocked || uploading || !!store.operation" :loading="store.busy && store.operation?.kind === 'help'"
@@ -213,8 +187,6 @@ onBeforeUnmount(() => {
           :disabled="blocked"
           @click="store.initial"
           >生成首问</AppButton
-        ><AppButton variant="secondary" :disabled="blocked || uploading" @click="store.end"
-          >结束答辩并保存</AppButton
         ><AppButton variant="ghost" :disabled="store.busy || uploading" @click="store.load(id)"
           >刷新会话状态</AppButton
         >
@@ -222,6 +194,7 @@ onBeforeUnmount(() => {
       <p v-if="store.operation?.kind !== 'help'" class="judge-disclaimer">
         提交失败会保留输入和原请求。若回答已保存，请使用“重试上次操作”，避免产生重复回答。
       </p>
+      <EndDefenseControl :disabled="blocked || uploading" :has-draft="!!store.draft.trim() || !!store.draftAttachments.length" :has-pending-answer="store.operation?.kind === 'answer'" @end="store.end" />
     </div>
     <div v-else class="defense-ended">
       <h2>答辩已结束，完整记录已保存。</h2>
@@ -229,6 +202,26 @@ onBeforeUnmount(() => {
       <RouterLink :to="{ name: 'defense-report', params: { id } }" class="app-button button-primary"
         >查看诊断报告 →</RouterLink
       >
+      <details v-if="store.draft.trim() || store.draftAttachments.length" class="history-card">
+        <summary>查看保留的回答草稿</summary>
+        <p>以下内容不因结束操作而追加到会话；已经提交的回答请以下方记录为准。</p>
+        <textarea :value="store.draft" readonly rows="5" aria-label="结束时保留的回答草稿" />
+        <AttachmentGallery :items="store.draftAttachments" />
+      </details>
     </div>
+    <details v-if="store.session.status !== 'ended'" class="session-tools">
+      <summary>切换评委 · 当前 {{ judge?.name }}</summary>
+      <p>换个视角继续讨论。切换会生成新问题并计入题数，当前未回答的问题会保留为已跳过。</p>
+      <JudgeRolePicker :model-value="store.session.currentJudgeId" label="选择下一位评委" active
+        :disabled="blocked || uploading || !!store.operation || store.session.status !== 'awaiting_answer' || questions >= limit" @update:model-value="store.switchJudge" />
+    </details>
+    <DiscussionBoard :session="store.session" :disabled="blocked || uploading || !!store.operation" :question-limit-reached="questions >= limit" :read-only="store.session.status === 'ended'" @update="store.updateTopic" @focus="store.changeTopic" />
+    <details class="session-tools"><summary>训练设置与项目附件</summary>
+      <TrainingSummary :session="store.session" />
+      <AttachmentGallery v-if="store.session.project.attachments?.length" :items="store.session.project.attachments" />
+    </details>
+    <h2 class="report-history-heading">本场对话记录 · {{ answers }} 次回答</h2>
+    <DefenseMessages :messages="store.session.messages" :demo="store.session.mode === 'demo'" :assistance="store.session.assistance"
+      :retryable-answer-id="store.session.status !== 'ended' ? store.session.pending?.answerMessageId ?? undefined : undefined" />
   </template>
 </template>

@@ -32,8 +32,17 @@ export function discussionPlan(session: DefenseSession) {
   const preferred: DiscussionTopicId = goal === 'users' ? 'needs' : goal === 'technical' ? 'solution' : goal === 'value' ? 'value'
     : ({business: 'value', technical: 'solution', user: 'needs', devil: 'assumptions'} as const)[session.pending?.judgeId ?? session.currentJudgeId]
   const current = session.discussion.currentTopicId
+  const moveOn = available.filter(id => id !== current)
   return {
     maxQuestionsPerVisit: MAX_TOPIC_QUESTIONS, availableTopicIds: available,
+    currentTopicId: current,
+    // Candidates depend on the assessment generated in this same model response.
+    // Give both branches explicitly so a recommended current topic is not mistaken for a mandate.
+    afterSufficientOrChangeDirection: {
+      availableTopicIds: moveOn,
+      recommendedTopicId: moveOn.includes(preferred) ? preferred : moveOn[0] ?? null,
+      endIfEmpty: session.pending?.type === 'answer' && moveOn.length === 0,
+    },
     recommendedTopicId: current && available.includes(current) && session.pending?.type === 'answer' ? current
       : available.includes(preferred) ? preferred : available[0] ?? null,
     topics: session.discussion.topics.map(t => ({id: t.id, title: t.title, status: t.status, source: t.source, note: t.note.slice(0, 500),
