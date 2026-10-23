@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import AeroDecor from '../components/ui/AeroDecor.vue'
 import StatusNotice from '../components/ui/StatusNotice.vue'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
@@ -25,7 +24,7 @@ const selectedId = computed(() =>
 const selected = computed(() => projects.findProject(selectedId.value))
 </script>
 <template>
-  <RouterLink to="/" class="back-link focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"><ArrowLeft :size="15" />返回总览</RouterLink>
+  <RouterLink to="/" class="back-link"><ArrowLeft :size="15" />返回总览</RouterLink>
   <div class="view-heading">
 
     <h1>{{ selected ? '设置这一次练习' : '选择要练习的项目' }}</h1>
@@ -37,8 +36,8 @@ const selected = computed(() => projects.findProject(selectedId.value))
   </StatusNotice>
   <template v-else-if="!projects.loadError">
     <div :class="{ 'preparation-layout': selected }">
-    <div v-if="selected" class="selected-project-panel aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
-      <AeroDecor />
+    <div v-if="selected" class="selected-project-panel surface-panel">
+
       <div>
         <span class="section-kicker">本轮使用的项目资料</span>
         <h2>{{ selected.name }}</h2>
@@ -49,14 +48,14 @@ const selected = computed(() => projects.findProject(selectedId.value))
         </div>
       </div>
       <div class="selected-project-actions">
-        <RouterLink :to="{ name: 'project-edit', params: { id: selected.id }, query: { prepare: '1' } }" class="app-button button-secondary aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500">
-      <AeroDecor :orbs="false" />编辑后回到训练</RouterLink>
+        <RouterLink :to="{ name: 'project-edit', params: { id: selected.id }, query: { prepare: '1' } }" class="app-button button-secondary control-button">
+      编辑后回到训练</RouterLink>
         <RouterLink
           :to="{ name: 'project-detail', params: { id: selected.id } }"
-          class="app-button button-secondary aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+          class="app-button button-secondary control-button"
           >
-      <AeroDecor :orbs="false" />查看项目资料<ArrowUpRight :size="15" /></RouterLink
-        ><RouterLink to="/defense" class="text-button focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+      查看项目资料<ArrowUpRight :size="15" /></RouterLink
+        ><RouterLink to="/defense" class="text-button"
           >切换项目<ArrowRight :size="14"
         /></RouterLink>
       </div>
@@ -73,7 +72,7 @@ const selected = computed(() => projects.findProject(selectedId.value))
 
           <h2>本轮，想打磨哪个项目？</h2>
         </div>
-        <RouterLink to="/projects/new" class="section-action focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+        <RouterLink to="/projects/new" class="section-action"
           >创建新项目<ArrowUpRight :size="14"
         /></RouterLink>
       </div>
@@ -82,7 +81,7 @@ const selected = computed(() => projects.findProject(selectedId.value))
           v-for="project in projects.activeProjects"
           :key="project.id"
           :to="{ name: 'defense', query: { project: project.id } }"
-          class="project-choice focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+          class="project-choice"
           ><FolderOpen :size="23" />
           <div>
             <h3>{{ project.name }}</h3>
@@ -94,21 +93,21 @@ const selected = computed(() => projects.findProject(selectedId.value))
           <span>选用项目<ArrowUpRight :size="16" /></span
         ></RouterLink>
       </div>
-      <div v-else class="empty-state aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
-      <AeroDecor />
+      <div v-else class="empty-state surface-panel">
+
         <FolderOpen :size="30" />
         <h2>先给你的想法，建立一份档案。</h2>
         <p>还没有项目资料。填写并保存后，就可以在这里进入准备。</p>
-        <RouterLink to="/projects/new" class="app-button button-primary aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+        <RouterLink to="/projects/new" class="app-button button-primary control-button"
           >
-      <AeroDecor :orbs="false" />创建第一个项目<ArrowUpRight :size="16"
+      创建第一个项目<ArrowUpRight :size="16"
         /></RouterLink>
       </div>
     </template>
     <DefenseStartPanel v-if="selected" :key="selected.id" :project="selected" />
     </div>
-    <details class="defense-preview aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
-      <summary class="defense-preview-heading focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500">
+    <details class="defense-preview surface-panel">
+      <summary class="defense-preview-heading">
         <span class="defense-preview-icon"><ScanEye :size="21" /></span>
         <span class="defense-preview-title"
           ><strong>单轮评委预览与角色规则</strong
@@ -119,7 +118,7 @@ const selected = computed(() => projects.findProject(selectedId.value))
           ><span class="preview-close-label">收起预览</span><ChevronDown :size="17"
         /></span>
       </summary>
-      <AeroDecor />
+
       <JudgeWorkbench :project="selected" />
     </details>
   </template>

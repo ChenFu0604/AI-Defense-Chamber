@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import AeroDecor from '../components/ui/AeroDecor.vue'
 import StatusNotice from '../components/ui/StatusNotice.vue'
 import { computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
@@ -46,7 +45,7 @@ onMounted(store.load)
 watch(id, store.load)
 </script>
 <template>
-  <RouterLink to="/history" class="back-link focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500">← 返回历史记录</RouterLink>
+  <RouterLink to="/history" class="back-link">← 返回历史记录</RouterLink>
   <div class="view-heading">
 
     <h1>历史答辩与报告</h1>
@@ -57,8 +56,8 @@ watch(id, store.load)
     <TrainingSummary :session="entry.session" />
     <DiscussionSummary v-if="entry.session.status === 'ended'" :session="entry.session" />
     <DiscussionBoard :session="entry.session" read-only />
-    <div class="history-card aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
-      <AeroDecor />
+    <div class="history-card surface-panel">
+
       <h2>{{ entry.session.project.name }}</h2>
       <p>
         {{ projectTypeLabels[entry.session.project.projectType] }} ·
@@ -74,30 +73,30 @@ watch(id, store.load)
         <RouterLink
           v-if="entry.session.status !== 'ended'"
           :to="{ name: 'defense-session', params: { id } }"
-          class="app-button button-primary aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+          class="app-button button-primary control-button"
           >
-      <AeroDecor :orbs="false" />继续原会话</RouterLink
+      继续原会话</RouterLink
         ><RouterLink
           v-if="entry.report"
           :to="{ name: 'history-train', params: { id } }"
-          class="app-button button-primary aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+          class="app-button button-primary control-button"
           >
-      <AeroDecor :orbs="false" />根据薄弱点重新训练</RouterLink
+      根据薄弱点重新训练</RouterLink
         ><RouterLink
           v-if="entry.report"
           :to="{ name: 'history-compare', query: { before: id } }"
-          class="app-button button-secondary aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+          class="app-button button-secondary control-button"
           >
-      <AeroDecor :orbs="false" />与另一场评分对比</RouterLink
+      与另一场评分对比</RouterLink
         ><AppButton variant="ghost" :disabled="store.busy" @click="store.sync(id)"
           >只读同步后端快照</AppButton
         >
       </div>
     </div>
     <StatusNotice v-if="store.message" tone="success" compact>{{ store.message }}</StatusNotice>
-    <details class="history-card aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
-      <summary class="focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500">当时的项目资料与分析</summary>
-      <AeroDecor />
+    <details class="history-card surface-panel">
+      <summary >当时的项目资料与分析</summary>
+
       <h3>{{ entry.session.project.name }}</h3>
       <ProjectSnapshot :project="entry.session.project" />
       <AttachmentGallery
@@ -112,12 +111,12 @@ watch(id, store.load)
       <template #actions><RouterLink
         v-if="entry.session.status === 'ended' && entry.session.mode === 'live'"
         :to="{ name: 'defense-report', params: { id } }"
-        class="text-button focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+        class="text-button"
         >进入报告页面生成或读取 →</RouterLink
       ></template>
     </StatusNotice>
-    <section class="history-card aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
-      <AeroDecor />
+    <section class="history-card surface-panel">
+
       <h2>当时发现的项目风险</h2>
       <p v-if="risks">{{ risks.nodes.length }} 个风险或证据缺口，属于原记录中的评价。</p>
       <article v-for="node in risks?.nodes" :key="node.id">
@@ -132,11 +131,11 @@ watch(id, store.load)
     <AnswerFeedback v-if="entry.session.closingFeedback" :assessment="entry.session.closingFeedback.assessment" :demo="entry.session.mode === 'demo'" />
     <DefenseMessages :messages="entry.session.messages" :demo="entry.session.mode === 'demo'" :assistance="entry.session.assistance" />
   </template>
-  <div v-else class="empty-state aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
-      <AeroDecor />
+  <div v-else class="empty-state surface-panel">
+
     <h2>尚未找到本地完整历史</h2>
     <p>可返回历史列表，从旧版会话入口只读同步。原后端记录不会因本地缺失被删除。</p>
-    <RouterLink to="/history" class="app-button button-primary aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500">
-      <AeroDecor :orbs="false" />返回历史列表</RouterLink>
+    <RouterLink to="/history" class="app-button button-primary control-button">
+      返回历史列表</RouterLink>
   </div>
 </template>

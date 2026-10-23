@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import AeroDecor from '../ui/AeroDecor.vue'
 import { defineAsyncComponent } from 'vue'
 import {
   reportDimensionIds,
@@ -14,8 +13,8 @@ const priorities = { high: '优先处理', medium: '随后改进', low: '持续�
 </script>
 <template>
   <div class="report-overview">
-    <section class="report-card report-score aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
-      <AeroDecor />
+    <section class="report-card report-score surface-panel">
+
       <h2>综合评分</h2>
       <div class="report-score-number">{{ report.overallScore }}<span>/ 100</span></div>
       <p>五个维度各占 20%，取算术平均，保留一位小数。</p>
@@ -25,8 +24,8 @@ const priorities = { high: '优先处理', medium: '随后改进', low: '持续�
         {{ new Date(report.createdAt).toLocaleString('zh-CN') }}</small
       >
     </section>
-    <section class="report-card aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
-      <AeroDecor />
+    <section class="report-card surface-panel">
+
       <h2>五维能力画像</h2>
       <AbilityRadar :dimensions="report.output.dimensions" />
     </section>
@@ -36,8 +35,8 @@ const priorities = { high: '优先处理', medium: '随后改进', low: '持续�
       report.output.limitations
     }}
   </p>
-  <section class="report-card aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
-      <AeroDecor />
+  <section class="report-card surface-panel">
+
     <h2>下一次答辩前的行动清单</h2>
     <ol class="report-tasks">
       <li v-for="(item, index) in report.output.improvements" :key="index">
@@ -51,8 +50,8 @@ const priorities = { high: '优先处理', medium: '随后改进', low: '持续�
       </li>
     </ol>
   </section>
-  <section class="report-card aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
-      <AeroDecor />
+  <section class="report-card surface-panel">
+
     <h2>分项评分与回答依据</h2>
     <div class="report-dimensions-grid">
     <div v-for="key in reportDimensionIds" :key="key" class="report-dimension">
@@ -78,10 +77,10 @@ const priorities = { high: '优先处理', medium: '随后改进', low: '持续�
     <section
       v-for="section in ['strengths', 'weaknesses', 'evidenceGaps', 'priorities'] as const"
       :key="section"
-      class="report-card aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out"
+      class="report-card surface-panel"
       :class="'report-' + section"
     >
-      <AeroDecor />
+
       <h2>
         {{
           {

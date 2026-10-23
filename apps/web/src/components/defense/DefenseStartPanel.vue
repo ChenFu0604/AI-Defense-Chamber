@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import AeroDecor from '../ui/AeroDecor.vue'
 import { ref, toRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { type Project } from '@defense/shared'
@@ -54,8 +53,8 @@ async function start() {
 }
 </script>
 <template>
-  <section class="defense-start aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
-      <AeroDecor />
+  <section class="defense-start surface-panel">
+
     <h2>进入多轮答辩</h2>
     <ol class="preparation-steps" aria-label="训练准备步骤">
       <li :class="{ complete: confirmed }">01 · 确认项目资料</li>
@@ -69,7 +68,7 @@ async function start() {
     <TrainingPreferencesPicker v-model="preferences" :disabled="busy || settingsOpen" />
     <JudgeRolePicker v-model="judgeId" :disabled="busy || settingsOpen" />
     <label class="defense-confirm"
-      ><input class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+      ><input
         v-model="confirmed"
         type="checkbox"
         :disabled="busy"
@@ -100,7 +99,7 @@ async function start() {
         v-for="session in recent.slice(0, 5)"
         :key="session.id"
         :to="{ name: 'defense-session', params: { id: session.id } }"
-        class="resume-session-card focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+        class="resume-session-card"
         ><MessagesSquare :size="20" />
         <div>
           <span class="resume-session-badge">{{

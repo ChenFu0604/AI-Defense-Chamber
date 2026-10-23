@@ -13,7 +13,7 @@ defineProps<{ title?: string; finding: AnalysisFinding }>()
     <p class="finding-summary">{{ finding.summary }}</p>
     <p class="finding-reason">{{ finding.reasoning }}</p>
     <details v-if="finding.evidence.length" class="finding-evidence">
-      <summary class="focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500">查看材料依据 · {{ finding.evidence.length }} 处</summary>
+      <summary >查看材料依据 · {{ finding.evidence.length }} 处</summary>
       <blockquote v-for="(reference, index) in finding.evidence" :key="index">
         <span>{{
           reference.field === 'materials'

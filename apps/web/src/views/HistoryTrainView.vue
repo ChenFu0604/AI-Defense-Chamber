@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import AeroDecor from '../components/ui/AeroDecor.vue'
 import StatusNotice from '../components/ui/StatusNotice.vue'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -34,7 +33,7 @@ async function start() {
 }
 </script>
 <template>
-  <RouterLink :to="{ name: 'history-detail', params: { id } }" class="back-link focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+  <RouterLink :to="{ name: 'history-detail', params: { id } }" class="back-link"
     >← 返回原答辩报告</RouterLink
   >
   <div class="view-heading">
@@ -46,8 +45,8 @@ async function start() {
     {{ history.error || defense.error }}
   </StatusNotice>
   <StatusNotice v-if="defense.warning" tone="warning" compact>{{ defense.warning }}</StatusNotice>
-  <section v-if="entry?.report && entry.session.status === 'ended'" class="history-card aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
-      <AeroDecor />
+  <section v-if="entry?.report && entry.session.status === 'ended'" class="history-card surface-panel">
+
     <h2>{{ entry.session.project.name }}</h2>
     <p>沿用这场答辩保存的项目和画像快照。若需修改项目资料，可回到项目页面另行创建训练。</p>
     <TrainingSummary :session="entry.session" />
@@ -66,7 +65,7 @@ async function start() {
     </ul>
     <JudgeRolePicker v-model="judgeId" :disabled="defense.busy" />
     <label class="defense-confirm"
-      ><input class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+      ><input
         v-model="confirmed"
         type="checkbox"
         :disabled="defense.busy"

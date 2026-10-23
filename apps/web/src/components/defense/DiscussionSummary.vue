@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import AeroDecor from '../ui/AeroDecor.vue'
 import { computed } from 'vue'
 import { discussionSummary, type DefenseSession } from '@defense/shared'
 const props = defineProps<{session: DefenseSession}>()
 const summary = computed(() => discussionSummary(props.session))
 </script>
 <template>
-  <section v-if="summary" class="discussion-summary aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out" aria-label="本场讨论小结">
-      <AeroDecor />
+  <section v-if="summary" class="discussion-summary surface-panel" aria-label="本场讨论小结">
+
     <h2>本场讨论留下的下一步</h2>
     <p>根据已保存的议题和问答整理，不重新调用模型。状态只描述讨论进度，用户更正不等于已验证的结论。</p>
     <div class="discussion-grid"><article v-for="group in ([['clarified', '本场已澄清'], ['evidence', '还需补充证据'], ['unfinished', '暂缓或仍待澄清'], ['uncovered', '本场尚未覆盖']] as const)" :key="group[0]">

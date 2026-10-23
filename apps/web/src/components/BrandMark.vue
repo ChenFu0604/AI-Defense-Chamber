@@ -2,7 +2,7 @@
 defineProps<{ compact?: boolean }>()
 </script>
 <template>
-  <RouterLink to="/" class="brand focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" aria-label="AI 答辩压力舱首页">
+  <RouterLink to="/" class="brand" aria-label="AI 答辩压力舱首页">
     <span class="brand-symbol"
       ><svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
         <path d="M20 7 31 13v14l-11 6-11-6V13Z" stroke="currentColor" stroke-width="2" />

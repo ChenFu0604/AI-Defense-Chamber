@@ -105,7 +105,7 @@ onBeforeUnmount(() => {
       <span>{{ modelValue.length }} / {{ MAX_ATTACHMENTS }}</span>
     </div>
     <label class="attachment-ocr-control">
-      <input class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" v-model="ocrEnabled" type="checkbox" :disabled="disabled || busy" />
+      <input  v-model="ocrEnabled" type="checkbox" :disabled="disabled || busy" />
       <span
         ><strong>OCR 识别扫描件和图片文字</strong
         ><small
@@ -128,7 +128,7 @@ onBeforeUnmount(() => {
       }}</strong>
       <p v-if="busy" role="status">{{ currentName }}</p>
       <p v-else>图片 ≤ 4 MiB · PDF / TXT ≤ 8 MiB · PDF 最多 40 页</p>
-      <input class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+      <input
         ref="documentInput"
         type="file"
         multiple
@@ -138,7 +138,7 @@ onBeforeUnmount(() => {
         :disabled="disabled || busy || modelValue.length >= MAX_ATTACHMENTS"
         @change="acceptFiles(Array.from(($event.target as HTMLInputElement).files ?? []))"
       />
-      <input class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+      <input
         ref="input"
         type="file"
         multiple

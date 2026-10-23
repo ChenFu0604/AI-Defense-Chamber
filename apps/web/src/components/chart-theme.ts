@@ -9,16 +9,16 @@ export interface ChartPalette {
   edgeLabelBackground: string
 }
 
-// Server-rendered options use the same daylight palette as the workspace.
+// Server-rendered options use the same neutral blue palette as the workspace.
 export const defaultChartPalette: ChartPalette = {
-  label: '#0b5077',
-  grid: '#a9d7e9',
-  area: '#edf8fe',
-  surface: '#f0f9ff',
-  fill: 'rgb(14 165 233 / 20%)',
-  line: '#0369a1',
-  edge: '#386984',
-  edgeLabelBackground: '#f0f9ff',
+  label: '#5c687b',
+  grid: '#dce3ee',
+  area: '#f6f8fb',
+  surface: '#ffffff',
+  fill: 'rgb(55 102 213 / 12%)',
+  line: '#3766d5',
+  edge: '#61718a',
+  edgeLabelBackground: '#ffffff',
 }
 
 export function readChartPalette(element?: Element): ChartPalette {

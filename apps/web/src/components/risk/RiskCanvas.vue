@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import AeroDecor from '../ui/AeroDecor.vue'
 import { onBeforeUnmount, onMounted, shallowRef, watch } from 'vue'
 import { VueFlow, useVueFlow, type NodeMouseEvent, type EdgeMouseEvent } from '@vue-flow/core'
 import type { RiskGraph } from '@defense/shared'
@@ -77,14 +76,14 @@ function reset() {
       <template #node-risk="nodeProps"><RiskNodeCard v-bind="nodeProps" /></template>
     </VueFlow>
     <div class="risk-canvas-controls" aria-label="画布控制">
-      <button class="aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" type="button" aria-label="放大风险地图" @click="zoomIn()">
-      <AeroDecor :orbs="false" />＋</button>
-      <button class="aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" type="button" aria-label="缩小风险地图" @click="zoomOut()">
-      <AeroDecor :orbs="false" />−</button>
-      <button class="aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" type="button" @click="reset">
-      <AeroDecor :orbs="false" />适应画布</button>
-      <button class="aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" type="button" @click="setViewport({ x: 20, y: 20, zoom: 1 })">
-      <AeroDecor :orbs="false" />原始比例</button>
+      <button class="control-button" type="button" aria-label="放大风险地图" @click="zoomIn()">
+      ＋</button>
+      <button class="control-button" type="button" aria-label="缩小风险地图" @click="zoomOut()">
+      −</button>
+      <button class="control-button" type="button" @click="reset">
+      适应画布</button>
+      <button class="control-button" type="button" @click="setViewport({ x: 20, y: 20, zoom: 1 })">
+      原始比例</button>
     </div>
     <p class="risk-canvas-tip">拖动画布移动 · 拖动节点调整位置 · 使用按钮或触控缩放</p>
   </div>

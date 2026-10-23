@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import AeroDecor from '../components/ui/AeroDecor.vue'
 import StatusNotice from '../components/ui/StatusNotice.vue'
 import { computed, defineAsyncComponent, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
@@ -67,7 +66,7 @@ function chooseEdge(id: string) {
 }
 </script>
 <template>
-  <RouterLink :to="back" class="back-link focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+  <RouterLink :to="back" class="back-link"
     >← {{ source.kind === 'project' ? '返回项目详情' : '返回答辩报告' }}</RouterLink
   >
   <div class="view-heading risk-map-heading">
@@ -94,12 +93,12 @@ function chooseEdge(id: string) {
       模拟数据 · 来自主动选择的模拟画像或模拟会话，不代表真实项目风险。
     </StatusNotice>
     <p class="risk-map-source-note">{{ notice }}</p>
-    <div v-if="status === 'empty'" class="empty-state risk-empty aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
-      <AeroDecor />
+    <div v-if="status === 'empty'" class="empty-state risk-empty surface-panel">
+
       <h2>暂无风险数据</h2>
       <p>当前来源没有可用风险记录。空地图不代表项目没有风险；不会为了丰富画布增加节点。</p>
-      <RouterLink :to="back" class="app-button button-secondary aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500">
-      <AeroDecor :orbs="false" />{{
+      <RouterLink :to="back" class="app-button button-secondary control-button">
+      {{
         source.kind === 'project' ? '返回项目分析' : '查看答辩与报告'
       }}</RouterLink>
     </div>
@@ -116,7 +115,7 @@ function chooseEdge(id: string) {
         </div>
         <label
           >风险筛选
-          <select class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" v-model="levelFilter" aria-label="风险等级筛选">
+          <select  v-model="levelFilter" aria-label="风险等级筛选">
             <option value="all">全部等级</option>
             <option value="high">仅高风险</option>
             <option value="medium">仅中风险</option>
@@ -139,11 +138,11 @@ function chooseEdge(id: string) {
           @select="choose"
           @edge="chooseEdge"
         />
-        <div v-else class="empty-state risk-empty aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
-      <AeroDecor />
+        <div v-else class="empty-state risk-empty surface-panel">
+
           <h2>该等级下暂无风险</h2>
-          <button type="button" class="text-button aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" @click="levelFilter = 'all'">
-      <AeroDecor :orbs="false" />
+          <button type="button" class="text-button control-button" @click="levelFilter = 'all'">
+
             显示全部节点
           </button>
         </div>
@@ -157,14 +156,14 @@ function chooseEdge(id: string) {
       </div>
       <section class="risk-node-list" aria-labelledby="risk-list-title">
         <h2 id="risk-list-title">全部可见节点 <small>也可用键盘选择下列条目查看详情</small></h2>
-        <button class="aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+        <button class="control-button"
           v-for="node in visibleNodes"
           :key="node.id"
           type="button"
           :aria-pressed="selectedId === node.id"
           @click="choose(node.id)"
         >
-      <AeroDecor :orbs="false" />
+
           <span :class="'risk-badge risk-level-' + node.level">{{
             severityLabels[node.level]
           }}</span

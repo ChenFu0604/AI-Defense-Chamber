@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { createSSRApp, h } from 'vue'
 import { renderToString } from '@vue/server-renderer'
 import { createPinia } from 'pinia'
@@ -9,6 +9,9 @@ import { useReportStore } from '../stores/report'
 import { endedReportSession, reportFixture, reportAnswerId, reportQuote } from '../../../../tests/fixtures/report'
 
 afterEach(() => vi.restoreAllMocks())
+// SSR awaits the lazy radar module. Compile its real dependencies before measuring
+// the report assertions; the chart itself is exercised in chart-appearance.test.ts.
+beforeAll(async () => { await import('../components/report/AbilityRadar.vue') })
 
 async function renderReport(closingOnly = false) {
   const session = endedReportSession(), pinia = createPinia()

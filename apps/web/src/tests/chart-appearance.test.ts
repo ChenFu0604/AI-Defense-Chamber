@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { readFileSync } from 'node:fs'
 import { init } from 'echarts/core'
 import { buildRiskGraph } from '@defense/shared'
 import {
@@ -14,7 +15,18 @@ import { endedReportSession, reportFixture, reportOutputFixture } from '../../..
 afterEach(() => vi.unstubAllGlobals())
 
 describe('chart appearance', () => {
-  it('reads actual Aero tokens and cleans up motion listeners', () => {
+  it('keeps server-rendered chart colors aligned with the production workspace tokens', () => {
+    const css = readFileSync(new URL('../styles/tokens.css', import.meta.url), 'utf8')
+    for (const [key, token] of Object.entries({
+      label: 'label', grid: 'grid', area: 'area', surface: 'surface', fill: 'fill',
+      line: 'line', edge: 'edge', edgeLabelBackground: 'edge-label-bg',
+    })) {
+      const actual = new RegExp(`--chart-${token}:\\s*([^;]+);`).exec(css)?.[1]?.trim()
+      expect(defaultChartPalette[key as keyof typeof defaultChartPalette], token).toBe(actual)
+    }
+  })
+
+  it('reads workspace tokens and cleans up motion listeners', () => {
     const root = {}
     const media = { matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }
     let text = '#0b5077'

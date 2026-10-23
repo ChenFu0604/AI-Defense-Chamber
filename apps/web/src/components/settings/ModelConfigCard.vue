@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import AeroDecor from '../ui/AeroDecor.vue'
 import { onBeforeUnmount, onMounted } from 'vue'
 import { DEFAULT_MODEL_TIMEOUT_MS, MAX_MODEL_TIMEOUT_MS } from '@defense/shared'
 import { PlugZap, Save, KeyRound, ServerCog, ListRestart } from 'lucide-vue-next'
@@ -32,8 +31,8 @@ async function save() {
 }
 </script>
 <template>
-  <section class="model-config-card aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out" aria-labelledby="model-config-title">
-      <AeroDecor />
+  <section class="model-config-card surface-panel" aria-labelledby="model-config-title">
+
     <div class="model-config-heading">
       <span class="model-config-icon"><ServerCog :size="24" /></span>
       <div>
@@ -55,7 +54,7 @@ async function save() {
           label="API Base URL"
           hint="填写基础地址，系统会追加 /chat/completions。"
           :error="errors.baseUrl"
-          ><input class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+          ><input
             id="model-base-url"
             v-model="form.baseUrl"
             type="url"
@@ -69,7 +68,7 @@ async function save() {
           hint="填写地址与密钥后点击获取模型，也可以直接手动填写模型 ID。"
           :error="errors.model"
           ><div class="model-name-control">
-            <select class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+            <select
               v-if="models.length && !manualModel"
               id="model-name"
               v-model="form.model"
@@ -81,7 +80,7 @@ async function save() {
               </option>
               <option v-for="model in models" :key="model" :value="model">{{ model }}</option>
             </select>
-            <input class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+            <input
               v-else
               id="model-name"
               v-model="form.model"
@@ -100,8 +99,8 @@ async function save() {
           </div>
           <div v-if="models.length" class="model-picker-help">
             <span>共 {{ models.length }} 个模型，是否支持对话及结构化输出请通过测试连接确认。</span
-            ><button type="button" class="text-button aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" @click="manualModel = !manualModel">
-      <AeroDecor :orbs="false" />
+            ><button type="button" class="text-button control-button" @click="manualModel = !manualModel">
+
               {{ manualModel ? '从列表选择' : '手动输入' }}
             </button>
           </div>
@@ -117,7 +116,7 @@ async function save() {
               : '密钥仅发送到本机后端，不保存在浏览器。'
           "
           :error="errors.apiKey"
-          ><input class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+          ><input
             id="model-api-key"
             v-model="form.apiKey"
             type="password"
@@ -130,7 +129,7 @@ async function save() {
         /></FormField>
         <div class="model-config-options">
           <FormField id="model-format" label="结构化输出"
-            ><select class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" id="model-format" v-model="form.responseFormat">
+            ><select  id="model-format" v-model="form.responseFormat">
               <option value="json_schema">JSON Schema（严格校验，推荐）</option>
               <option value="json_object">JSON Object（兼容模式）</option>
             </select></FormField
@@ -139,7 +138,7 @@ async function save() {
             label="请求超时（毫秒）"
             :hint="`1000～${MAX_MODEL_TIMEOUT_MS}，默认 ${DEFAULT_MODEL_TIMEOUT_MS}。分析较慢时可设为 180000（3 分钟），保存后生效。`"
             :error="errors.timeoutMs"
-            ><input class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+            ><input
               id="model-timeout"
               v-model.number="form.timeoutMs"
               type="number"

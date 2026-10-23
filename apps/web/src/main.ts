@@ -21,8 +21,7 @@ import './styles/project-layout.css'
 import './styles/defense-layout.css'
 import './styles/page-layouts.css'
 import './styles/interaction-motion.css'
-import './styles/aero-shell.css'
-import './styles/aero.css'
+import './styles/clean-workspace.css'
 
 const app = createApp(App).use(createPinia()).use(router)
 app.mount('#app')

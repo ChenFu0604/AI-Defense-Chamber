@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import AeroDecor from './ui/AeroDecor.vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import {
@@ -130,12 +129,12 @@ function importDocument() {
 <template>
   <form
     ref="formElement"
-    class="project-form aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out"
+    class="project-form surface-panel"
     novalidate
     :aria-busy="projects.saving"
     @submit.prevent="save"
   >
-      <AeroDecor />
+
     <div class="form-panel-heading">
       <div>
         <h2>{{ project ? '修改项目，保留每次进步。' : '先从一个想法开始。' }}</h2>
@@ -172,7 +171,7 @@ function importDocument() {
       :open="materialsOpen"
       @toggle="materialsOpen = ($event.target as HTMLDetailsElement).open"
     >
-      <summary class="focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500">
+      <summary>
         <span><FileUp :size="17" />从项目材料开始</span
         ><small>PDF / TXT 解析 · 扫描件 OCR · 图片附件</small><ChevronDown :size="16" />
       </summary>
@@ -206,14 +205,14 @@ function importDocument() {
           >
         </div>
         <label
-          >填入字段<select class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" v-model="importField">
+          >填入字段<select  v-model="importField">
             <option v-for="field in projectTextFields" :key="field.key" :value="field.key">
               {{ field.label }}
             </option>
           </select></label
         >
         <label for="document-import-text">待追加文字（可编辑）</label>
-        <textarea class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+        <textarea
           id="document-import-text"
           v-model="importText"
           rows="5"
@@ -243,8 +242,8 @@ function importDocument() {
       <strong>还有 {{ errorSummary.length }} 项需要补充</strong>
       <ul>
         <li v-for="item in errorSummary" :key="item.field">
-          <button class="aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" type="button" @click="focusField(item.field)">
-      <AeroDecor :orbs="false" />{{ item.message }}</button>
+          <button class="control-button" type="button" @click="focusField(item.field)">
+      {{ item.message }}</button>
         </li>
       </ul>
     </div>
@@ -259,7 +258,7 @@ function importDocument() {
         <p>{{ navigationNote }}</p>
         <RouterLink
           :to="{ name: 'project-detail', params: { id: savedProject.id } }"
-          class="text-button focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+          class="text-button"
           >查看已创建项目 →</RouterLink
         >
       </div>
@@ -274,7 +273,7 @@ function importDocument() {
         hint="一个清晰的名称，让评委快速理解你的方向。"
         :error="errors.name"
       >
-        <input class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+        <input
           id="project-name"
           v-model="form.name"
           name="name"
@@ -290,7 +289,7 @@ function importDocument() {
         <span class="field-counter">{{ form.name.length }} / {{ projectTextLimits.name }}</span>
       </FormField>
       <FormField id="project-projectType" label="项目类型" :error="errors.projectType">
-        <select class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+        <select
           id="project-projectType"
           v-model="form.projectType"
           name="projectType"
@@ -316,7 +315,7 @@ function importDocument() {
           :hint="field.hint"
           :error="errors[field.key]"
         >
-          <textarea class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+          <textarea
             :id="'project-' + field.key"
             v-model="form[field.key]"
             :name="field.key"
@@ -349,7 +348,7 @@ function importDocument() {
             :key="level"
             class="difficulty-option"
             :class="{ selected: form.difficulty === level }"
-            ><input class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+            ><input
               :id="level === 'normal' ? 'project-difficulty' : 'project-difficulty-' + level"
               v-model="form.difficulty"
               type="radio"

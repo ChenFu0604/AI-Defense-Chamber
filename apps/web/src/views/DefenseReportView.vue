@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import AeroDecor from '../components/ui/AeroDecor.vue'
 import StatusNotice from '../components/ui/StatusNotice.vue'
 import { computed, onBeforeUnmount, watch } from 'vue'
 import { useRoute } from 'vue-router'
@@ -44,7 +43,7 @@ const answers = computed(
 </script>
 <template>
   <div class="report-page">
-  <RouterLink :to="{ name: 'defense-session', params: { id } }" class="back-link focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+  <RouterLink :to="{ name: 'defense-session', params: { id } }" class="back-link"
     >← 查看答辩会话</RouterLink
   >
   <div class="view-heading">
@@ -69,26 +68,26 @@ const answers = computed(
       ><span>已保存 {{ answers }} 次回答</span>
     </div>
     <nav class="page-section-nav" aria-label="报告内容导航">
-      <a class="focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" href="#report-evaluation">评分与建议</a>
-      <a class="focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" href="#report-training">本轮练习</a>
-      <a class="focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" href="#report-feedback">逐轮反馈</a>
-      <a class="focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" href="#report-transcript">完整记录</a>
+      <a href="#report-evaluation">评分与建议</a>
+      <a href="#report-training">本轮练习</a>
+      <a href="#report-feedback">逐轮反馈</a>
+      <a href="#report-transcript">完整记录</a>
     </nav>
-    <div class="report-next-actions aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
-      <AeroDecor />
+    <div class="report-next-actions surface-panel">
+
       <div><strong>把反馈带到下一步</strong><p>先看改进建议，再查看风险或开始新的练习。</p></div>
       <div class="defense-actions">
       <RouterLink
         :to="{ name: 'history-detail', params: { id } }"
-        class="app-button button-secondary aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+        class="app-button button-secondary control-button"
         >
-      <AeroDecor :orbs="false" />本地历史与二次训练 →</RouterLink
+      本地历史与二次训练 →</RouterLink
       >
       <RouterLink
         :to="{ name: 'session-risks', params: { id } }"
-        class="app-button button-secondary aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+        class="app-button button-secondary control-button"
         >
-      <AeroDecor :orbs="false" />查看本场答辩漏洞地图 →</RouterLink
+      查看本场答辩漏洞地图 →</RouterLink
       >
     </div>
     </div>
@@ -97,8 +96,8 @@ const answers = computed(
       <StatusNotice v-if="reports.status === 'loading'" busy compact>正在读取历史评分报告…</StatusNotice>
       <RequestWait :active="reports.status === 'generating'" :request-key="id" label="正在生成诊断报告"
         description="正在评价真实回答、核对评分范围与原文引用，完成保存后展示。等待期间可查看下方问答。" />
-      <div v-if="reports.status === 'missing'" class="report-card aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
-      <AeroDecor />
+      <div v-if="reports.status === 'missing'" class="report-card surface-panel">
+
         <h2>这场答辩还没有评分报告</h2>
         <p>
           生成会把项目背景和已保存的问答发送至服务端配置的模型，可能消耗模型额度。成功后保存在后端，重新打开会直接读取。
@@ -122,7 +121,7 @@ const answers = computed(
             @click="reports.generate(id)"
             >重试生成</AppButton
           >
-          <RouterLink to="/settings" class="text-button focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500">模型设置 →</RouterLink>
+          <RouterLink to="/settings" class="text-button">模型设置 →</RouterLink>
         </template>
       </StatusNotice>
       <ReportResults
@@ -133,16 +132,16 @@ const answers = computed(
     </template>
     <StatusNotice v-else tone="info" compact :announce="false">模拟会话不生成真实评分或能力雷达图；以下保留模拟问答与逐轮反馈。</StatusNotice>
     </section>
-    <section id="report-training" class="report-training-section aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out" aria-labelledby="report-training-heading">
-      <AeroDecor />
-      <div class="section-heading"><h2 id="report-training-heading">这次练习回顾</h2><a href="#report-evaluation" class="text-button focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500">返回评分 ↑</a></div>
+    <section id="report-training" class="report-training-section surface-panel" aria-labelledby="report-training-heading">
+
+      <div class="section-heading"><h2 id="report-training-heading">这次练习回顾</h2><a href="#report-evaluation" class="text-button">返回评分 ↑</a></div>
       <TrainingSummary :session="store.session" />
       <DiscussionSummary :session="store.session" />
     </section>
     <section id="report-feedback" aria-labelledby="report-feedback-heading">
     <h2 id="report-feedback-heading" class="report-history-heading">逐轮反馈</h2>
-    <div v-for="entry in assessments" :key="entry.id" class="defense-report-finding aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
-      <AeroDecor />
+    <div v-for="entry in assessments" :key="entry.id" class="defense-report-finding surface-panel">
+
       <h3>{{ answerEvaluationLabels[entry.assessment!.evaluation] }}</h3>
       <p>回答依据：「{{ entry.assessment!.answerQuote }}」</p>
       <p>{{ entry.assessment!.feedback }}</p>

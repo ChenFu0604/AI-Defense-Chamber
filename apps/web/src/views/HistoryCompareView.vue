@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import AeroDecor from '../components/ui/AeroDecor.vue'
 import StatusNotice from '../components/ui/StatusNotice.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
@@ -40,7 +39,7 @@ const label = (entry: (typeof records.value)[number]) =>
   `${entry.session.project.name} · ${new Date(entry.session.createdAt).toLocaleString('zh-CN')} · ${entry.report!.overallScore} 分 · ${entry.session.id.slice(0, 8)}`
 </script>
 <template>
-  <RouterLink to="/history" class="back-link focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500">← 返回历史记录</RouterLink>
+  <RouterLink to="/history" class="back-link">← 返回历史记录</RouterLink>
   <div class="view-heading">
 
     <h1>两次答辩评分对比</h1>
@@ -53,17 +52,17 @@ const label = (entry: (typeof records.value)[number]) =>
   <StatusNotice v-if="records.length < 2" tone="info" compact>
     至少需要两份已保存的评分报告。完成二次训练并生成新报告后再来对比。
   </StatusNotice>
-  <div class="history-compare-select aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
-      <AeroDecor />
+  <div class="history-compare-select surface-panel">
+
     <label
-      >基准场次<select class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" v-model="beforeId">
+      >基准场次<select  v-model="beforeId">
         <option value="">请选择历史报告</option>
         <option v-for="entry in records" :key="entry.session.id" :value="entry.session.id">
           {{ label(entry) }}
         </option>
       </select></label
     ><label
-      >对比场次<select class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" v-model="afterId">
+      >对比场次<select  v-model="afterId">
         <option value="">请选择另一份报告</option>
         <option v-for="entry in records" :key="entry.session.id" :value="entry.session.id">
           {{ label(entry) }}
@@ -77,8 +76,8 @@ const label = (entry: (typeof records.value)[number]) =>
         before.report!.model !== after.report!.model ? '两场所用模型不同，请谨慎解读。' : ''
       }}{{ projectChanged ? '项目资料也有变化。' : '' }}
     </StatusNotice>
-    <div class="history-card aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
-      <AeroDecor />
+    <div class="history-card surface-panel">
+
       <h2>综合分 {{ before.report!.overallScore }} → {{ after.report!.overallScore }}</h2>
       <strong class="history-delta" :class="{ 'positive-text': comparison.data.overall > 0 }"
         >{{ signed(comparison.data.overall) }} 分</strong
@@ -106,9 +105,9 @@ const label = (entry: (typeof records.value)[number]) =>
       </table>
     </div>
     <div class="defense-actions">
-      <RouterLink :to="{ name: 'history-detail', params: { id: beforeId } }" class="text-button focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+      <RouterLink :to="{ name: 'history-detail', params: { id: beforeId } }" class="text-button"
         >查看基准完整依据 →</RouterLink
-      ><RouterLink :to="{ name: 'history-detail', params: { id: afterId } }" class="text-button focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+      ><RouterLink :to="{ name: 'history-detail', params: { id: afterId } }" class="text-button"
         >查看对比完整依据 →</RouterLink
       >
     </div></template

@@ -49,7 +49,7 @@ const judgeName = (id: string) => judgeDefinitions.find((v) => v.id === id)?.nam
 <template>
   <div
     ref="feed"
-    class="defense-messages focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+    class="defense-messages"
     role="log"
     aria-label="答辩消息记录"
     aria-live="polite"
@@ -90,11 +90,11 @@ const judgeName = (id: string) => judgeDefinitions.find((v) => v.id === id)?.nam
       </p>
       <p v-if="message.status === 'superseded'">已切换评委或议题，本题未作答。</p>
       <details v-for="help in assistance?.filter(v => v.questionId === message.id)" :key="help.requestId" class="saved-assistance">
-        <summary class="focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500">{{ assistanceKindLabels[help.kind] }} · {{ help.mode === 'demo' ? '模拟提示' : '系统辅助记录' }}</summary>
+        <summary >{{ assistanceKindLabels[help.kind] }} · {{ help.mode === 'demo' ? '模拟提示' : '系统辅助记录' }}</summary>
         <p>{{ help.content }}</p><small>提示不属于用户回答，不作为用户已提供的证据。</small>
       </details>
       <details v-if="message.assessment">
-        <summary class="focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500">
+        <summary>
           回答分析 · {{ answerEvaluationLabels[message.assessment.evaluation]
           }}{{ demo ? '（模拟）' : '' }}
         </summary>

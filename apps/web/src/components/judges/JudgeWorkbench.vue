@@ -112,7 +112,7 @@ function run(all = false) {
       </p>
       <template #actions><RouterLink
         :to="{ name: 'project-detail', params: { id: project.id }, hash: '#analysis' }"
-        class="text-button focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+        class="text-button"
         >前往项目分析 →</RouterLink
       ></template>
     </StatusNotice>

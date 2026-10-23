@@ -59,7 +59,7 @@ function color(name: string) {
   return value
 }
 
-function composite(hex: string, backdrop = color('sky-end')) {
+function composite(hex: string, backdrop = color('page-bg')) {
   if (!/^#[\da-f]{6}(?:[\da-f]{2})?$/i.test(hex)) throw new Error(`Unsupported color: ${hex}`)
   const alpha = hex.length === 9 ? parseInt(hex.slice(7, 9), 16) / 255 : 1
   return [1, 3, 5].map(start => (parseInt(hex.slice(start, start + 2), 16) * alpha + parseInt(backdrop.slice(start, start + 2), 16) * (1 - alpha)) / 255)
@@ -77,12 +77,12 @@ function contrast(foreground: string, background: string) {
   return (Math.max(...values) + 0.05) / (Math.min(...values) + 0.05)
 }
 
-describe('Aero workspace navigation', () => {
-  it('keeps the natural scenery decorative and exposes no obsolete theme selector', async () => {
+describe('clean blue workspace navigation', () => {
+  it('keeps the navigation on simple surfaces without obsolete scenery or theme controls', async () => {
     const html = await renderPage(WorkspaceLayout)
-    expect(html).toContain('class="aero-scenery" aria-hidden="true"')
-    expect(html).toMatch(/class="sidebar aero-panel\b/)
-    expect(html).toMatch(/class="topbar aero-panel\b/)
+    expect(html).not.toMatch(/aero-scenery|aero-decor|aero-panel/)
+    expect(html).toMatch(/class="sidebar surface-panel\b/)
+    expect(html).toMatch(/class="topbar surface-panel\b/)
     expect(html).not.toContain('aria-label="界面主题"')
     expect(html).not.toContain('深色模式')
   })
@@ -143,17 +143,18 @@ describe('Aero workspace navigation', () => {
   })
 })
 
-describe('daylight glass text accessibility', () => {
-  it('keeps primary and secondary text readable on glass composited over the darkest sky', () => {
+describe('clean blue text accessibility', () => {
+  it('keeps primary and secondary text readable on opaque workspace surfaces', () => {
     for (const foreground of ['text-primary', 'text-secondary', 'muted']) {
-      for (const background of ['page-bg', 'sky-end', 'surface-card', 'glass-base', 'surface-subtle', 'accent-soft']) {
+      for (const background of ['page-bg', 'surface-card', 'surface-subtle', 'accent-soft']) {
         expect(contrast(color(foreground), color(background)), `${foreground} on ${background}`).toBeGreaterThanOrEqual(4.5)
       }
     }
-    expect(color('sky-start')).toBe('#7dd3fc')
-    expect(color('sky-end')).toBe('#0ea5e9')
-    expect(color('surface-card')).toBe('#ffffffb3')
-    expect(color('surface-subtle')).toBe('#ffffff66')
+    for (const surface of ['page-bg', 'surface-card', 'surface-subtle', 'surface-elevated']) {
+      expect(color(surface)).toMatch(/^#[\da-f]{6}$/i)
+    }
+    expect(color('page-bg')).not.toBe(color('surface-card'))
+    expect(color('surface-card')).toBe('#ffffff')
   })
 
   it('keeps buttons, status notices and role labels readable without relying on pale text', () => {
@@ -166,7 +167,7 @@ describe('daylight glass text accessibility', () => {
       expect(contrast(color(foreground!), color(background!)), `${foreground} on ${background}`).toBeGreaterThanOrEqual(4.5)
     }
     for (const foreground of ['success', 'warning', 'danger', 'mint', 'cyan', 'violet', 'rose']) {
-      expect(contrast(color(foreground), color('glass-base')), `${foreground} on least opaque main glass`).toBeGreaterThanOrEqual(4.5)
+      expect(contrast(color(foreground), color('surface-subtle')), `${foreground} on secondary surface`).toBeGreaterThanOrEqual(4.5)
     }
   })
 

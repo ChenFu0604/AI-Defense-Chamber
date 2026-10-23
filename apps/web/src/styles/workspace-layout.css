@@ -1,4 +1,4 @@
-/* Shared workspace structure and responsive spacing. The Aero skin is applied last. */
+/* Shared workspace structure and responsive spacing. The active theme is applied last. */
 body { background: var(--page-bg); color: var(--text-primary); font-size: 15px; line-height: 1.65; }
 ::selection { background: var(--accent-border); color: var(--text-primary); }
 .sidebar { width: 244px; padding: 28px 20px 20px; background: var(--surface-card); border-right: 0; }

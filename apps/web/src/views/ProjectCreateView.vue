@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import AeroDecor from '../components/ui/AeroDecor.vue'
 import StatusNotice from '../components/ui/StatusNotice.vue'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -19,7 +18,7 @@ async function onCreated(project: Project) {
 </script>
 <template>
   <div class="project-create-page">
-  <RouterLink to="/projects" class="back-link focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"><ArrowLeft :size="15" />返回我的项目</RouterLink>
+  <RouterLink to="/projects" class="back-link"><ArrowLeft :size="15" />返回我的项目</RouterLink>
   <div class="view-heading project-create-heading">
 
     <h1>创建你的项目</h1>
@@ -30,15 +29,15 @@ async function onCreated(project: Project) {
   <div class="create-layout project-create-layout">
     <ProjectForm @created="onCreated" />
     <aside class="form-guide">
-      <nav class="project-form-navigation aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out" aria-label="项目填写导航">
-      <AeroDecor />
+      <nav class="project-form-navigation surface-panel" aria-label="项目填写导航">
+
         <strong>从这里开始</strong>
-        <a class="focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" href="#project-form-basics"><span>01</span><div>写下基本想法<small>项目名称、简介与目标用户</small></div></a>
-        <a class="focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" href="#project-form-materials"><span>02</span><div>补充已有材料<small>图片、文档与文字识别 · 选填</small></div></a>
-        <a class="focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" href="#project-form-save"><span>03</span><div>保存并进入下一步<small>保存时会检查需要补充的资料</small></div></a>
+        <a href="#project-form-basics"><span>01</span><div>写下基本想法<small>项目名称、简介与目标用户</small></div></a>
+        <a href="#project-form-materials"><span>02</span><div>补充已有材料<small>图片、文档与文字识别 · 选填</small></div></a>
+        <a href="#project-form-save"><span>03</span><div>保存并进入下一步<small>保存时会检查需要补充的资料</small></div></a>
       </nav>
-      <details class="project-writing-guide aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out"><summary class="focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500">填写建议与保存后的下一步</summary>
-      <AeroDecor />
+      <details class="project-writing-guide surface-panel"><summary >填写建议与保存后的下一步</summary>
+
       <div class="guide-label"><Lightbulb :size="17" />一份好的项目简介</div>
       <h2>不必完美，<br />先从真实开始。</h2>
       <p>清楚说明你做了什么，以及还没有做到什么。承认未知，也是有说服力的表达。</p>
