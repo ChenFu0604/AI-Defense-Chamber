@@ -44,7 +44,7 @@ export function createClosingAssessmentModel(client: AIClient = aiClient, attach
       nextStrategy: 'change_direction' as const, risks: [],
     }, model: null }
     const question = session.messages.find((m) => m.id === answer.replyTo)!
-    const materials = await attachments.materials([...(answer.attachments ?? []), ...(session.project.attachments ?? [])])
+    const materials = await attachments.materials([...(answer.attachments ?? []), ...(session.training?.tasks?.flatMap(t => t.attachments ?? []) ?? []), ...(session.project.attachments ?? [])])
     const generated = await client.generate({
       name: 'defense_assessment', schema: answerAssessmentSchema,
       system: `只输出最后一次回答的 assessment 对象，不再提问。answerQuote 必须逐字引用 latestAnswer 中的一段连续原文。

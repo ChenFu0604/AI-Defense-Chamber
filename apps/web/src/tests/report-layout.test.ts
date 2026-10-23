@@ -30,6 +30,7 @@ async function renderReport(closingOnly = false) {
   const generate = vi.spyOn(reports, 'generate')
   const placeholder = { render: () => null }
   const router = createRouter({ history: createMemoryHistory(), routes: [
+    { path: '/tasks', name: 'improvement-tasks', component: placeholder },
     { path: '/defense/sessions/:id/report', component: placeholder },
     { path: '/defense/sessions/:id', name: 'defense-session', component: placeholder },
     { path: '/history/:id', name: 'history-detail', component: placeholder },

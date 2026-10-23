@@ -70,6 +70,7 @@ export function createReportService(
             .filter((m) => m.sender === 'user')
             .flatMap((m) => m.attachments ?? [])
             .reverse(),
+          ...(session.training?.tasks?.flatMap(t => t.attachments ?? []) ?? []),
           ...(session.project.attachments ?? []),
         ])
         const context = buildReportContext(session, materials.documents)

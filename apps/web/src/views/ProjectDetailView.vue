@@ -109,6 +109,7 @@ const analysisStatus = computed(() => {
           <div class="project-related-card surface-panel">
 
             <h2>继续了解项目</h2>
+            <RouterLink :to="{name: 'improvement-tasks', query: {project: project.id}}">跟进改进任务<ArrowUpRight :size="15" /></RouterLink>
             <a href="#analysis">查看或生成项目画像<ArrowUpRight :size="15" /></a>
             <RouterLink :to="{ name: 'project-risks', params: { id: project.id } }">查看项目漏洞地图<ArrowUpRight :size="15" /></RouterLink>
             <RouterLink v-if="analyses.stateFor(project.id).demo" :to="{ name: 'project-risks', params: { id: project.id }, query: { mode: 'demo' } }">查看已保存模拟画像的地图（模拟）<ArrowUpRight :size="15" /></RouterLink>

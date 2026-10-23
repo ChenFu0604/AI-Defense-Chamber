@@ -127,6 +127,7 @@ const answers = computed(
       <ReportResults
         v-if="reports.report?.sessionId === id"
         :report="reports.report"
+        :project-name="store.session?.project.name"
         :messages="store.session.messages"
       />
     </template>

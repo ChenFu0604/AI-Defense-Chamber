@@ -5,16 +5,25 @@ import { projectSchema } from './project.js'
 import { analysisRecordSchema, analysisMatchesProject } from './analysis.js'
 import { trainingPreferencesSchema, assistanceRecordSchema, assistanceRequestSchema, trainingSettings } from './training.js'
 import { discussionMemorySchema, discussionTopicIdSchema, discussionLinksAreValid, topicQuestionRequestSchema, topicStateRequestSchema } from './discussion.js'
+import { retrainingTaskSchema, retrainingTaskUpdatesSchema } from './improvements.js'
 
 export const MAX_DEFENSE_QUESTIONS = 30
 export const retrainingFocusSchema = z.strictObject({
   sourceSessionId: z.uuid(),
   sourceReportId: z.uuid(),
   focus: z.array(z.string().trim().min(1).max(1500)).min(1).max(5),
+  projectSource: z.enum(['original', 'current']).optional(),
+  sourceProjectUpdatedAt: z.iso.datetime().optional(),
+  tasks: z.array(retrainingTaskSchema).max(5).optional(),
 })
 export const retrainRequestSchema = z.strictObject({
   requestId: z.uuid(),
   judgeId: z.enum(judgeIds),
+  current: z.strictObject({ project: projectSchema, analysis: analysisRecordSchema }).optional(),
+  taskUpdates: retrainingTaskUpdatesSchema.optional(),
+}).superRefine((value, context) => {
+  if (value.current && (value.current.analysis.mode !== 'live' || !analysisMatchesProject(value.current.analysis, value.current.project)))
+    context.addIssue({code: 'custom', message: '复训资料需要匹配当前项目的真实画像。'})
 })
 export type RetrainRequest = z.infer<typeof retrainRequestSchema>
 const text = (max: number) => z.string().trim().min(1).max(max)

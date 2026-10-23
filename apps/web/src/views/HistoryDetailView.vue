@@ -105,7 +105,7 @@ watch(id, store.load)
       />
       <AnalysisResults :record="entry.session.analysis" />
     </details>
-    <ReportResults v-if="entry.report" :report="entry.report" :messages="entry.session.messages" />
+    <ReportResults v-if="entry.report" :report="entry.report" :messages="entry.session.messages" :project-name="entry.session.project.name" />
     <StatusNotice v-else tone="info" compact :announce="false">
       此快照没有评分报告，不补造评分。
       <template #actions><RouterLink

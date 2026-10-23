@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineAsyncComponent } from 'vue'
+import { defineAsyncComponent, onMounted } from 'vue'
 import {
   reportDimensionIds,
   reportDimensionLabels,
@@ -7,8 +7,13 @@ import {
   type DefenseMessage,
 } from '@defense/shared'
 import ReportReferences from './ReportReferences.vue'
+import { useImprovementsStore } from '../../stores/improvements'
+import AppButton from '../ui/AppButton.vue'
+import StatusNotice from '../ui/StatusNotice.vue'
 const AbilityRadar = defineAsyncComponent(() => import('./AbilityRadar.vue'))
-defineProps<{ report: DefenseReport; messages: DefenseMessage[] }>()
+defineProps<{ report: DefenseReport; messages: DefenseMessage[]; projectName?: string }>()
+const tasks = useImprovementsStore()
+onMounted(tasks.load)
 const priorities = { high: '优先处理', medium: '随后改进', low: '持续优化' }
 </script>
 <template>
@@ -38,6 +43,8 @@ const priorities = { high: '优先处理', medium: '随后改进', low: '持续�
   <section class="report-card surface-panel">
 
     <h2>下一次答辩前的行动清单</h2>
+    <StatusNotice v-if="tasks.error" tone="error" compact>{{ tasks.error }}</StatusNotice>
+    <RouterLink :to="{name: 'improvement-tasks', query: {project: report.projectId}}" class="text-button">查看项目改进任务 →</RouterLink>
     <ol class="report-tasks">
       <li v-for="(item, index) in report.output.improvements" :key="index">
         <h3>
@@ -47,6 +54,7 @@ const priorities = { high: '优先处理', medium: '随后改进', low: '持续�
         <p>{{ item.action }}</p>
         <p><strong>完成标准：</strong>{{ item.acceptanceCriteria }}</p>
         <ReportReferences :references="item.references" :messages="messages" />
+        <div class="report-task-actions"><AppButton variant="secondary" :disabled="tasks.tasks.some(t => t.sourceReportId === report.id && t.improvementIndex === index)" @click="tasks.add(report, index, projectName ?? '项目')">{{ tasks.tasks.some(t => t.sourceReportId === report.id && t.improvementIndex === index) ? '已加入改进任务' : '加入改进任务' }}</AppButton></div>
       </li>
     </ol>
   </section>

@@ -12,6 +12,7 @@ import {
   Plus,
   FolderOpen,
   Settings,
+  ListChecks,
 } from 'lucide-vue-next'
 import BrandMark from '../components/BrandMark.vue'
 import HealthStatus from '../components/HealthStatus.vue'
@@ -56,6 +57,7 @@ const title = computed(() => (typeof route.meta.title === 'string' ? route.meta.
           ><Orbit :size="18" />认识评委团<ArrowUpRight :size="14" class="nav-end"
         /></RouterLink>
         <RouterLink to="/history" class="nav-item nav-history control-button" :class="{ active: route.path.startsWith('/history') }" aria-label="历史记录与二次训练"><BookOpen :size="18" />历史记录</RouterLink>
+        <RouterLink to="/tasks" class="nav-item control-button" :class="{active: route.name === 'improvement-tasks'}"><ListChecks :size="18" />改进任务</RouterLink>
       </nav>
       <div class="sidebar-bottom">
         <RouterLink

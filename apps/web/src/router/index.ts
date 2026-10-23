@@ -16,6 +16,7 @@ export const router = createRouter({
       path: '/',
       component: WorkspaceLayout,
       children: [
+        {path: 'tasks', name: 'improvement-tasks', component: () => import('../views/ImprovementTasksView.vue'), meta: {title: '改进任务'}},
         {
           path: 'projects', name: 'projects',
           component: () => import('../views/ProjectsView.vue'), meta: { title: '我的项目' },

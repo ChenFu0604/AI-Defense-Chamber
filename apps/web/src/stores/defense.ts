@@ -10,6 +10,7 @@ import {
   type Attachment,
   type AssistanceKind,
   type TopicStateRequest, type TopicQuestionRequest,
+  retrainRequestSchema, type RetrainRequest,
 } from '@defense/shared'
 import { defenseApi, DefenseApiError } from '../services/defense-api'
 import { rememberDefense, readDefenseDraft, saveDefenseDraft } from '../services/defense-storage'
@@ -202,19 +203,25 @@ export const useDefenseStore = defineStore('defense-session', () => {
       if (token === epoch) busy.value = false
     }
   }
-  async function retrain(sourceId: string, judgeId: JudgeId) {
+  async function retrain(sourceId: string, judgeId: JudgeId, options: Pick<RetrainRequest, 'current' | 'taskUpdates'> = {}) {
     if (busy.value) return null
     busy.value = true
     error.value = ''
     const token = epoch
+    let attemptedId: string | undefined
     try {
       const previous = readPendingCreation()
+      const candidate = retrainRequestSchema.parse({...options, judgeId, requestId: '00000000-0000-4000-8000-000000000000'})
+      const signature = (input: RetrainRequest) => JSON.stringify(retrainRequestSchema.parse({...input, requestId: candidate.requestId}))
       const input =
         previous?.kind === 'retrain' &&
         previous.sourceId === sourceId &&
-        previous.input.judgeId === judgeId
+        signature(previous.input) === signature(candidate)
           ? previous.input
-          : { requestId: crypto.randomUUID(), judgeId }
+          : { ...candidate, requestId: crypto.randomUUID() }
+      if (previous && (previous.kind !== 'retrain' || previous.sourceId !== sourceId || signature(previous.input) !== signature(candidate)))
+        throw new Error('另一次会话创建结果尚待确认，请先到历史记录读取会话或安全重试原请求。')
+      attemptedId = input.requestId
       savePendingCreation({ kind: 'retrain', sourceId, input })
       const record = await defenseApi('/' + sourceId + '/retrain', input)
       if (epoch !== token) return null
@@ -227,13 +234,26 @@ export const useDefenseStore = defineStore('defense-session', () => {
       draftWritable = true
       apply(record)
       try {
-        savePendingCreation(null)
+        const pending = readPendingCreation()
+        if (pending?.input.requestId === input.requestId) savePendingCreation(null)
       } catch {
         warning.value = '会话已创建，本地创建标记清理失败。'
       }
       return record
     } catch (failure) {
-      if (epoch === token) error.value = message(failure)
+      if (epoch === token) {
+        error.value = message(failure)
+        // These responses are explicit rejections before session creation. Unknown
+        // network/storage failures keep the original ID for safe reconciliation.
+        if (failure instanceof DefenseApiError && ['VALIDATION_ERROR', 'RETRAIN_PROJECT_MISMATCH', 'RETRAIN_TASK_NOT_FOUND',
+          'SESSION_NOT_FOUND', 'REPORT_NOT_FOUND', 'RETRAIN_NOT_READY', 'REPORT_SOURCE_MISMATCH',
+          'ATTACHMENT_NOT_FOUND', 'ATTACHMENT_MISMATCH'].includes(failure.code)) {
+          try {
+            const pending = readPendingCreation()
+            if (pending?.input.requestId === attemptedId) savePendingCreation(null)
+          } catch { warning.value = '创建已被服务端拒绝，但本地待创建标记清理失败，请先检查浏览器存储。' }
+        }
+      }
       return null
     } finally {
       if (epoch === token) busy.value = false

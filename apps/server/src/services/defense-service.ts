@@ -1,6 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto'
 import {
-  retrainingFocusSchema,
   reportEvidenceIsValid,
   type RetrainRequest,
   type DefenseSession,
@@ -18,6 +17,7 @@ import { createDefenseRepository, type DefenseRepository } from './defense-repos
 import { createDefenseModel } from './defense-model.js'
 
 import { createReportRepository, type ReportRepository } from './report-repository.js'
+import { buildRetrainingPlan } from './retraining-plan.js'
 import { reportSourceFingerprint } from './report-context.js'
 import { attachmentService, type AttachmentService } from './attachment-service.js'
 import type { Attachment } from '@defense/shared'
@@ -338,21 +338,13 @@ export function createDefenseService(
           'REPORT_SOURCE_MISMATCH',
           '历史报告与原会话记录不一致，未创建训练。',
         )
-      const training = retrainingFocusSchema.parse({
-        sourceSessionId: id,
-        sourceReportId: report.id,
-        focus: [
-          ...report.output.weaknesses.slice(0, 2).map((item) => `${item.title}：${item.detail}`),
-          ...report.output.improvements
-            .slice(0, 2)
-            .map((item) => `${item.title}：${item.action} 完成标准：${item.acceptanceCriteria}`),
-        ].map((item) => item.slice(0, 1500)),
-      })
+      const {project, analysis, training} = buildRetrainingPlan(source, report, input)
+      for (const task of training.tasks ?? []) await attachments.validate(task.attachments)
       return create(
         {
           requestId: input.requestId,
-          project: source.project,
-          analysis: source.analysis,
+          project,
+          analysis,
           mode: source.mode,
           judgeId: input.judgeId,
           ...(source.preferences ? { preferences: source.preferences } : {}),

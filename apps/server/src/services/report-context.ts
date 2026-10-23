@@ -15,6 +15,10 @@ export function buildReportContext(
   const context = {
     discussionSummary: discussionSummary(session),
     training: {
+      retraining: session.training ? {sourceSessionId: session.training.sourceSessionId,
+        projectSource: session.training.projectSource ?? 'original',
+        tasks: session.training.tasks?.map(t => ({title: t.title, status: t.status, note: t.note,
+          notice: '用户自行记录的进度，不是本场已验证的结论，也不是本场回答。'}))} : null,
       ...trainingSettings(session),
       assistanceCount: session.assistance?.length ?? 0,
       assistedQuestionIds: [...new Set(session.assistance?.map((v) => v.questionId) ?? [])],
@@ -81,6 +85,7 @@ export function reportSourceFingerprint(session: DefenseSession) {
         ...(session.preferences ? { preferences: session.preferences } : {}),
         ...(session.assistance?.length ? { assistance: session.assistance } : {}),
         ...(session.discussion ? {discussion: session.discussion} : {}),
+        ...(session.training?.projectSource ? {retraining: session.training} : {}),
       }),
     )
     .digest('hex')

@@ -26,6 +26,7 @@ async function renderPage(component: Component, path = '/', populated = false, a
       { path: '/defense/sessions/:id', name: 'defense-session', component: placeholder },
       { path: '/defense/sessions/:id/report', name: 'defense-report', component: placeholder },
       { path: '/history', name: 'history', component: placeholder },
+      { path: '/tasks', name: 'improvement-tasks', component: placeholder },
       { path: '/settings', name: 'system-settings', component: placeholder },
     ],
   })

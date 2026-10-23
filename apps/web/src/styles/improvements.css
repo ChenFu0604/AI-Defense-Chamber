@@ -1,0 +1,31 @@
+.improvement-page { max-width: 1120px; margin-inline: auto; width: 100%; }
+.improvement-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 18px; padding: 20px 24px; margin-bottom: 16px; }
+.improvement-filters label { display: grid; gap: 8px; flex: 1; min-width: min(220px, 100%); font-size: 13px; }
+.improvement-filters select, .improvement-editor select, .improvement-editor textarea { width: 100%; }
+.improvement-filters > span, .improvement-boundary, .improvement-task-meta { color: var(--text-secondary); font-size: 13px; }
+.improvement-boundary { margin: 16px 0 24px; }
+.improvement-list { display: grid; gap: 20px; }
+.improvement-task { padding: 24px; min-width: 0; }
+.improvement-task > header { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
+.improvement-task h2 { font-size: 18px; line-height: 1.5; margin: 6px 0 16px; overflow-wrap: anywhere; }
+.improvement-task > p { margin: 12px 0; line-height: 1.8; overflow-wrap: anywhere; white-space: pre-wrap; }
+.improvement-criteria { color: var(--text-secondary); }
+.improvement-status { flex-shrink: 0; padding: 5px 10px; border-radius: 8px; background: var(--surface-subtle); color: var(--text-secondary); font-size: 12px; }
+.improvement-status.is-in_progress { color: var(--accent); background: var(--accent-soft); }
+.improvement-status.is-done { color: var(--success); background: var(--success-soft); }
+.improvement-task-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+.improvement-editor { display: grid; gap: 12px; }
+.improvement-editor small { color: var(--text-secondary); }
+.retraining-options { display: grid; gap: 16px; margin-block: 20px; }
+.retraining-options label, .retraining-task-choice { display: flex; align-items: start; gap: 10px; font-size: 14px; line-height: 1.7; }
+.retraining-options input, .retraining-task-choice input { flex-shrink: 0; margin-top: 6px; }
+.retraining-task-choice { padding-block: 12px; border-bottom: 1px solid var(--line); }
+.retraining-task-choice p { margin: 4px 0; color: var(--text-secondary); font-size: 13px; }
+.retraining-task-choice small { color: var(--text-secondary); }
+.report-task-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+@media (max-width: 700px) {
+  .app-shell .sidebar .side-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .improvement-filters, .improvement-task { padding: 18px; }
+  .improvement-task > header { flex-direction: column; gap: 0; }
+  .improvement-status { margin-bottom: 8px; }
+}

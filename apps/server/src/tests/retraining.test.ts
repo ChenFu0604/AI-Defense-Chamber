@@ -5,6 +5,7 @@ import {
   type DefenseReport,
   defenseSessionSchema,
   reportReferences,
+  retrainRequestSchema,
 } from '@defense/shared'
 import {
   endedReportSession,
@@ -16,7 +17,12 @@ import { createDefenseService } from '../services/defense-service.js'
 import { reportSourceFingerprint } from '../services/report-context.js'
 import { buildDefenseContext } from '../services/defense-context.js'
 import { createApp } from '../app.js'
-function setup() {
+import { createAttachmentService, type AttachmentService } from '../services/attachment-service.js'
+import { createDefenseModel } from '../services/defense-model.js'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+function setup(attachments?: AttachmentService) {
   const source = endedReportSession(),
     records = new Map<string, DefenseSession>([[source.id, structuredClone(source)]])
   const report = { ...reportFixture(), sourceFingerprint: reportSourceFingerprint(source) }
@@ -30,10 +36,63 @@ function setup() {
   }
   const getReport = vi.fn(async () => report)
   const model = vi.fn()
-  const service = createDefenseService(repository, model, { get: getReport, async save() {} })
+  const service = createDefenseService(repository, model, { get: getReport, async save() {} }, attachments)
   return { source, report, records, service, model, getReport }
 }
 describe('targeted retraining', () => {
+  it('validates actual task attachments and includes their text in the judge call without promoting completion to verified fact', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'defense-retraining-evidence-'))
+    try {
+      const attachments = createAttachmentService(directory), env = setup(attachments)
+      const file = await attachments.upload(Buffer.from('INTERVIEW NOTE: three participants; payment willingness remains unknown.'), 'interviews.txt')
+      const next = await env.service.retrain(env.source.id, {requestId: crypto.randomUUID(), judgeId: 'user',
+        taskUpdates: [{improvementIndex: 0, status: 'done', note: '用户自行记录的进展', attachments: [file]}]})
+      const generate = vi.fn(async (_task: {user: string}) => ({data: {question: {...env.source.messages[0]!.question!, judgeId: 'user', question: '这三次访谈中有哪些不同意见？'}, assessment: null}, model: 'fixture-model'}))
+      const model = createDefenseModel({generate} as never, attachments)
+      await model(next, 'user', null, null)
+      const task = generate.mock.calls[0]![0]
+      const context = JSON.parse(task.user)
+      expect(context.materials[0].text).toContain('three participants')
+      expect(context.retraining.tasks[0].source).toBe('user_progress_not_verified')
+      expect(context.retraining.tasks[0].attachments[0]).not.toHaveProperty('text')
+      expect(defenseSessionSchema.safeParse(next).success).toBe(true)
+      await expect(env.service.retrain(env.source.id, {requestId: crypto.randomUUID(), judgeId: 'user',
+        taskUpdates: [{improvementIndex: 0, status: 'todo', note: '', attachments: [{...file, name: 'forged.txt'}]}]})).rejects.toMatchObject({code: 'ATTACHMENT_MISMATCH'})
+    } finally { await rm(directory, {recursive: true, force: true}) }
+  })
+  it('uses the selected updated project and real profile while preserving old records', async () => {
+    const env = setup(), old = structuredClone(env.source), reportBefore = structuredClone(env.report)
+    const project = {...env.source.project, technicalPlan: env.source.project.technicalPlan + ' 更新后的小范围原型方案。', updatedAt: '2026-10-23T01:00:00.000Z'}
+    const analysis = {...env.source.analysis, id: crypto.randomUUID(), projectSnapshot: {...env.source.analysis.projectSnapshot, technicalPlan: project.technicalPlan}}
+    const input = {requestId: crypto.randomUUID(), judgeId: 'technical' as const, current: {project, analysis},
+      taskUpdates: [{improvementIndex: 0, status: 'done' as const, note: '已整理记录，但还需核对。'}]}
+    const next = await env.service.retrain(env.source.id, input)
+    expect(next.project).toEqual(project)
+    expect(next.analysis).toEqual(analysis)
+    expect(next.training?.projectSource).toBe('current')
+    expect(next.training?.tasks?.[0]).toMatchObject({title: env.report.output.improvements[0]!.title, note: input.taskUpdates[0]!.note})
+    expect(next.training?.focus).toHaveLength(1)
+    const context = buildDefenseContext(next, null, null, 'technical')
+    expect(context.project.technicalPlan).toBe(project.technicalPlan)
+    expect(context.retraining?.tasks?.[0]).toMatchObject({source: 'user_progress_not_verified', status: 'done'})
+    expect(await env.service.retrain(env.source.id, input)).toEqual(next)
+    await expect(env.service.retrain(env.source.id, {...input, taskUpdates: [{...input.taskUpdates[0]!, note: '不同笔记'}]})).rejects.toMatchObject({code: 'IDEMPOTENCY_CONFLICT'})
+    expect(env.records.get(old.id)).toEqual(old)
+    expect(env.report).toEqual(reportBefore)
+    expect(env.model).not.toHaveBeenCalled()
+    expect(defenseSessionSchema.safeParse(next).success).toBe(true)
+  })
+  it('rejects another project, a stale/mismatched profile, duplicate tasks and nonexistent suggestions', async () => {
+    const env = setup(), input = {requestId: crypto.randomUUID(), judgeId: 'user' as const}
+    await expect(env.service.retrain(env.source.id, {...input, current: {project: {...env.source.project, id: crypto.randomUUID()}, analysis: env.source.analysis}})).rejects.toMatchObject({code: 'RETRAIN_PROJECT_MISMATCH'})
+    const app = createApp({defense: env.service}), url = `/api/v1/defense/sessions/${env.source.id}/retrain`
+    await request(app).post(url).send({...input, current: {project: {...env.source.project, technicalPlan: '已变化'}, analysis: env.source.analysis}}).expect(400)
+    const task = {improvementIndex: 0, status: 'todo', note: ''}
+    await request(app).post(url).send({...input, taskUpdates: [task, task]}).expect(400)
+    await request(app).post(url).send({...input, taskUpdates: [{...task, improvementIndex: 7}]}).expect(400)
+    expect(retrainRequestSchema.safeParse({...input, taskUpdates: [{...task, status: 'verified'}]}).success).toBe(false)
+    expect(env.records.size).toBe(1)
+  })
   it('retains the selected training preferences in an independent retraining session', async () => {
     const env = setup()
     env.source.preferences = {style: 'guided', goal: 'users', questionLimit: 5}

@@ -10,6 +10,8 @@ const settings = computed(() => trainingSettings(props.session))
     <span>训练目标：{{ trainingGoalLabels[settings.goal] }}</span>
     <span>最多 {{ settings.questionLimit }} 题</span>
     <span>已求助 {{ session.assistance?.length ?? 0 }} 次</span>
+    <span v-if="session.training">复训资料：{{ session.training.projectSource === 'current' ? '重新选定的项目版本' : '原答辩快照' }}</span>
+    <span v-if="session.training?.tasks?.length">重点复测 {{ session.training.tasks.length }} 项改进任务</span>
     <small v-if="session.assistance?.length">包含系统提示辅助，不能直接等同于独立作答表现。</small>
   </div>
 </template>

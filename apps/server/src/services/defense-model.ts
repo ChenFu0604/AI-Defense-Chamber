@@ -28,7 +28,7 @@ export function createDefenseModel(
       session.messages.filter((m) => m.sender === 'user').at(-1)?.attachments ?? []
     const materials =
       session.mode === 'live'
-        ? await attachments.materials([...latestFiles, ...(session.project.attachments ?? [])])
+        ? await attachments.materials([...latestFiles, ...(session.training?.tasks?.flatMap(t => t.attachments ?? []) ?? []), ...(session.project.attachments ?? [])])
         : { images: [], documents: [] }
     const context = buildDefenseContext(
       session,
