@@ -39,5 +39,6 @@ const judge = computed(() => judgeDefinitions.find((item) => item.id === props.j
         }}
       </p>
     </div>
+    <div v-if="$slots.default" class="defense-activity-details"><slot /></div>
   </div>
 </template>

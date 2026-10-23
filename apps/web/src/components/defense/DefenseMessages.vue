@@ -23,7 +23,15 @@ const props = withDefaults(
   { activity: null, judgeId: 'business' },
 )
 const feed = ref<HTMLElement | null>(null),
-  follow = ref(true)
+  follow = ref(true),
+  revealIncoming = ref(false)
+watch(
+  () => ({ ids: props.messages.map((message) => message.id), activity: props.activity }),
+  (current, previous) => {
+    // Reveal complete server responses, never replay saved history as a simulated token stream.
+    revealIncoming.value = !!previous.activity && current.ids.some((id) => !previous.ids.includes(id))
+  },
+)
 function onScroll() {
   if (feed.value)
     follow.value = feed.value.scrollHeight - feed.value.scrollTop - feed.value.clientHeight < 100
@@ -41,7 +49,7 @@ const judgeName = (id: string) => judgeDefinitions.find((v) => v.id === id)?.nam
 <template>
   <div
     ref="feed"
-    class="defense-messages"
+    class="defense-messages focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
     role="log"
     aria-label="答辩消息记录"
     aria-live="polite"
@@ -53,6 +61,7 @@ const judgeName = (id: string) => judgeDefinitions.find((v) => v.id === id)?.nam
       <span class="conversation-empty-mark">AI</span><strong>对话，即将开始</strong>
       <p>生成首问后，评委的问题会显示在这里。</p>
     </div>
+    <TransitionGroup name="ink-reveal" :css="revealIncoming" tag="div" class="defense-message-list">
     <article
       v-for="message in messages"
       :key="message.id"
@@ -81,11 +90,11 @@ const judgeName = (id: string) => judgeDefinitions.find((v) => v.id === id)?.nam
       </p>
       <p v-if="message.status === 'superseded'">已切换评委或议题，本题未作答。</p>
       <details v-for="help in assistance?.filter(v => v.questionId === message.id)" :key="help.requestId" class="saved-assistance">
-        <summary>{{ assistanceKindLabels[help.kind] }} · {{ help.mode === 'demo' ? '模拟提示' : '系统辅助记录' }}</summary>
+        <summary class="focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500">{{ assistanceKindLabels[help.kind] }} · {{ help.mode === 'demo' ? '模拟提示' : '系统辅助记录' }}</summary>
         <p>{{ help.content }}</p><small>提示不属于用户回答，不作为用户已提供的证据。</small>
       </details>
       <details v-if="message.assessment">
-        <summary>
+        <summary class="focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500">
           回答分析 · {{ answerEvaluationLabels[message.assessment.evaluation]
           }}{{ demo ? '（模拟）' : '' }}
         </summary>
@@ -96,6 +105,7 @@ const judgeName = (id: string) => judgeDefinitions.find((v) => v.id === id)?.nam
         </p>
       </details>
     </article>
+    </TransitionGroup>
     <DefenseActivity
       v-if="activity"
       :judge-id="judgeId"

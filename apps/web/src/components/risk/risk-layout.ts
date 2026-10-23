@@ -1,7 +1,12 @@
 import type { Node, Edge } from '@vue-flow/core'
 import { riskGraphSchema, type RiskGraph, type RiskNode } from '@defense/shared'
+import { readChartPalette, type ChartPalette } from '../chart-theme'
 
-export function buildFlowElements(input: RiskGraph, selectedId: string | null = null) {
+export function buildFlowElements(
+  input: RiskGraph,
+  selectedId: string | null = null,
+  palette: ChartPalette = readChartPalette(),
+) {
   const graph = riskGraphSchema.parse(input)
   const order = { high: 0, medium: 1, low: 2 }
   const sorted = [...graph.nodes].sort(
@@ -27,9 +32,9 @@ export function buildFlowElements(input: RiskGraph, selectedId: string | null = 
     type: 'smoothstep',
     label: '共同依据',
     data: edge,
-    style: { stroke: '#68718e', strokeWidth: 1.4, strokeDasharray: '5 4' },
-    labelStyle: { fill: '#c1c7d9', fontSize: 10 },
-    labelBgStyle: { fill: '#171b28' },
+    style: { stroke: palette.edge, strokeWidth: 1.5, strokeDasharray: '5 4' },
+    labelStyle: { fill: palette.label, fontSize: 12 },
+    labelBgStyle: { fill: palette.edgeLabelBackground },
     animated: false,
     deletable: false,
     focusable: true,

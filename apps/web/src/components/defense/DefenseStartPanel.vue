@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AeroDecor from '../ui/AeroDecor.vue'
 import { ref, toRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { type Project } from '@defense/shared'
@@ -11,6 +12,7 @@ import DefenseModePicker from './DefenseModePicker.vue'
 import TrainingPreferencesPicker from './TrainingPreferencesPicker.vue'
 import ModelConfigCard from '../settings/ModelConfigCard.vue'
 import RequestWait from '../ui/RequestWait.vue'
+import StatusNotice from '../ui/StatusNotice.vue'
 import { useSystemStore } from '../../stores/system'
 import { useTrainingPreparation } from '../../composables/useTrainingPreparation'
 const props = defineProps<{ project: Project }>()
@@ -52,8 +54,8 @@ async function start() {
 }
 </script>
 <template>
-  <section class="defense-start">
-    <div class="section-kicker">ANSWER · CHALLENGE · REFINE</div>
+  <section class="defense-start aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
+      <AeroDecor />
     <h2>进入多轮答辩</h2>
     <ol class="preparation-steps" aria-label="训练准备步骤">
       <li :class="{ complete: confirmed }">01 · 确认项目资料</li>
@@ -67,24 +69,24 @@ async function start() {
     <TrainingPreferencesPicker v-model="preferences" :disabled="busy || settingsOpen" />
     <JudgeRolePicker v-model="judgeId" :disabled="busy || settingsOpen" />
     <label class="defense-confirm"
-      ><input
+      ><input class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
         v-model="confirmed"
         type="checkbox"
         :disabled="busy"
       />我已确认项目资料；真实模式下允许将资料发送给所配置模型，完成分析并开始答辩。</label
     >
-    <p v-if="state.warning || !analysis" class="notice">{{ state.warning || '还没有与当前资料匹配的画像。点击下方按钮会先分析，成功后直接进入答辩，无需跳转。' }}</p>
+    <StatusNotice v-if="state.warning || !analysis" compact :tone="state.warning ? 'warning' : 'info'" :announce="!!state.warning">{{ state.warning || '还没有与当前资料匹配的画像。点击下方按钮会先分析，成功后直接进入答辩，无需跳转。' }}</StatusNotice>
     <div v-if="mode === 'live'" class="inline-model-settings">
-      <p v-if="system.health && system.health.ai !== 'configured'" class="notice">需要先连接模型。你可以在这里设置，项目选择会保留。</p>
+      <StatusNotice v-if="system.health && system.health.ai !== 'configured'" compact tone="warning">需要先连接模型。你可以在这里设置，项目选择会保留。</StatusNotice>
       <AppButton variant="secondary" :disabled="busy || system.checking" @click="toggleSettings">{{ settingsOpen ? '完成设置，返回训练准备' : '配置或检查模型' }}</AppButton>
       <ModelConfigCard v-if="settingsOpen" />
     </div>
     <p v-if="mode === 'demo'" class="defense-source">
       模拟规则演示：引用回答展示交互流程，不代表真实模型理解或诊断。
     </p>
-    <p v-if="defense.error" role="alert" class="notice notice-error">{{ defense.error }}</p>
-    <p v-if="error || navigationError" role="alert" class="notice notice-error">{{ error || navigationError }}</p>
-    <p v-if="defense.warning || recentError" role="status">{{ defense.warning || recentError }}</p>
+    <StatusNotice v-if="defense.error" tone="error" compact>{{ defense.error }}</StatusNotice>
+    <StatusNotice v-if="error || navigationError" tone="error" compact>{{ error || navigationError }}</StatusNotice>
+    <StatusNotice v-if="defense.warning || recentError" tone="warning" compact>{{ defense.warning || recentError }}</StatusNotice>
     <AppButton
       :disabled="!confirmed || busy || settingsOpen"
       :busy="busy"
@@ -98,7 +100,7 @@ async function start() {
         v-for="session in recent.slice(0, 5)"
         :key="session.id"
         :to="{ name: 'defense-session', params: { id: session.id } }"
-        class="resume-session-card"
+        class="resume-session-card focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
         ><MessagesSquare :size="20" />
         <div>
           <span class="resume-session-badge">{{

@@ -10,9 +10,9 @@
 }
 .project-materials {
   margin: 20px 0 28px;
-  border: 1px solid #383344;
-  border-radius: 12px;
-  background: #14131c;
+  border: 0;
+  border-radius: 16px;
+  background: var(--surface-subtle);
   padding: 0 18px;
 }
 .project-materials > summary {
@@ -31,23 +31,23 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  color: #d4c7ef;
-  font-size: 13px;
+  color: var(--accent);
+  font-size: 14px;
 }
 .project-materials > summary > small {
   flex: 1;
-  color: #8d94a8;
-  font-size: 11px;
+  color: var(--accent);
+  font-size: 12px;
 }
 .project-materials > summary > svg {
-  color: #a99ac4;
+  color: var(--accent);
   margin-left: auto;
 }
 .project-materials[open] > summary > svg {
   transform: rotate(180deg);
 }
 .project-materials-hint {
-  color: #a0a6b8;
+  color: var(--text-secondary);
   font-size: 12px;
   line-height: 1.9;
   margin: 0 0 16px;
@@ -82,7 +82,7 @@
 .attachment-heading p,
 .attachment-heading > span,
 .attachment-help {
-  color: #a0a6b8;
+  color: var(--text-secondary);
   font-size: 12px;
   line-height: 1.8;
 }
@@ -95,9 +95,9 @@
   gap: 10px;
   margin: 18px 0;
   padding: 14px;
-  border: 1px solid #3b354c;
-  background: #1b1724;
-  border-radius: 10px;
+  border: 0;
+  background: var(--surface-subtle);
+  border-radius: 16px;
   cursor: pointer;
 }
 .attachment-ocr-control input {
@@ -112,33 +112,33 @@
 }
 .attachment-ocr-control strong {
   font-size: 12px;
-  color: #d0c3e6;
-  font-weight: 500;
+  color: var(--text-primary);
+  font-weight: var(--weight-medium);
 }
 .attachment-ocr-control small {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.9;
-  color: #959db1;
+  color: var(--text-secondary);
 }
 .attachment-ocr-notice {
   padding: 0 14px 14px;
-  color: #b9a8d7;
-  font-size: 11px;
+  color: var(--text-primary);
+  font-size: 12px;
   line-height: 1.9;
 }
 .attachment-ocr-notice > span {
   display: block;
-  color: #dfba85;
+  color: var(--text-primary);
 }
 .attachment-dropzone {
-  border: 1px dashed #555168;
-  border-radius: 12px;
+  border: 0;
+  border-radius: 16px;
   padding: 26px 18px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  background: #17151f;
+  background: var(--surface-subtle);
   text-align: center;
   transition:
     border-color 0.15s,
@@ -152,12 +152,11 @@
 }
 .attachment-dropzone p {
   font-size: 12px;
-  color: #a6a6bb;
+  color: var(--text-secondary);
   overflow-wrap: anywhere;
 }
 .attachment-dropzone.dragging {
-  border-color: var(--accent);
-  background: #282036;
+  background: var(--surface-subtle);
 }
 .attachment-dropzone.disabled {
   opacity: 0.65;
@@ -184,15 +183,15 @@
 }
 .attachment-card {
   min-width: 0;
-  border: 1px solid var(--border-card);
-  border-radius: 12px;
+  border: 0;
+  border-radius: 16px;
   overflow: hidden;
-  background: #11141d;
+  background: var(--surface-card);
 }
 .attachment-preview {
   height: 142px;
   position: relative;
-  background: #0c0e14;
+  background: var(--surface-subtle);
   display: grid;
   place-items: center;
 }
@@ -216,8 +215,8 @@
   top: 8px;
   right: 8px;
   padding: 7px;
-  background: #13151ee8;
-  border: 1px solid #55506b;
+  background: var(--surface-subtle);
+  border: 0;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -228,13 +227,13 @@
   gap: 8px;
 }
 .attachment-caption strong {
-  font-size: 13px;
+  font-size: 14px;
   overflow-wrap: anywhere;
   line-height: 1.6;
 }
 .attachment-caption span {
-  color: #919aaf;
-  font-size: 11px;
+  color: var(--text-secondary);
+  font-size: 12px;
 }
 .attachment-caption a {
   font-size: 12px;
@@ -257,18 +256,18 @@
   overflow-wrap: anywhere;
   max-height: 230px;
   overflow: auto;
-  background: #0c0f16;
+  background: var(--surface-subtle);
   padding: 12px;
   font: inherit;
   line-height: 1.8;
-  color: #b6bfd2;
+  color: var(--text-primary);
 }
 .document-import {
   margin-top: 16px;
   padding: 16px;
-  background: #181b26;
-  border: 1px solid var(--border-card);
-  border-radius: 10px;
+  background: var(--surface-subtle);
+  border: 0;
+  border-radius: 16px;
   font-size: 12px;
 }
 .document-import > label {
@@ -280,19 +279,19 @@
 .document-import select {
   min-width: 0;
   max-width: 100%;
-  background: #0e1119;
-  color: #eee;
-  border: 1px solid #45495c;
-  border-radius: 6px;
+  background: var(--surface-card);
+  color: var(--text-primary);
+  border: 0;
+  border-radius: 16px;
   padding: 9px;
 }
 .document-import textarea {
   width: 100%;
   margin-top: 10px;
-  background: #0c0f17;
-  color: #dce0ed;
-  border: 1px solid #45495c;
-  border-radius: 8px;
+  background: var(--surface-card);
+  color: var(--text-primary);
+  border: 0;
+  border-radius: 16px;
   padding: 12px;
   font: inherit;
   line-height: 1.8;
@@ -300,7 +299,7 @@
 }
 .document-import p {
   margin: 10px 0;
-  color: #a6aec2;
+  color: var(--text-secondary);
   line-height: 1.8;
 }
 @media (max-width: 600px) {

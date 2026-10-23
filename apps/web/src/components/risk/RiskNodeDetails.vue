@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AeroDecor from '../ui/AeroDecor.vue'
 import { computed } from 'vue'
 import {
   riskSourceLabels,
@@ -45,14 +46,16 @@ function locationLabel(ref: RiskEvidence) {
 </script>
 <template>
   <aside
-    class="risk-details"
+    class="risk-details aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
     aria-labelledby="risk-detail-title"
     tabindex="0"
     @keydown.esc="$emit('close')"
   >
+      <AeroDecor />
     <div class="risk-detail-header">
       <span :class="'risk-badge risk-level-' + node.level">{{ severityLabels[node.level] }}</span
-      ><button type="button" aria-label="关闭风险详情" @click="$emit('close')">×</button>
+      ><button class="aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" type="button" aria-label="关闭风险详情" @click="$emit('close')">
+      <AeroDecor :orbs="false" />×</button>
     </div>
     <h2 id="risk-detail-title">{{ node.name }}</h2>
     <p class="risk-source-label">{{ riskSourceLabels[node.source] }}</p>
@@ -84,7 +87,8 @@ function locationLabel(ref: RiskEvidence) {
       关联节点 <span>({{ relations.length }})</span>
     </h3>
     <div v-for="{ edge, other } in relations" :key="edge.id" class="risk-relation">
-      <button type="button" @click="$emit('select', other.id)">{{ other.name }} →</button>
+      <button class="aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" type="button" @click="$emit('select', other.id)">
+      <AeroDecor :orbs="false" />{{ other.name }} →</button>
       <p>{{ edge.explanation }}</p>
     </div>
     <p v-if="!relations.length" class="risk-muted">

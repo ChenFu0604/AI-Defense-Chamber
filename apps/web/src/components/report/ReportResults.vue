@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AeroDecor from '../ui/AeroDecor.vue'
 import { defineAsyncComponent } from 'vue'
 import {
   reportDimensionIds,
@@ -13,8 +14,8 @@ const priorities = { high: '优先处理', medium: '随后改进', low: '持续�
 </script>
 <template>
   <div class="report-overview">
-    <section class="report-card report-score">
-      <div class="section-kicker">DEFENSE REVIEW · AI 训练建议</div>
+    <section class="report-card report-score aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
+      <AeroDecor />
       <h2>综合评分</h2>
       <div class="report-score-number">{{ report.overallScore }}<span>/ 100</span></div>
       <p>五个维度各占 20%，取算术平均，保留一位小数。</p>
@@ -24,7 +25,8 @@ const priorities = { high: '优先处理', medium: '随后改进', low: '持续�
         {{ new Date(report.createdAt).toLocaleString('zh-CN') }}</small
       >
     </section>
-    <section class="report-card">
+    <section class="report-card aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
+      <AeroDecor />
       <h2>五维能力画像</h2>
       <AbilityRadar :dimensions="report.output.dimensions" />
     </section>
@@ -34,8 +36,25 @@ const priorities = { high: '优先处理', medium: '随后改进', low: '持续�
       report.output.limitations
     }}
   </p>
-  <section class="report-card">
+  <section class="report-card aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
+      <AeroDecor />
+    <h2>下一次答辩前的行动清单</h2>
+    <ol class="report-tasks">
+      <li v-for="(item, index) in report.output.improvements" :key="index">
+        <h3>
+          {{ item.title }}
+          <span class="report-priority">{{ priorities[item.priority] }} · {{ reportDimensionLabels[item.dimension] }}</span>
+        </h3>
+        <p>{{ item.action }}</p>
+        <p><strong>完成标准：</strong>{{ item.acceptanceCriteria }}</p>
+        <ReportReferences :references="item.references" :messages="messages" />
+      </li>
+    </ol>
+  </section>
+  <section class="report-card aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
+      <AeroDecor />
     <h2>分项评分与回答依据</h2>
+    <div class="report-dimensions-grid">
     <div v-for="key in reportDimensionIds" :key="key" class="report-dimension">
       <h3>
         {{ reportDimensionLabels[key]
@@ -53,14 +72,16 @@ const priorities = { high: '优先处理', medium: '随后改进', low: '持续�
         :messages="messages"
       />
     </div>
+    </div>
   </section>
   <div class="report-sections">
     <section
       v-for="section in ['strengths', 'weaknesses', 'evidenceGaps', 'priorities'] as const"
       :key="section"
-      class="report-card"
+      class="report-card aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out"
       :class="'report-' + section"
     >
+      <AeroDecor />
       <h2>
         {{
           {
@@ -87,20 +108,4 @@ const priorities = { high: '优先处理', medium: '随后改进', low: '持续�
       </p>
     </section>
   </div>
-  <section class="report-card">
-    <h2>下一次答辩前的行动清单</h2>
-    <ol class="report-tasks">
-      <li v-for="(item, index) in report.output.improvements" :key="index">
-        <h3>
-          {{ item.title }}
-          <span class="report-priority"
-            >{{ priorities[item.priority] }} · {{ reportDimensionLabels[item.dimension] }}</span
-          >
-        </h3>
-        <p>{{ item.action }}</p>
-        <p><strong>完成标准：</strong>{{ item.acceptanceCriteria }}</p>
-        <ReportReferences :references="item.references" :messages="messages" />
-      </li>
-    </ol>
-  </section>
 </template>

@@ -2,6 +2,7 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import { router } from './router'
+import './styles/tokens.css'
 import './styles/main.css'
 import './styles/projects.css'
 import './styles/analysis.css'
@@ -15,5 +16,13 @@ import './styles/workspace.css'
 import './styles/attachments.css'
 import './styles/defense-workspace.css'
 import './styles/project-workspace.css'
+import './styles/workspace-layout.css'
+import './styles/project-layout.css'
+import './styles/defense-layout.css'
+import './styles/page-layouts.css'
+import './styles/interaction-motion.css'
+import './styles/aero-shell.css'
+import './styles/aero.css'
 
-createApp(App).use(createPinia()).use(router).mount('#app')
+const app = createApp(App).use(createPinia()).use(router)
+app.mount('#app')

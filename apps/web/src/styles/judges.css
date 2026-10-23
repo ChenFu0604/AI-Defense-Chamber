@@ -5,8 +5,8 @@
 .judge-disclaimer,
 .judge-source,
 .judge-empty {
-  color: #a2a5b3;
-  font-size: 13px;
+  color: var(--text-secondary);
+  font-size: 14px;
   line-height: 1.9;
   margin: 16px 0;
 }
@@ -27,14 +27,13 @@
   outline-offset: 3px;
 }
 .judge-seat.active {
-  border-color: var(--judge-color);
-  background: color-mix(in srgb, var(--judge-color) 5%, #13151a);
+  background: color-mix(in srgb, var(--judge-color) 5%, var(--surface-subtle));
 }
 .judge-seat .judge-perspective {
   min-height: 50px;
 }
 .judge-active-label {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--judge-color);
 }
 .judge-state {
@@ -42,7 +41,7 @@
   align-items: center;
   gap: 7px;
   font-size: 12px;
-  color: #a2a5b3;
+  color: var(--text-secondary);
 }
 .judge-state i {
   width: 6px;
@@ -67,9 +66,9 @@
 }
 .judge-details,
 .judge-statement {
-  border: 1px solid #30333e;
-  background: #13151b;
-  border-radius: 12px;
+  border: 0;
+  background: var(--surface-card);
+  border-radius: 16px;
   padding: 22px;
   margin: 24px 0;
   overflow-wrap: anywhere;
@@ -77,8 +76,8 @@
 .judge-details p,
 .judge-details li,
 .judge-statement p {
-  color: #aeb1bf;
-  font-size: 13px;
+  color: var(--text-secondary);
+  font-size: 14px;
   line-height: 1.9;
 }
 .judge-details h3,
@@ -89,7 +88,7 @@
 }
 .judge-details h4 {
   margin: 18px 0 6px;
-  font-size: 13px;
+  font-size: 14px;
 }
 .judge-details ul {
   padding-left: 20px;
@@ -103,10 +102,10 @@
 }
 .judge-dimensions span,
 .judge-question-meta span {
-  background: #252836;
-  border: 1px solid #35394b;
+  background: var(--surface-subtle);
+  border: 0;
   padding: 4px 9px;
-  border-radius: 5px;
+  border-radius: 16px;
   font-size: 12px;
 }
 .judge-question-meta {
@@ -114,10 +113,9 @@
 }
 .judge-question-meta .risk-high {
   color: var(--rose);
-  border-color: #7d4153;
 }
 .judge-question-meta .risk-medium {
-  color: #f0c680;
+  color: var(--warning);
 }
 .judge-controls {
   display: flex;
@@ -130,20 +128,20 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 13px;
+  font-size: 14px;
 }
 .judge-controls select {
-  color: #dedee9;
-  background: #1b1d26;
-  border: 1px solid #414553;
+  color: var(--text-primary);
+  background: var(--surface-card);
+  border: 0;
   padding: 12px;
-  border-radius: 8px;
+  border-radius: 16px;
   max-width: 100%;
 }
 .judge-workbench .notice {
   display: block;
   line-height: 1.9;
-  font-size: 13px;
+  font-size: 14px;
 }
 .judge-workbench .notice .text-button {
   display: inline-flex;

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AeroDecor from './ui/AeroDecor.vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import {
@@ -40,7 +41,10 @@ const emit = defineEmits<{ created: [project: Project] }>()
 const { form, errors, errorSummary, hasContent, validateField, submit,
   draftError, draftSavedAt, draftPending, restored, saveDraft } = useProjectForm({ drafts: true, project: props.project })
 const expanded = ref(!!props.project || !!form.coreFeatures || !!form.technicalPlan || !!form.valueProposition)
-const visibleFields = computed(() => projectTextFields.filter((field, index) => expanded.value || index < 2))
+const fieldGroups = computed(() => [
+  { id: 'project-form-idea', number: '02', title: '说明想法与使用场景', fields: projectTextFields.slice(0, 2) },
+  ...(expanded.value ? [{ id: 'project-form-plan', number: '03', title: '补充方案与项目价值', fields: projectTextFields.slice(2) }] : []),
+])
 function protectUnload(event: BeforeUnloadEvent) {
   if (draftPending.value) saveDraft()
   if (draftError.value && hasContent.value && !savedProject.value) {
@@ -126,14 +130,14 @@ function importDocument() {
 <template>
   <form
     ref="formElement"
-    class="project-form"
+    class="project-form aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out"
     novalidate
     :aria-busy="projects.saving"
     @submit.prevent="save"
   >
+      <AeroDecor />
     <div class="form-panel-heading">
       <div>
-        <span class="section-kicker">PROJECT BRIEF</span>
         <h2>{{ project ? '修改项目，保留每次进步。' : '先从一个想法开始。' }}</h2>
         <p>先写名称、简介和目标用户，草稿会自动保存。准备分析前，再补齐核心功能、技术方案与应用价值。</p>
       </div>
@@ -163,11 +167,12 @@ function importDocument() {
       <AppButton v-if="!savedProject" variant="ghost" @click="saveDraft">{{ draftError ? '重试保存草稿' : '保存草稿' }}</AppButton>
     </div>
     <details
+      id="project-form-materials"
       class="project-materials"
       :open="materialsOpen"
       @toggle="materialsOpen = ($event.target as HTMLDetailsElement).open"
     >
-      <summary>
+      <summary class="focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500">
         <span><FileUp :size="17" />从项目材料开始</span
         ><small>PDF / TXT 解析 · 扫描件 OCR · 图片附件</small><ChevronDown :size="16" />
       </summary>
@@ -201,14 +206,14 @@ function importDocument() {
           >
         </div>
         <label
-          >填入字段<select v-model="importField">
+          >填入字段<select class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" v-model="importField">
             <option v-for="field in projectTextFields" :key="field.key" :value="field.key">
               {{ field.label }}
             </option>
           </select></label
         >
         <label for="document-import-text">待追加文字（可编辑）</label>
-        <textarea
+        <textarea class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
           id="document-import-text"
           v-model="importText"
           rows="5"
@@ -238,7 +243,8 @@ function importDocument() {
       <strong>还有 {{ errorSummary.length }} 项需要补充</strong>
       <ul>
         <li v-for="item in errorSummary" :key="item.field">
-          <button type="button" @click="focusField(item.field)">{{ item.message }}</button>
+          <button class="aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" type="button" @click="focusField(item.field)">
+      <AeroDecor :orbs="false" />{{ item.message }}</button>
         </li>
       </ul>
     </div>
@@ -253,20 +259,22 @@ function importDocument() {
         <p>{{ navigationNote }}</p>
         <RouterLink
           :to="{ name: 'project-detail', params: { id: savedProject.id } }"
-          class="text-button"
+          class="text-button focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
           >查看已创建项目 →</RouterLink
         >
       </div>
     </div>
     <fieldset :disabled="projects.saving || !!savedProject" class="form-controls">
+      <section id="project-form-basics" class="project-form-section">
       <div class="form-section-label"><span>01</span>项目概况</div>
+      <div class="project-basic-fields">
       <FormField
         id="project-name"
         label="项目名称"
         hint="一个清晰的名称，让评委快速理解你的方向。"
         :error="errors.name"
       >
-        <input
+        <input class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
           id="project-name"
           v-model="form.name"
           name="name"
@@ -282,7 +290,7 @@ function importDocument() {
         <span class="field-counter">{{ form.name.length }} / {{ projectTextLimits.name }}</span>
       </FormField>
       <FormField id="project-projectType" label="项目类型" :error="errors.projectType">
-        <select
+        <select class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
           id="project-projectType"
           v-model="form.projectType"
           name="projectType"
@@ -296,15 +304,19 @@ function importDocument() {
           </option>
         </select>
       </FormField>
-      <template v-for="(field, index) in visibleFields" :key="field.key">
-        <div v-if="index === 1" class="form-section-label"><span>02</span>用户、方案与价值</div>
+      </div>
+      </section>
+      <section v-for="group in fieldGroups" :id="group.id" :key="group.id" class="project-form-section">
+        <div class="form-section-label"><span>{{ group.number }}</span>{{ group.title }}</div>
         <FormField
+          v-for="field in group.fields"
+          :key="field.key"
           :id="'project-' + field.key"
           :label="field.label"
           :hint="field.hint"
           :error="errors[field.key]"
         >
-          <textarea
+          <textarea class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
             :id="'project-' + field.key"
             v-model="form[field.key]"
             :name="field.key"
@@ -324,9 +336,10 @@ function importDocument() {
           ></textarea>
           <span class="field-counter">{{ form[field.key].length }} / {{ field.max }}</span>
         </FormField>
-      </template>
-      <AppButton v-if="!expanded" variant="secondary" @click="expanded = true">继续补充方案与价值 →</AppButton>
-      <div v-if="expanded" class="form-section-label"><span>03</span>选择你的答辩强度</div>
+      </section>
+      <div v-if="!expanded" class="project-expand-section"><p>先保存草稿也可以。准备创建项目时，再补充功能、技术方案与应用价值。</p><AppButton variant="secondary" @click="expanded = true">继续补充方案与价值 →</AppButton></div>
+      <section v-if="expanded" class="project-form-section">
+      <div class="form-section-label"><span>04</span>选择你的答辩强度</div>
       <fieldset v-if="expanded" class="difficulty-fieldset">
         <legend>答辩难度<span class="required-mark" aria-hidden="true">*</span></legend>
         <p id="difficulty-hint" class="field-hint">答辩提问将参考此难度设置。</p>
@@ -336,7 +349,7 @@ function importDocument() {
             :key="level"
             class="difficulty-option"
             :class="{ selected: form.difficulty === level }"
-            ><input
+            ><input class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
               :id="level === 'normal' ? 'project-difficulty' : 'project-difficulty-' + level"
               v-model="form.difficulty"
               type="radio"
@@ -358,8 +371,9 @@ function importDocument() {
           {{ errors.difficulty }}
         </p>
       </fieldset>
+      </section>
     </fieldset>
-    <div class="form-submit-bar">
+    <div id="project-form-save" class="form-submit-bar">
       <p>
         <ShieldCheck :size="15" /><span
           >项目资料保存到此浏览器，附件保存在本机后端。<br />上传与创建不调用模型；分析时才会发送资料与附件。</span

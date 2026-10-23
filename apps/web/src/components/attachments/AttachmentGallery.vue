@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AeroDecor from '../ui/AeroDecor.vue'
 import { ref, watch } from 'vue'
 import { FileText, Image as ImageIcon, ExternalLink, X } from 'lucide-vue-next'
 import { attachmentUrl, type Attachment } from '@defense/shared'
@@ -39,18 +40,19 @@ watch(
         <button
           v-if="removable"
           type="button"
-          class="attachment-remove"
+          class="attachment-remove aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
           :aria-label="'移除附件 ' + file.name"
           :disabled="disabled"
           @click="emit('remove', file.id)"
         >
+      <AeroDecor :orbs="false" />
           <X :size="15" />
         </button>
       </div>
       <div class="attachment-caption">
         <strong :title="file.name">{{ file.name }}</strong
         ><span>{{ Math.ceil(file.size / 1024) }} KB · 已存后端</span>
-        <a :href="attachmentUrl(file.id)" target="_blank" rel="noopener noreferrer"
+        <a class="focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" :href="attachmentUrl(file.id)" target="_blank" rel="noopener noreferrer"
           >查看文件<ExternalLink :size="12"
         /></a>
       </div>
@@ -64,7 +66,7 @@ watch(
         >
       </p>
       <details v-if="file.text" class="attachment-extraction">
-        <summary>
+        <summary class="focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500">
           查看{{ file.ocr ? 'OCR / 提取' : '提取' }}文字 · {{ file.text.length }} 字{{
             file.truncated ? '（仅保留部分）' : ''
           }}

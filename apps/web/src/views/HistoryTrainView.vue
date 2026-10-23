@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AeroDecor from '../components/ui/AeroDecor.vue'
+import StatusNotice from '../components/ui/StatusNotice.vue'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { type JudgeId } from '@defense/shared'
@@ -32,19 +34,20 @@ async function start() {
 }
 </script>
 <template>
-  <RouterLink :to="{ name: 'history-detail', params: { id } }" class="back-link"
+  <RouterLink :to="{ name: 'history-detail', params: { id } }" class="back-link focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
     >← 返回原答辩报告</RouterLink
   >
   <div class="view-heading">
-    <div class="eyebrow">PRACTICE WITH A PURPOSE</div>
+
     <h1>围绕薄弱点二次训练</h1>
     <p>创建新的独立会话，保留原始问答和评分。完成后可为新会话生成报告并进行对比。</p>
   </div>
-  <p v-if="history.error || defense.error" class="notice notice-error" role="alert">
+  <StatusNotice v-if="history.error || defense.error" tone="error" compact>
     {{ history.error || defense.error }}
-  </p>
-  <p v-if="defense.warning" class="notice" role="status">{{ defense.warning }}</p>
-  <section v-if="entry?.report && entry.session.status === 'ended'" class="history-card">
+  </StatusNotice>
+  <StatusNotice v-if="defense.warning" tone="warning" compact>{{ defense.warning }}</StatusNotice>
+  <section v-if="entry?.report && entry.session.status === 'ended'" class="history-card aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
+      <AeroDecor />
     <h2>{{ entry.session.project.name }}</h2>
     <p>沿用这场答辩保存的项目和画像快照。若需修改项目资料，可回到项目页面另行创建训练。</p>
     <TrainingSummary :session="entry.session" />
@@ -63,7 +66,7 @@ async function start() {
     </ul>
     <JudgeRolePicker v-model="judgeId" :disabled="defense.busy" />
     <label class="defense-confirm"
-      ><input
+      ><input class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
         v-model="confirmed"
         type="checkbox"
         :disabled="defense.busy"
@@ -73,7 +76,7 @@ async function start() {
     }}</AppButton>
     <p>后端从原始评分报告提取最多 5 项训练重点，创建时不调用模型；进入新会话后生成首问。</p>
   </section>
-  <p v-else-if="!history.error" class="notice">
+  <StatusNotice v-else-if="!history.error" tone="info" compact>
     本地缺少已结束真实会话的评分报告，请先同步或生成原报告。
-  </p>
+  </StatusNotice>
 </template>

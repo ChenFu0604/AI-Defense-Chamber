@@ -1,7 +1,7 @@
 .history-toolbar {
   padding: 20px 22px;
   margin: 26px 0;
-  border: 1px solid var(--border-card);
+  border: 0;
   border-radius: var(--radius-card);
   background: var(--surface-card);
   min-width: 0;
@@ -22,35 +22,31 @@
   padding: 10px 13px;
   min-height: 40px;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   gap: 8px;
   box-shadow: none;
 }
 .history-tool-group .app-button {
-  background: #1b1e28;
-  border-color: #343947;
-  color: #c2c9d9;
+  background: var(--surface-subtle);
+  color: var(--accent);
 }
 .history-tool-group .app-button:hover {
-  background: #242835;
-  border-color: #555d72;
+  background: var(--surface-subtle);
 }
 .history-tool-group .app-button > svg {
-  color: #929db3;
+  color: var(--accent);
 }
 .history-toolbar .history-compare-link {
-  color: #d1bdf7;
-  background: #221c30;
-  border-color: #4d3f67;
+  color: var(--accent);
+  background: var(--surface-subtle);
 }
 .history-toolbar .history-compare-link:hover {
-  background: #2b2340;
-  border-color: #8a71b5;
+  background: var(--surface-subtle);
 }
 .history-toolbar-filter {
   margin-top: 18px;
   padding-top: 18px;
-  border-top: 1px solid #ffffff0a;
+  border-top: 0;
   gap: 14px;
 }
 .history-toolbar .history-filter {
@@ -61,16 +57,16 @@
   display: inline-flex;
   gap: 8px;
   align-items: center;
-  color: #929eb3;
+  color: var(--text-secondary);
   white-space: nowrap;
   font-size: 12px;
 }
 .history-toolbar .history-filter select {
   min-height: 38px;
   width: 250px;
-  background: #10131b;
-  border: 1px solid #343b4d;
-  border-radius: 8px;
+  background: var(--surface-card);
+  border: 0;
+  border-radius: 16px;
   font-size: 12px;
   padding: 8px 12px;
 }
@@ -78,14 +74,14 @@
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  font-size: 11px;
-  color: #8d98ad;
+  font-size: 12px;
+  color: var(--text-secondary);
 }
 .history-record-count i {
   width: 3px;
   height: 3px;
   border-radius: 50%;
-  background: #5d677b;
+  background: var(--accent-soft);
 }
 @media (max-width: 760px) {
   .history-toolbar {
@@ -125,9 +121,9 @@
   margin: 22px 0;
 }
 .history-card {
-  background: #151923;
-  border: 1px solid #363d53;
-  border-radius: 12px;
+  background: var(--surface-card);
+  border: 0;
+  border-radius: 16px;
   padding: 24px;
   margin: 20px 0;
   overflow-wrap: anywhere;
@@ -146,13 +142,13 @@
 }
 .history-card p,
 .history-card li {
-  font-size: 13px;
-  color: #b5bed2;
+  font-size: 14px;
+  color: var(--text-primary);
   line-height: 1.9;
 }
 .history-card summary {
   cursor: pointer;
-  color: #cbb7ff;
+  color: var(--accent);
   font-size: 15px;
 }
 .history-score {
@@ -161,30 +157,30 @@
   align-items: center;
   flex-wrap: wrap;
   padding: 15px 0;
-  color: #b8bdd4;
+  color: var(--text-primary);
   font-size: 12px;
 }
 .history-score strong {
   font-size: 38px;
-  color: #bba8fb;
+  color: var(--text-primary);
 }
 .history-score span:last-child {
   margin-left: auto;
-  color: #c9d5eb;
+  color: var(--text-primary);
 }
 .history-filter {
   display: flex;
   gap: 12px;
   align-items: center;
-  font-size: 13px;
+  font-size: 14px;
   margin: 22px 0;
 }
 .history-filter select,
 .history-compare-select select {
-  background: #202537;
-  border: 1px solid #4b5672;
-  color: #e9e8f5;
-  border-radius: 6px;
+  background: var(--surface-card);
+  border: 0;
+  color: var(--text-primary);
+  border-radius: 16px;
   padding: 10px;
   max-width: 100%;
   min-width: 0;
@@ -200,7 +196,7 @@
   min-width: 0;
   flex-direction: column;
   gap: 12px;
-  font-size: 13px;
+  font-size: 14px;
 }
 .history-compare-select select {
   width: 100%;
@@ -212,22 +208,22 @@
 .history-table {
   width: 100%;
   border-collapse: collapse;
-  background: #151923;
-  font-size: 13px;
+  background: var(--surface-subtle);
+  font-size: 14px;
 }
 .history-table th,
 .history-table td {
   padding: 18px;
   text-align: left;
-  border-bottom: 1px solid #343c51;
+  border-bottom: 0;
   white-space: nowrap;
 }
 .history-table th {
-  color: #c9b5ff;
+  color: var(--text-primary);
 }
 .history-delta {
   font-size: 32px;
-  color: #d1bee8;
+  color: var(--text-primary);
 }
 .history-original {
   white-space: pre-wrap;

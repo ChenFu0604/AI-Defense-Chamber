@@ -4,9 +4,9 @@
 .defense-ended {
   padding: 24px;
   margin: 24px 0;
-  background: #13151c;
-  border: 1px solid #343746;
-  border-radius: 12px;
+  background: var(--surface-subtle);
+  border: 0;
+  border-radius: 16px;
   overflow-wrap: anywhere;
 }
 .defense-start h2,
@@ -19,8 +19,8 @@
 .defense-current p,
 .defense-report-finding p {
   line-height: 1.9;
-  color: #b7bac8;
-  font-size: 13px;
+  color: var(--text-secondary);
+  font-size: 14px;
 }
 .defense-settings,
 .defense-actions,
@@ -37,10 +37,10 @@
   margin-bottom: 8px;
 }
 .defense-settings select {
-  background: #1a1d28;
-  color: #e3e4ef;
-  border: 1px solid #45495c;
-  border-radius: 7px;
+  background: var(--surface-card);
+  color: var(--text-primary);
+  border: 0;
+  border-radius: 16px;
   padding: 12px;
   max-width: 100%;
 }
@@ -50,20 +50,20 @@
   gap: 10px;
   margin: 20px 0;
   line-height: 1.8;
-  font-size: 13px;
+  font-size: 14px;
 }
 .defense-confirm input {
   margin-top: 5px;
   accent-color: var(--violet);
 }
 .defense-source {
-  color: #f0ca8d;
+  color: var(--text-primary);
   font-size: 12px;
   line-height: 1.8;
 }
 .defense-session-bar {
   justify-content: space-between;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.8;
 }
 .defense-progress {
@@ -76,35 +76,34 @@
   min-height: 180px;
   overflow-y: auto;
   overflow-wrap: anywhere;
-  border: 1px solid #303443;
-  border-radius: 12px;
+  border: 0;
+  border-radius: 16px;
   padding: 20px;
-  background: #0e1016;
+  background: var(--surface-subtle);
   scroll-behavior: smooth;
 }
 .defense-message {
-  border: 1px solid #33384b;
-  background: #191c29;
+  border: 0;
+  background: var(--surface-subtle);
   padding: 18px;
-  border-radius: 12px;
+  border-radius: 16px;
   margin: 0 30px 20px 0;
 }
 .defense-message.user {
   margin: 0 0 20px 30px;
-  border-color: #4c4168;
-  background: #211c30;
+  background: var(--surface-subtle);
 }
 .defense-message-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 9px;
   align-items: center;
-  font-size: 11px;
-  color: #a6aabc;
+  font-size: 12px;
+  color: var(--text-secondary);
 }
 .defense-message-meta strong {
-  color: #d8c4ff;
-  font-size: 13px;
+  color: var(--text-primary);
+  font-size: 14px;
 }
 .defense-message-content {
   white-space: pre-wrap;
@@ -114,7 +113,7 @@
 }
 .defense-message details {
   font-size: 12px;
-  color: #aeb3c4;
+  color: var(--text-secondary);
   line-height: 1.9;
 }
 .defense-message summary {
@@ -128,17 +127,17 @@
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  font-size: 13px;
+  font-size: 14px;
   margin-bottom: 10px;
 }
 .defense-composer textarea {
   width: 100%;
   resize: vertical;
   min-height: 120px;
-  background: #151821;
-  border: 1px solid #44495d;
-  color: #eceaf3;
-  border-radius: 9px;
+  background: var(--surface-card);
+  border: 0;
+  color: var(--text-primary);
+  border-radius: 16px;
   padding: 16px;
   line-height: 1.8;
   font: inherit;
@@ -151,7 +150,7 @@
 }
 .defense-recent {
   margin-top: 25px;
-  font-size: 13px;
+  font-size: 14px;
 }
 .defense-recent a {
   display: block;

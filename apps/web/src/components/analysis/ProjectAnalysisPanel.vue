@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AeroDecor from '../ui/AeroDecor.vue'
 import { computed, onBeforeUnmount, watch } from 'vue'
 import {
   Sparkles,
@@ -14,6 +15,7 @@ import { useAnalysisStore } from '../../stores/analysis'
 import AppButton from '../ui/AppButton.vue'
 import AnalysisResults from './AnalysisResults.vue'
 import RequestWait from '../ui/RequestWait.vue'
+import StatusNotice from '../ui/StatusNotice.vue'
 
 const props = defineProps<{ project: Project }>()
 const analyses = useAnalysisStore()
@@ -36,10 +38,10 @@ watch(
 onBeforeUnmount(() => analyses.cancel(props.project.id))
 </script>
 <template>
-  <section id="analysis" class="project-analysis-panel" aria-labelledby="analysis-title">
+  <section id="analysis" class="project-analysis-panel aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out" aria-labelledby="analysis-title">
+      <AeroDecor />
     <div class="analysis-panel-header">
       <div>
-        <div class="section-kicker">FROM PROJECT BRIEF TO PROJECT INSIGHT</div>
         <h2 id="analysis-title"><Sparkles :size="21" />项目智能分析</h2>
         <p>从核心价值、技术可行性到风险与证据，整理你的答辩起点。</p>
       </div>
@@ -77,7 +79,6 @@ onBeforeUnmount(() => analyses.cancel(props.project.id))
         <strong>{{
           state.activeMode === 'demo' ? '正在准备模拟结构示例' : '正在分析项目，请稍候'
         }}</strong>
-        <RequestWait :active="state.status === 'loading' && state.activeMode === 'live'" :request-key="project.id" />
         <p>
           {{
             state.activeMode === 'demo'
@@ -85,8 +86,10 @@ onBeforeUnmount(() => analyses.cancel(props.project.id))
               : '正在请求模型并检查返回结果。已有画像保留，新结果通过校验后才会替换。'
           }}
         </p>
+        <RequestWait embedded :active="state.status === 'loading' && state.activeMode === 'live'" :request-key="project.id" />
       </div>
-      <button type="button" class="text-button" @click="analyses.cancel(project.id)">
+      <button type="button" class="text-button aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" @click="analyses.cancel(project.id)">
+      <AeroDecor :orbs="false" />
         <X :size="14" />取消分析
       </button>
     </div>
@@ -100,7 +103,7 @@ onBeforeUnmount(() => analyses.cancel(props.project.id))
           可在模型配置中延长等待时间（最长 5 分钟）；若仍超时，请检查服务商状态或切换模型。
         </p>
         <p v-if="configError || ['AI_TIMEOUT', 'CLIENT_TIMEOUT'].includes(state.errorCode)">
-          <RouterLink to="/settings" class="text-button">前往系统设置 → 模型配置</RouterLink>
+          <RouterLink to="/settings" class="text-button focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500">前往系统设置 → 模型配置</RouterLink>
         </p>
         <p>已有项目和先前画像保留；不会自动切换成模拟结果。</p>
         <AppButton variant="secondary" @click="analyses.run(project, state.activeMode)"
@@ -108,26 +111,28 @@ onBeforeUnmount(() => analyses.cancel(props.project.id))
         /></AppButton>
       </div>
     </div>
-    <p v-if="state.status === 'cancelled'" class="analysis-cancelled" role="status">
+    <StatusNotice v-if="state.status === 'cancelled'" compact>
       本次分析已取消。已有资料和画像保留，可再次分析。
-    </p>
-    <p v-if="state.warning" class="notice analysis-storage-warning" role="status">
+    </StatusNotice>
+    <StatusNotice v-if="state.warning" tone="warning" compact>
       {{ state.warning }}
-    </p>
+    </StatusNotice>
     <div v-if="state.live && state.demo" class="analysis-mode-tabs" aria-label="分析来源">
-      <button
+      <button class="aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
         type="button"
         :disabled="state.status === 'loading'"
         :aria-pressed="state.activeMode === 'live'"
         @click="analyses.showMode(project.id, 'live')"
       >
+      <AeroDecor :orbs="false" />
         真实模型分析</button
-      ><button
+      ><button class="aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
         type="button"
         :disabled="state.status === 'loading'"
         :aria-pressed="state.activeMode === 'demo'"
         @click="analyses.showMode(project.id, 'demo')"
       >
+      <AeroDecor :orbs="false" />
         模拟示例
       </button>
     </div>

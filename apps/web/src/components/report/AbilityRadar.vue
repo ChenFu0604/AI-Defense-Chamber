@@ -2,15 +2,18 @@
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import type { ReportDimensions } from '@defense/shared'
 import { createRadarChart } from './radar-chart'
+import { observeChartAppearance } from '../chart-theme'
 const props = defineProps<{ dimensions: ReportDimensions }>()
 const container = ref<HTMLElement | null>(null)
 let chart: ReturnType<typeof createRadarChart> | undefined
 let observer: ResizeObserver | undefined
+let stopAppearance: (() => void) | undefined
 const resize = () => chart?.resize()
 onMounted(() => {
   if (!container.value) return
   chart = createRadarChart(container.value)
   chart.update(props.dimensions)
+  stopAppearance = observeChartAppearance(() => chart?.update(props.dimensions))
   if (typeof ResizeObserver !== 'undefined') {
     observer = new ResizeObserver(resize)
     observer.observe(container.value)
@@ -24,6 +27,7 @@ watch(
 )
 onBeforeUnmount(() => {
   observer?.disconnect()
+  stopAppearance?.()
   window.removeEventListener('resize', resize)
   chart?.dispose()
 })

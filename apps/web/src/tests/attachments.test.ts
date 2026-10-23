@@ -172,7 +172,10 @@ describe('attachment frontend integration', () => {
     const cards = await renderToString(
       createSSRApp({ render: () => h(ProjectSnapshot, { project: endedReportSession().project }) }),
     )
-    expect(cards.match(/class="project-snapshot-card"/g)).toHaveLength(5)
+    expect(cards.match(/<section\b[^>]*class="[^"]*\bproject-snapshot-card\b/g)).toHaveLength(5)
+    for (const field of ['description', 'targetUsers', 'coreFeatures', 'technicalPlan', 'valueProposition'] as const) {
+      expect(cards).toContain(endedReportSession().project[field])
+    }
   })
   it('reconstructs failed attachment operations after refresh and clears files only after confirmed success', async () => {
     const session = endedReportSession(),

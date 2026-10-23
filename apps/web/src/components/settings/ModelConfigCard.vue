@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import AeroDecor from '../ui/AeroDecor.vue'
 import { onBeforeUnmount, onMounted } from 'vue'
 import { DEFAULT_MODEL_TIMEOUT_MS, MAX_MODEL_TIMEOUT_MS } from '@defense/shared'
 import { PlugZap, Save, KeyRound, ServerCog, ListRestart } from 'lucide-vue-next'
 import AppButton from '../ui/AppButton.vue'
 import FormField from '../ui/FormField.vue'
+import StatusNotice from '../ui/StatusNotice.vue'
 import { useModelSettings } from '../../composables/useModelSettings'
 import { useSystemStore } from '../../stores/system'
 const settings = useModelSettings()
@@ -30,7 +32,8 @@ async function save() {
 }
 </script>
 <template>
-  <section class="model-config-card" aria-labelledby="model-config-title">
+  <section class="model-config-card aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out" aria-labelledby="model-config-title">
+      <AeroDecor />
     <div class="model-config-heading">
       <span class="model-config-icon"><ServerCog :size="24" /></span>
       <div>
@@ -44,7 +47,7 @@ async function save() {
     <p class="model-config-description">
       项目画像、四角色评审和动态追问共用此配置。保存到后端后立即用于后续请求，重启后继续保留。
     </p>
-    <div v-if="activity === 'loading'" role="status" class="notice">正在读取后端配置…</div>
+    <StatusNotice v-if="activity === 'loading'" compact busy>正在读取后端配置…</StatusNotice>
     <form class="model-config-form" @submit.prevent="save" novalidate>
       <fieldset :disabled="busy || !loaded">
         <FormField
@@ -52,7 +55,7 @@ async function save() {
           label="API Base URL"
           hint="填写基础地址，系统会追加 /chat/completions。"
           :error="errors.baseUrl"
-          ><input
+          ><input class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
             id="model-base-url"
             v-model="form.baseUrl"
             type="url"
@@ -66,7 +69,7 @@ async function save() {
           hint="填写地址与密钥后点击获取模型，也可以直接手动填写模型 ID。"
           :error="errors.model"
           ><div class="model-name-control">
-            <select
+            <select class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
               v-if="models.length && !manualModel"
               id="model-name"
               v-model="form.model"
@@ -78,7 +81,7 @@ async function save() {
               </option>
               <option v-for="model in models" :key="model" :value="model">{{ model }}</option>
             </select>
-            <input
+            <input class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
               v-else
               id="model-name"
               v-model="form.model"
@@ -97,7 +100,8 @@ async function save() {
           </div>
           <div v-if="models.length" class="model-picker-help">
             <span>共 {{ models.length }} 个模型，是否支持对话及结构化输出请通过测试连接确认。</span
-            ><button type="button" class="text-button" @click="manualModel = !manualModel">
+            ><button type="button" class="text-button aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" @click="manualModel = !manualModel">
+      <AeroDecor :orbs="false" />
               {{ manualModel ? '从列表选择' : '手动输入' }}
             </button>
           </div>
@@ -113,7 +117,7 @@ async function save() {
               : '密钥仅发送到本机后端，不保存在浏览器。'
           "
           :error="errors.apiKey"
-          ><input
+          ><input class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
             id="model-api-key"
             v-model="form.apiKey"
             type="password"
@@ -126,7 +130,7 @@ async function save() {
         /></FormField>
         <div class="model-config-options">
           <FormField id="model-format" label="结构化输出"
-            ><select id="model-format" v-model="form.responseFormat">
+            ><select class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" id="model-format" v-model="form.responseFormat">
               <option value="json_schema">JSON Schema（严格校验，推荐）</option>
               <option value="json_object">JSON Object（兼容模式）</option>
             </select></FormField
@@ -135,7 +139,7 @@ async function save() {
             label="请求超时（毫秒）"
             :hint="`1000～${MAX_MODEL_TIMEOUT_MS}，默认 ${DEFAULT_MODEL_TIMEOUT_MS}。分析较慢时可设为 180000（3 分钟），保存后生效。`"
             :error="errors.timeoutMs"
-            ><input
+            ><input class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
               id="model-timeout"
               v-model.number="form.timeoutMs"
               type="number"
@@ -151,8 +155,8 @@ async function save() {
           接口只返回“是否已配置密钥”，不会回传密钥。测试会向所填地址发送固定短文本，可能消耗少量模型额度，不发送项目资料。含图片的分析与答辩需选择支持视觉的模型；此连接测试不验证图片理解能力。
         </p>
       </div>
-      <p v-if="error" class="notice notice-error" role="alert">{{ error }}</p>
-      <p v-if="message" class="notice" role="status">{{ message }}</p>
+      <StatusNotice v-if="error" tone="error" compact>{{ error }}</StatusNotice>
+      <StatusNotice v-if="message" compact :tone="connection || message.startsWith('已保存到后端') ? 'success' : 'info'">{{ message }}</StatusNotice>
       <div v-if="connection" class="model-connection-result">
         <span class="status-dot online"></span><strong>模型测试通过</strong
         ><span>{{ connection.model }}</span

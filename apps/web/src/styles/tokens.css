@@ -1,0 +1,55 @@
+/* Frutiger Aero: daylight, clear glass and readable sky-colored text. */
+:root {
+  color-scheme: light;
+  --font-sans: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;
+  --text-primary: #08354f;
+  --text-secondary: #073652;
+  --muted: #073652;
+  --page-bg: #e0f2fe;
+  --sky-start: #7dd3fc;
+  --sky-end: #0ea5e9;
+  --surface-card: #ffffffb3;
+  --glass-base: #ffffff73;
+  --surface-subtle: #ffffff66;
+  --surface-elevated: #ffffffe6;
+  --input-bg: #ffffffcc;
+  --accent: #075985;
+  --accent-hover: #0c4a6e;
+  --accent-contrast: #ffffff;
+  --accent-soft: #e0f2fe;
+  --accent-border: #7dd3fc;
+  --border-card: #ffffff99;
+  --line: #ffffff80;
+  --success: #0f5429;
+  --success-soft: #e9f7e8;
+  --success-border: #bbf7d0;
+  --warning: #704008;
+  --warning-soft: #fff8df;
+  --warning-border: #fde68a;
+  --danger: #8a203d;
+  --danger-soft: #fff0f3;
+  --danger-border: #fecdd3;
+  --mint: #0f5429;
+  --cyan: #0c4a6e;
+  --violet: #59397f;
+  --rose: #8a203d;
+  --overlay: rgb(12 74 110 / 28%);
+  --chart-grid: #a9d7e9;
+  --chart-area: #edf8fe;
+  --chart-surface: #f0f9ff;
+  --chart-fill: rgb(14 165 233 / 20%);
+  --chart-line: #0369a1;
+  --chart-label: #0b5077;
+  --chart-edge: #386984;
+  --chart-edge-label-bg: #f0f9ff;
+  --weight-body: 400;
+  --weight-medium: 500;
+  --weight-strong: 600;
+  --radius-card: 22px;
+  --space-card: 26px;
+  --shadow-card: 0 12px 32px rgb(3 105 161 / 9%), inset 0 1px 0 rgb(255 255 255 / 75%);
+}
+
+body {
+  font-variant-numeric: tabular-nums;
+}

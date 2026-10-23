@@ -41,7 +41,7 @@ function choose(id: JudgeId) {
         class="role-choice"
         :class="[judge.color, { selected: modelValue === judge.id }]"
       >
-        <input
+        <input class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
           v-model="selected"
           type="radio"
           :name="name"

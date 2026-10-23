@@ -15,7 +15,17 @@ const input = ref<HTMLInputElement | null>(null),
   error = ref(''),
   currentName = ref('')
 let controller: AbortController | null = null,
-  active = true
+  active = true,
+  dragDepth = 0
+function dragEnter(event: DragEvent) {
+  if (props.disabled || busy.value || !event.dataTransfer?.types.includes('Files')) return
+  dragDepth += 1
+  dragging.value = true
+}
+function dragLeave() {
+  dragDepth = Math.max(0, dragDepth - 1)
+  dragging.value = dragDepth > 0
+}
 function chooseDocuments() {
   if (props.disabled || busy.value || props.modelValue.length >= MAX_ATTACHMENTS) return
   ocrEnabled.value = true
@@ -69,6 +79,7 @@ async function acceptFiles(files: File[]) {
   }
 }
 function drop(event: DragEvent) {
+  dragDepth = 0
   dragging.value = false
   if (event.dataTransfer?.files) void acceptFiles(Array.from(event.dataTransfer.files))
 }
@@ -94,7 +105,7 @@ onBeforeUnmount(() => {
       <span>{{ modelValue.length }} / {{ MAX_ATTACHMENTS }}</span>
     </div>
     <label class="attachment-ocr-control">
-      <input v-model="ocrEnabled" type="checkbox" :disabled="disabled || busy" />
+      <input class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" v-model="ocrEnabled" type="checkbox" :disabled="disabled || busy" />
       <span
         ><strong>OCR 识别扫描件和图片文字</strong
         ><small
@@ -106,8 +117,9 @@ onBeforeUnmount(() => {
     <div
       class="attachment-dropzone"
       :class="{ dragging, disabled: disabled || busy }"
-      @dragover.prevent="!disabled && !busy && (dragging = true)"
-      @dragleave.prevent="dragging = false"
+      @dragenter.prevent="dragEnter"
+      @dragover.prevent
+      @dragleave.prevent="dragLeave"
       @drop.prevent="drop"
     >
       <Upload v-if="!busy" :size="24" /><LoaderCircle v-else :size="24" class="spinning" />
@@ -116,7 +128,7 @@ onBeforeUnmount(() => {
       }}</strong>
       <p v-if="busy" role="status">{{ currentName }}</p>
       <p v-else>图片 ≤ 4 MiB · PDF / TXT ≤ 8 MiB · PDF 最多 40 页</p>
-      <input
+      <input class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
         ref="documentInput"
         type="file"
         multiple
@@ -126,7 +138,7 @@ onBeforeUnmount(() => {
         :disabled="disabled || busy || modelValue.length >= MAX_ATTACHMENTS"
         @change="acceptFiles(Array.from(($event.target as HTMLInputElement).files ?? []))"
       />
-      <input
+      <input class="bg-white/30 backdrop-blur-md border border-white/40 rounded-2xl text-sky-900 placeholder:text-sky-400/50 focus:outline-none focus:border-white/70 focus:bg-white/40 transition-all focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
         ref="input"
         type="file"
         multiple

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AeroDecor from './ui/AeroDecor.vue'
 import { ref } from 'vue'
 import { X, ArrowUpRight, Check, CircleDashed } from 'lucide-vue-next'
 import AppButton from './ui/AppButton.vue'
@@ -21,7 +22,8 @@ defineExpose({ open })
   >
     <div class="dialog-heading">
       <span class="eyebrow">BUILDING IN THE OPEN</span
-      ><button class="icon-button" aria-label="关闭窗口" @click="dialog?.close()">
+      ><button class="icon-button aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" aria-label="关闭窗口" @click="dialog?.close()">
+      <AeroDecor :orbs="false" />
         <X :size="20" />
       </button>
     </div>

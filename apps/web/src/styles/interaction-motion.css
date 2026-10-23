@@ -1,0 +1,62 @@
+/* Complete messages arrive in JSON. This soft reveal does not simulate token streaming. */
+.ink-reveal-enter-active {
+  transition: opacity 240ms ease-out, filter 240ms ease-out;
+}
+.ink-reveal-enter-from {
+  opacity: 0;
+  filter: blur(2px);
+}
+.ink-reveal-enter-to {
+  opacity: 1;
+  filter: blur(0);
+}
+
+/* Dragging stays attached to the pointer; only the destination surface responds. */
+.attachment-dropzone {
+  border-color: transparent;
+  transition: background-color 150ms ease-out;
+}
+.attachment-dropzone.dragging:not(.disabled) {
+  background: var(--accent-soft);
+  border-color: transparent;
+}
+.attachment-dropzone.dragging > svg {
+  color: var(--accent);
+}
+.risk-canvas .vue-flow__node.dragging,
+.risk-canvas .vue-flow__node.dragging .risk-node-card {
+  transition: none;
+  cursor: grabbing;
+}
+.risk-canvas .vue-flow__node.dragging .risk-node-card {
+  background: var(--surface-elevated, var(--surface-card));
+}
+.risk-canvas .vue-flow__node-risk:not(.dragging) .risk-node-card {
+  transition: background-color 150ms ease-out;
+}
+.attachment-heading > span,
+.attachment-caption > span,
+.defense-message-meta time {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ink-reveal-enter-active,
+  .attachment-dropzone,
+  .risk-canvas .vue-flow__node-risk .risk-node-card {
+    transition: none;
+  }
+  .ink-reveal-enter-from {
+    opacity: 1;
+    filter: none;
+  }
+  .defense-messages {
+    scroll-behavior: auto;
+  }
+  .spinning,
+  .thinking-dots i,
+  .judge-state-dot {
+    animation: none;
+  }
+}

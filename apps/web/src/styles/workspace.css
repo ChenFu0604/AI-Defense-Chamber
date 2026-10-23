@@ -14,9 +14,9 @@
 .project-snapshot-card {
   min-width: 0;
   padding: 20px;
-  border: 1px solid var(--border-card);
-  border-radius: 12px;
-  background: #0f121a;
+  border: 0;
+  border-radius: 16px;
+  background: var(--surface-card);
 }
 .project-snapshot-card:first-child {
   grid-column: 1/-1;
@@ -24,7 +24,7 @@
 .project-snapshot-card h4 {
   margin: 0 0 12px;
   font-size: 14px;
-  color: #d4c3ff;
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   gap: 9px;
@@ -33,14 +33,14 @@
   content: '';
   width: 4px;
   height: 14px;
-  border-radius: 4px;
+  border-radius: 16px;
   background: var(--accent);
 }
 .project-snapshot-card p {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  color: #b6bed0;
-  font-size: 13px;
+  color: var(--text-secondary);
+  font-size: 14px;
   line-height: 1.95;
   margin: 0;
 }
@@ -61,14 +61,11 @@
   min-width: 0;
   margin: 0;
   padding: 18px;
-  border: 1px solid var(--border-card);
-  border-radius: 12px;
-  background: #10131c;
+  border: 0;
+  border-radius: 16px;
+  background: var(--surface-card);
   color: var(--accent);
   transition: border-color 0.15s;
-}
-.resume-session-card:hover {
-  border-color: #8065ad;
 }
 .resume-session-card > div {
   flex: 1;
@@ -77,17 +74,17 @@
   min-width: 0;
 }
 .resume-session-card strong {
-  font-size: 13px;
-  color: #e0e1ec;
+  font-size: 14px;
+  color: var(--text-primary);
   overflow-wrap: anywhere;
 }
 .resume-session-card small {
-  font-size: 11px;
-  color: #9ba5ba;
+  font-size: 12px;
+  color: var(--text-secondary);
 }
 .resume-session-badge {
-  color: #bba7e9;
-  font-size: 10px;
+  color: var(--accent);
+  font-size: 12px;
 }
 @media (max-width: 700px) {
   .project-snapshot-grid,
@@ -104,18 +101,7 @@
 .model-config-card {
   padding: var(--space-card);
   border-radius: var(--radius-card);
-  border-color: var(--border-card);
   background-color: var(--surface-card);
-}
-.report-evidenceGaps {
-  border-top-color: #bd9256;
-}
-.report-weaknesses,
-.report-priorities {
-  border-top-color: #9f606c;
-}
-.report-strengths {
-  border-top-color: #598f84;
 }
 .report-card h2,
 .history-card h2,

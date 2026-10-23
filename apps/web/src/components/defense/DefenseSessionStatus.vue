@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AeroDecor from '../ui/AeroDecor.vue'
 import { computed } from 'vue'
 import { Activity, MessageSquare, CheckCircle2 } from 'lucide-vue-next'
 import {
@@ -19,7 +20,8 @@ const count = computed(() => Math.max(0, Math.min(limit.value, props.questions))
 const percent = computed(() => (count.value / limit.value) * 100)
 </script>
 <template>
-  <section class="session-overview" aria-label="本场答辩状态">
+  <section class="session-overview aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out" aria-label="本场答辩状态">
+      <AeroDecor />
     <div class="session-overview-top">
       <span class="session-source-chip" :class="mode"
         ><Activity :size="14" />{{

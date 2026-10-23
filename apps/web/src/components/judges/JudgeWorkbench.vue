@@ -13,6 +13,7 @@ import { useJudgesStore } from '../../stores/judges'
 import JudgeSeat from './JudgeSeat.vue'
 import JudgeDetails from './JudgeDetails.vue'
 import AppButton from '../ui/AppButton.vue'
+import StatusNotice from '../ui/StatusNotice.vue'
 import DefenseModePicker from '../defense/DefenseModePicker.vue'
 import { MessageSquarePlus, ListOrdered } from 'lucide-vue-next'
 const props = defineProps<{ project?: Project }>()
@@ -53,7 +54,6 @@ function run(all = false) {
   <section class="judge-workbench" aria-label="多角色评委工作台">
     <div class="section-heading">
       <div>
-        <div class="section-kicker">FOUR PERSPECTIVES · ONE MODEL</div>
         <h2>四个立场，逐一审视。</h2>
       </div>
       <span class="preview-chip">角色提问工作台</span>
@@ -103,19 +103,19 @@ function run(all = false) {
         </div>
       </div>
     </section>
-    <p v-if="!project" class="notice">选择一个项目后，即可根据画像生成角色问题。</p>
-    <div v-else-if="!analysis" class="notice">
+    <StatusNotice v-if="!project" compact :announce="false">选择一个项目后，即可根据画像生成角色问题。</StatusNotice>
+    <StatusNotice v-else-if="!analysis" compact :announce="false">
       <p>
         请先生成{{
           mode === 'live' ? '真实模型' : '模拟'
         }}项目画像。真实模式未配置模型时会显示配置错误，系统不会自动改用模拟数据。
       </p>
-      <RouterLink
+      <template #actions><RouterLink
         :to="{ name: 'project-detail', params: { id: project.id }, hash: '#analysis' }"
-        class="text-button"
+        class="text-button focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
         >前往项目分析 →</RouterLink
-      >
-    </div>
+      ></template>
+    </StatusNotice>
     <p v-else class="judge-source">
       {{
         mode === 'demo'
@@ -123,12 +123,12 @@ function run(all = false) {
           : `真实调用模式 · 基于模型画像 ${analysis.model}`
       }}。本轮问题仅保留在当前工作台，刷新后清空；画像内容仍需人工核实。
     </p>
-    <p v-if="judges.busy" role="status">
+    <StatusNotice v-if="judges.busy" compact busy>
       {{ judgeDefinitions.find((j) => j.id === judges.pendingId)?.name }}正在结合项目画像生成问题…
-    </p>
-    <div v-if="judges.error" role="alert" class="notice notice-error">
+    </StatusNotice>
+    <StatusNotice v-if="judges.error" tone="error" compact>
       {{ judges.error }} <span>已有问题已保留，可再次点击提问重试。</span>
-    </div>
+    </StatusNotice>
     <div class="judge-statements" aria-live="polite" :aria-busy="judges.busy">
       <p v-if="!selectedStatements.length" class="judge-empty">
         {{ selected.name }}尚未提问。选择来源并生成问题，或查看其他评委。

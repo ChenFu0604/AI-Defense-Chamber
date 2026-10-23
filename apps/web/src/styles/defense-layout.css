@@ -1,0 +1,167 @@
+/* Keep the conversation primary; supporting controls share a separate column. */
+.session-page { min-width: 0; }
+.session-page > .back-link { margin-bottom: 18px; }
+.session-page-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
+.session-page-heading > div { min-width: 0; }
+.session-page-heading h1 { margin: 8px 0 10px; font-size: clamp(25px, 2.3vw, 34px); line-height: 1.4; letter-spacing: -.5px; overflow-wrap: anywhere; }
+.session-page-heading p { color: var(--text-secondary); font-size: 14px; line-height: 1.8; }
+.session-history-link { flex-shrink: 0; }
+.session-page > .session-overview { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 28px; padding: 18px 24px; margin: 0 0 24px; }
+.session-page > .session-overview .session-overview-top { flex-direction: column; align-items: flex-start; justify-content: center; gap: 10px; padding: 0 24px 0 0; border: 0; border-right: 0; }
+.session-page > .session-overview .session-overview-bottom { padding: 0; margin: 0; gap: 24px; }
+.session-page > .session-overview .session-round strong { font-size: 30px; }
+.session-page > .session-overview .session-track-copy > p { margin-top: 8px; }
+.session-workspace-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; align-items: start; gap: 24px; }
+.session-primary, .session-side { min-width: 0; }
+.session-primary { display: flex; flex-direction: column; gap: 18px; }
+.session-primary > .current-question-card,
+.session-primary > .answer-feedback,
+.session-primary > .defense-composer,
+.session-primary > .defense-activity,
+.session-primary > .request-wait,
+.session-primary > .defense-ended { margin: 0; }
+.session-primary .current-question-card { padding: 26px; scroll-margin-top: 24px; }
+.session-card-eyebrow { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; color: var(--accent); font-size: 12px; font-weight: var(--weight-strong); }
+.session-card-eyebrow > span:last-child { font-variant-numeric: tabular-nums; }
+.session-primary .current-question-header { gap: 12px; padding-bottom: 0; border: 0; }
+.session-primary .current-question-header .role-avatar { width: 38px; height: 38px; border-radius: 16px; }
+.session-primary .current-question-header h2 { font-size: 15px; margin-top: 3px; }
+.session-primary .current-question-header > div > span { font-size: 12px; }
+.session-primary .current-question-text { font-size: 21px; font-weight: var(--weight-medium); line-height: 1.85; margin: 22px 0 4px; }
+.session-primary .current-question-placeholder { line-height: 1.8; margin: 22px 0 4px; }
+.session-primary .answer-feedback { padding: 20px 24px; }
+.session-primary .answer-feedback > p { font-size: 14px; }
+.session-primary .defense-composer { padding: 24px; }
+.session-composer-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 20px; }
+.session-composer-heading h2 { font-size: 19px; }
+.session-composer-heading > span { color: var(--text-secondary); font-size: 12px; }
+.session-primary .defense-composer > label { font-size: 13px; color: var(--text-secondary); }
+.session-primary .defense-composer textarea { min-height: 180px; padding: 16px; font-size: 16px; line-height: 1.85; }
+.session-input-hint { color: var(--text-secondary); font-size: 12px; line-height: 1.8; margin: 9px 0 18px; }
+.session-answer-materials { border: 0; border-radius: 16px; background: var(--surface-subtle); margin: 16px 0; }
+.session-answer-materials > summary { cursor: pointer; display: flex; align-items: center; gap: 9px; padding: 12px 14px; list-style: none; color: var(--text-primary); font-size: 13px; }
+.session-answer-materials > summary > span { color: var(--text-secondary); font-size: 12px; margin-left: auto; }
+.session-answer-materials > summary::-webkit-details-marker,
+.session-side .session-tools > summary::-webkit-details-marker { display: none; }
+.session-answer-materials[open] > summary { border-bottom: 0; }
+.session-answer-materials[open] > summary > svg,
+.session-side .session-tools[open] > summary > svg { transform: rotate(180deg); }
+.session-answer-materials > .attachment-uploader { margin: 0; padding: 14px; }
+.session-primary .defense-composer > .defense-actions { margin: 20px 0 10px; gap: 10px; }
+.session-primary .defense-composer > .judge-disclaimer { margin: 10px 0; color: var(--text-secondary); font-size: 12px; line-height: 1.8; }
+.session-primary .assistance-panel { margin: 22px 0 0; padding: 18px; box-shadow: none; }
+.session-primary .assistance-panel > p { font-size: 13px; }
+.session-primary .assistance-actions .app-button { min-height: 38px; padding: 8px 11px; font-size: 12px; }
+.session-primary .end-defense-control { margin-top: 22px; }
+.session-primary .end-defense-control > .app-button { min-height: 38px; font-size: 13px; padding: 8px 12px; }
+.session-side { display: grid; align-content: start; gap: 18px; }
+.session-judge-panel,
+.session-side > .discussion-board,
+.session-side > .session-settings { padding: 22px; border: 0; border-radius: 16px; background: var(--surface-card); box-shadow: none; margin: 0; }
+.session-side-heading { margin-bottom: 18px; }
+.session-side-heading .section-kicker { font-size: 11px; letter-spacing: .5px; }
+.session-judge-profile { display: flex; align-items: center; gap: 12px; }
+.session-judge-profile h2 { font-size: 17px; margin: 0 0 4px; }
+.session-judge-profile > div > span { color: var(--text-secondary); font-size: 12px; }
+.session-judge-panel > p { color: var(--text-secondary); font-size: 13px; line-height: 1.85; margin-top: 16px; }
+.session-side .session-tools > summary { list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; }
+.session-side .session-tools > summary > svg { flex-shrink: 0; }
+.session-side .session-tools > p { font-size: 12px; line-height: 1.8; margin-top: 14px; }
+.session-side .session-judge-switch { padding: 16px 0 0; margin: 16px 0 0; border: 0; border-top: 0; box-shadow: none; border-radius: 0; }
+.session-side .role-picker { margin: 18px 0 0; }
+.session-side .role-picker legend { font-size: 13px; margin-bottom: 12px; }
+.session-side .role-picker-grid { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.session-side .role-choice { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 7px 12px; padding: 14px; }
+.session-side .role-choice-top { grid-column: 1; grid-row: 1 / 4; align-self: start; margin: 0; }
+.session-side .role-choice-top .role-avatar { width: 36px; height: 36px; border-radius: 16px; }
+.session-side .role-choice-check { position: absolute; top: 12px; right: 12px; width: 17px; height: 17px; }
+.session-side .role-choice > strong { grid-column: 2; padding-right: 20px; font-size: 14px; }
+.session-side .role-choice-intro { grid-column: 2; min-height: 0; font-size: 12px; margin: 0; }
+.session-side .role-choice-english,
+.session-side .role-choice-tags { display: none; }
+.session-side .role-choice-state { grid-column: 2; padding: 0; margin: 0; border: 0; font-size: 11px; }
+.session-side .discussion-heading { gap: 6px; }
+.session-side .discussion-heading .section-kicker { font-size: 10px; letter-spacing: .7px; }
+.session-side .discussion-heading h2 { font-size: 17px; line-height: 1.6; margin: 6px 0; }
+.session-side .discussion-heading > span { font-size: 11px; }
+.session-side .discussion-board > p { color: var(--text-secondary); font-size: 12px; line-height: 1.8; margin-top: 10px; }
+.session-side .discussion-chips { display: grid; gap: 8px; margin: 16px 0; }
+.session-side .discussion-chips > span { padding: 9px 10px; font-size: 12px; background: var(--surface-subtle); border-radius: 16px; }
+.session-side .discussion-chips > .discussing { background: var(--accent-soft); font-weight: var(--weight-strong); }
+.session-side .discussion-details > summary { font-size: 12px; margin-bottom: 0; }
+.session-side .discussion-grid { grid-template-columns: minmax(0, 1fr); margin-top: 16px; }
+.session-side .discussion-topic { padding: 14px; border-radius: 16px; }
+.session-side .discussion-topic-heading h3 { font-size: 14px; }
+.session-side .discussion-topic p,
+.session-side .discussion-topic summary,
+.session-side .discussion-observation blockquote { font-size: 12px; color: var(--text-secondary); }
+.session-side .discussion-actions > .app-button { min-height: 34px; padding: 7px 9px; font-size: 12px; }
+.session-side .discussion-editor label { font-size: 12px; }
+.session-side .discussion-editor select,
+.session-side .discussion-editor textarea { padding: 8px; font-size: 13px; }
+.session-side .training-summary { font-size: 13px; }
+.session-side .attachment-grid { grid-template-columns: minmax(0, 1fr); }
+.session-training-focus { border-top: 0; margin-top: 16px; padding-top: 16px; }
+.session-training-focus h3 { font-size: 14px; }
+.session-training-focus p,
+.session-training-focus li { font-size: 12px; line-height: 1.85; color: var(--text-secondary); }
+.session-training-focus p { margin-top: 8px; }
+.session-training-focus ul { padding-left: 18px; }
+.session-primary .defense-ended { padding: 28px; }
+.session-ended-heading { display: flex; align-items: center; gap: 16px; }
+.session-ended-heading > span { display: grid; place-items: center; width: 54px; height: 54px; border: 0; border-radius: 16px; color: var(--success); background: var(--success-soft); flex-shrink: 0; }
+.session-ended-heading h2 { font-size: 24px; margin: 5px 0 0; }
+.session-ended-copy { font-size: 14px; color: var(--text-secondary); line-height: 1.9; margin: 20px 0; }
+.session-ended-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0 26px; }
+.session-primary .defense-ended .discussion-summary { padding: 22px 0 0; border: 0; border-top: 0; box-shadow: none; border-radius: 0; margin-bottom: 0; }
+.session-primary .defense-ended .history-card { margin-bottom: 0; box-shadow: none; }
+.session-history { margin-top: 36px; padding-top: 28px; border-top: 0; scroll-margin-top: 24px; }
+.session-history-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 22px; }
+.session-history-heading h2 { font-size: 21px; line-height: 1.5; margin: 7px 0; }
+.session-history-heading h2 > span { color: var(--text-secondary); font-size: 12px; font-weight: var(--weight-body); margin-left: 10px; }
+.session-history-heading p { color: var(--text-secondary); font-size: 13px; }
+.session-history .defense-messages { max-height: 720px; padding: 22px; background: var(--surface-card); }
+.session-history .defense-message { background: var(--surface-subtle); }
+.session-history .defense-message.user { background: var(--accent-soft); }
+.session-history .defense-message:target { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 1180px) {
+  .session-workspace-grid { grid-template-columns: minmax(0, 1fr); }
+  .session-side { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .session-side > .session-settings { grid-column: 1 / -1; }
+  .session-page-heading { align-items: flex-start; }
+  .session-history-link { padding: 10px 12px; font-size: 12px; }
+}
+@media (max-width: 700px) {
+  .session-page-heading { flex-direction: column; gap: 16px; }
+  .session-page-heading h1 { font-size: 25px; }
+  .session-page-heading p { font-size: 13px; }
+  .session-page > .session-overview { grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 18px 16px; }
+  .session-page > .session-overview .session-overview-top { flex-direction: row; flex-wrap: wrap; justify-content: space-between; align-items: center; padding: 0 0 14px; border-right: 0; border-bottom: 0; }
+  .session-page > .session-overview .session-overview-bottom { gap: 16px; }
+  .session-page > .session-overview .session-track-label { flex-wrap: wrap; gap: 6px; }
+  .session-page > .session-overview .session-track-copy > p { font-size: 11px; }
+  .session-primary .current-question-card,
+  .session-primary .answer-feedback,
+  .session-primary .defense-composer,
+  .session-primary .defense-ended { padding: 20px 16px; }
+  .session-primary .current-question-text { font-size: 18px; line-height: 1.85; }
+  .session-primary .current-question-header { flex-wrap: wrap; }
+  .session-composer-heading { flex-wrap: wrap; margin-bottom: 18px; }
+  .session-primary .defense-composer textarea { min-height: 170px; }
+  .session-primary .assistance-panel { padding: 16px 12px; }
+  .session-primary .end-defense-confirm { padding: 14px; }
+  .session-side { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 18px; background: var(--surface-card); border: 0; border-radius: 16px; }
+  .session-judge-panel,
+  .session-side > .discussion-board,
+  .session-side > .session-settings { padding: 20px 0; border: 0; border-radius: 0; box-shadow: none; }
+  .session-side > .discussion-board,
+  .session-side > .session-settings { border-top: 0; }
+  .session-side .discussion-chips { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .session-side .discussion-chips > span { font-size: 11px; }
+  .session-side .discussion-editor select,
+  .session-side .discussion-editor textarea { font-size: 16px; }
+  .session-ended-heading h2 { font-size: 21px; }
+  .session-ended-actions > .app-button { width: 100%; }
+  .session-history { margin-top: 28px; padding-top: 24px; }
+  .session-history .defense-messages { padding: 12px; max-height: 70vh; }
+}

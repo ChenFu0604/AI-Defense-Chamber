@@ -1,0 +1,108 @@
+/* Task-oriented page grids. Surface levels, spacing and type establish hierarchy. */
+.workspace-welcome { display: flex; justify-content: space-between; align-items: center; gap: 32px; padding: 12px 0 28px; }
+.workspace-welcome-copy { min-width: 0; }
+.workspace-welcome h1 { font-size: clamp(26px, 2.3vw, 34px); line-height: 1.55; margin: 10px 0; letter-spacing: -.5px; }
+.workspace-welcome h1 > span { display: block; color: var(--accent); }
+.workspace-welcome p { color: var(--text-secondary); font-size: 15px; }
+.workspace-welcome-actions { display: flex; gap: 10px; flex-shrink: 0; }
+.home-view .recent-projects { margin: 0 0 32px; }
+.home-view .recent-projects > .section-heading { margin: 12px 0 18px; }
+.home-view .continue-workspace { margin: 0 0 32px; }
+.home-view .project-grid { gap: 20px; }
+.home-guidance-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin: 32px 0; }
+.home-guidance-grid .practice-preview { background: var(--surface-card); padding: 28px; }
+.home-guidance-grid .preview-steps li { background: var(--surface-subtle); }
+.workspace-shortcuts { padding: 28px; background: var(--surface-card); border-radius: var(--radius-card); }
+.workspace-shortcuts > div { margin-bottom: 20px; }
+.workspace-shortcuts h2 { margin-top: 4px; font-size: 18px; }
+.workspace-shortcut { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 14px; align-items: start; padding: 16px 12px; border-radius: 16px; }
+.workspace-shortcut + .workspace-shortcut { margin-top: 6px; }
+.workspace-shortcut:hover { background: var(--surface-subtle); }
+.workspace-shortcut > span:nth-child(2) { display: grid; gap: 6px; }
+.workspace-shortcut strong { font-size: 14px; color: var(--text-primary); }
+.workspace-shortcut > span > span { font-size: 13px; color: var(--text-secondary); line-height: 1.8; }
+.workspace-shortcut small { color: var(--accent); font-size: 12px; }
+.workspace-shortcut > svg { color: var(--muted); margin-top: 10px; }
+.shortcut-icon, .guide-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 16px; background: var(--accent-soft); color: var(--accent); }
+.home-view .judges-section { padding-top: 4px; }
+.settings-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 28px; align-items: start; }
+.settings-main { min-width: 0; }
+.settings-main .model-config-card { max-width: none; }
+.settings-guide { padding: 28px; background: var(--surface-card); border-radius: var(--radius-card); }
+.settings-guide h2 { font-size: 18px; line-height: 1.7; margin-top: 20px; }
+.setup-steps { padding: 0; margin: 24px 0; list-style: none; display: grid; gap: 26px; }
+.setup-steps li { display: flex; gap: 12px; }
+.setup-steps li > span { font-family: var(--font-sans); color: var(--muted); font-size: 12px; padding-top: 3px; }
+.setup-steps a, .setup-steps strong { font-size: 14px; font-weight: var(--weight-medium); }
+.setup-steps a { color: var(--accent); }
+.setup-steps a:hover { text-decoration: underline; }
+.setup-steps p { color: var(--text-secondary); font-size: 13px; line-height: 1.8; margin-top: 6px; }
+.settings-guide-note { display: flex; align-items: start; gap: 10px; margin: 24px 0; padding: 16px; background: var(--surface-subtle); border-radius: 16px; }
+.settings-guide-note svg { flex-shrink: 0; margin-top: 3px; color: var(--muted); }
+.settings-guide-note p { font-size: 12px; color: var(--text-secondary); line-height: 1.85; }
+.settings-guide > .app-button { width: 100%; font-size: 13px; }
+.preparation-layout { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 24px; align-items: start; }
+.preparation-layout > .selected-project-panel { display: flex; flex-direction: column; gap: 22px; position: sticky; top: 24px; padding: 24px; background: var(--surface-card); margin: 0; }
+.preparation-layout .selected-project-panel h2 { font-size: 21px; overflow-wrap: anywhere; }
+.preparation-layout .selected-description { font-size: 13px; line-height: 1.9; margin-top: 16px; }
+.preparation-layout .selected-project-actions { width: 100%; align-items: stretch; gap: 10px; }
+.preparation-layout .selected-project-actions > .app-button { font-size: 12px; padding: 10px; }
+.preparation-layout .selected-checklist { width: 100%; background: var(--surface-subtle); padding: 16px; border-radius: 16px; }
+.preparation-layout .selected-checklist p { font-size: 12px; }
+.preparation-layout .selected-checklist > span { font-size: 12px; line-height: 1.8; }
+.preparation-layout > .defense-start { margin: 0; min-width: 0; }
+.page-section-nav { display: flex; gap: 8px; flex-wrap: wrap; padding: 8px; margin: 22px 0; background: var(--surface-card); border-radius: 16px; }
+.page-section-nav > a { padding: 10px 18px; color: var(--text-secondary); font-size: 14px; border-radius: 16px; }
+.page-section-nav > a:hover, .page-section-nav > a:focus-visible { color: var(--accent); background: var(--accent-soft); }
+.report-next-actions { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 22px 26px; background: var(--surface-card); border-radius: var(--radius-card); }
+.report-next-actions strong { font-size: 15px; }
+.report-next-actions p { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+.report-next-actions .defense-actions { margin: 0; }
+.report-page > section { scroll-margin-top: 24px; }
+.report-page #report-training, .report-page #report-feedback, .report-page #report-transcript { margin-top: 40px; }
+.report-page #report-transcript .defense-messages { background: var(--surface-card); padding: 24px; border-radius: var(--radius-card); }
+.report-page #report-transcript .defense-message { background: var(--surface-subtle); }
+.report-page #report-transcript .defense-message.user { background: var(--accent-soft); }
+.report-page .defense-message:target { outline: 2px solid var(--accent); outline-offset: 3px; }
+.report-dimensions-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.report-dimensions-grid .report-dimension { padding: 20px; background: var(--surface-subtle); border-radius: 16px; }
+.report-dimensions-grid .report-dimension:last-child { grid-column: 1 / -1; }
+.report-tasks { list-style-position: inside; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.report-tasks li { min-width: 0; padding: 20px; background: var(--surface-subtle); border-radius: 16px; }
+@media (max-width: 1250px) {
+  .settings-layout { grid-template-columns: minmax(0, 1fr); }
+  .settings-guide { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 32px; }
+  .settings-guide > .guide-icon { display: none; }
+  .settings-guide h2 { grid-column: 1 / -1; margin-top: 0; }
+  .settings-guide .setup-steps { grid-row: span 2; }
+  .settings-guide > .app-button { align-self: end; margin-bottom: 24px; }
+  .preparation-layout { grid-template-columns: minmax(0, 1fr); }
+  .preparation-layout > .selected-project-panel { position: static; display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+  .preparation-layout .selected-checklist { grid-column: 1 / -1; }
+  .workspace-welcome { align-items: flex-start; }
+  .workspace-welcome-actions { flex-direction: column; }
+  .report-next-actions { align-items: flex-start; flex-direction: column; }
+}
+@media (max-width: 1000px) {
+  .home-guidance-grid { grid-template-columns: minmax(0, 1fr); }
+  .report-dimensions-grid, .report-tasks { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 700px) {
+  .workspace-welcome { flex-direction: column; gap: 20px; padding-top: 0; }
+  .workspace-welcome h1 { font-size: 26px; }
+  .workspace-welcome-actions { flex-direction: row; width: 100%; }
+  .workspace-welcome-actions > .app-button { flex: 1; }
+  .home-guidance-grid { margin: 24px 0; gap: 16px; }
+  .home-guidance-grid .practice-preview, .workspace-shortcuts { padding: 22px 18px; }
+  .workspace-shortcut { padding: 14px 4px; gap: 10px; }
+  .settings-guide { display: block; padding: 22px; }
+  .settings-guide > .app-button { margin-bottom: 0; }
+  .preparation-layout > .selected-project-panel { display: flex; padding: 22px; }
+  .preparation-layout .selected-project-actions { flex-direction: row; flex-wrap: wrap; }
+  .preparation-layout .selected-project-actions > .app-button { flex: 1; }
+  .page-section-nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .page-section-nav > a { text-align: center; padding: 10px; font-size: 13px; }
+  .report-next-actions { padding: 20px; }
+  .report-next-actions .defense-actions, .report-next-actions .app-button { width: 100%; }
+  .report-page #report-transcript .defense-messages { padding: 12px; }
+}

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AeroDecor from '../components/ui/AeroDecor.vue'
+import StatusNotice from '../components/ui/StatusNotice.vue'
 import { computed, onBeforeUnmount, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { answerEvaluationLabels } from '@defense/shared'
@@ -41,24 +43,24 @@ const answers = computed(
 )
 </script>
 <template>
-  <RouterLink :to="{ name: 'defense-session', params: { id } }" class="back-link"
+  <div class="report-page">
+  <RouterLink :to="{ name: 'defense-session', params: { id } }" class="back-link focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
     >← 查看答辩会话</RouterLink
   >
   <div class="view-heading">
-    <div class="eyebrow">REVIEW YOUR REASONING</div>
+
     <h1>答辩诊断报告</h1>
     <p>从实际回答出发，识别优势、证据缺口与下一步改进方向。</p>
   </div>
-  <p v-if="store.error" role="alert" class="notice notice-error">
-    {{ store.error }} <button @click="loadPage()">重试读取</button>
-  </p>
-  <p v-if="store.busy" role="status">正在读取记录…</p>
-  <p v-if="store.warning || reports.warning" role="status" class="notice">
+  <StatusNotice v-if="store.error" tone="error" title="记录读取未完成" compact>
+    {{ store.error }}
+    <template #actions><AppButton variant="secondary" @click="loadPage()">重试读取</AppButton></template>
+  </StatusNotice>
+  <StatusNotice v-if="store.busy" busy compact>正在读取记录…</StatusNotice>
+  <StatusNotice v-if="store.warning || reports.warning" tone="warning" compact>
     {{ store.warning || reports.warning }}
-  </p>
+  </StatusNotice>
   <template v-if="store.session?.status === 'ended'">
-    <TrainingSummary :session="store.session" />
-    <DiscussionSummary :session="store.session" />
     <div class="defense-session-bar">
       <strong>{{ store.session.project.name }}</strong
       ><span>{{
@@ -66,32 +68,37 @@ const answers = computed(
       }}</span
       ><span>已保存 {{ answers }} 次回答</span>
     </div>
-    <p class="notice">逐轮反馈仅展示已保存结果；评分报告依据本次实际回答生成，不能替代外部核验。</p>
-    <div class="defense-actions">
+    <nav class="page-section-nav" aria-label="报告内容导航">
+      <a class="focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" href="#report-evaluation">评分与建议</a>
+      <a class="focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" href="#report-training">本轮练习</a>
+      <a class="focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" href="#report-feedback">逐轮反馈</a>
+      <a class="focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500" href="#report-transcript">完整记录</a>
+    </nav>
+    <div class="report-next-actions aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
+      <AeroDecor />
+      <div><strong>把反馈带到下一步</strong><p>先看改进建议，再查看风险或开始新的练习。</p></div>
+      <div class="defense-actions">
       <RouterLink
         :to="{ name: 'history-detail', params: { id } }"
-        class="app-button button-secondary"
-        >本地历史与二次训练 →</RouterLink
+        class="app-button button-secondary aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+        >
+      <AeroDecor :orbs="false" />本地历史与二次训练 →</RouterLink
       >
       <RouterLink
         :to="{ name: 'session-risks', params: { id } }"
-        class="app-button button-secondary"
-        >查看本场答辩漏洞地图 →</RouterLink
+        class="app-button button-secondary aero-control group bg-gradient-to-b from-white/90 to-white/60 backdrop-blur-md border border-white/50 rounded-full text-sky-700 shadow-lg transition-all duration-200 ease-out active:scale-95 focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500"
+        >
+      <AeroDecor :orbs="false" />查看本场答辩漏洞地图 →</RouterLink
       >
     </div>
+    </div>
+    <section id="report-evaluation" aria-label="评分与改进建议">
     <template v-if="store.session.mode === 'live'">
-      <p v-if="reports.status === 'loading'" class="notice" role="status">正在读取历史评分报告…</p>
-      <div
-        v-if="reports.status === 'generating'"
-        class="report-card"
-        role="status"
-        aria-live="polite"
-      >
-        <h2>正在生成诊断报告…</h2>
-        <RequestWait :active="reports.status === 'generating'" :request-key="id" />
-        <p>正在评价真实回答、核对评分范围与原文引用，完成保存后展示。等待期间可查看下方问答。</p>
-      </div>
-      <div v-if="reports.status === 'missing'" class="report-card">
+      <StatusNotice v-if="reports.status === 'loading'" busy compact>正在读取历史评分报告…</StatusNotice>
+      <RequestWait :active="reports.status === 'generating'" :request-key="id" label="正在生成诊断报告"
+        description="正在评价真实回答、核对评分范围与原文引用，完成保存后展示。等待期间可查看下方问答。" />
+      <div v-if="reports.status === 'missing'" class="report-card aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
+      <AeroDecor />
         <h2>这场答辩还没有评分报告</h2>
         <p>
           生成会把项目背景和已保存的问答发送至服务端配置的模型，可能消耗模型额度。成功后保存在后端，重新打开会直接读取。
@@ -99,9 +106,9 @@ const answers = computed(
         <AppButton :disabled="answers === 0" @click="reports.generate(id)">生成评分报告</AppButton>
         <p v-if="answers === 0">尚无回答，无法生成评分。可以查看完整答辩记录。</p>
       </div>
-      <div v-if="reports.error" role="alert" class="notice notice-error">
-        <p>{{ reports.error }}</p>
-        <div class="defense-actions">
+      <StatusNotice v-if="reports.error" tone="error" title="本次报告操作未完成">
+        {{ reports.error }}
+        <template #actions>
           <AppButton variant="secondary" @click="reports.load(id)">重新读取报告</AppButton>
           <AppButton
             v-if="
@@ -115,18 +122,27 @@ const answers = computed(
             @click="reports.generate(id)"
             >重试生成</AppButton
           >
-          <RouterLink to="/settings" class="text-button">模型设置 →</RouterLink>
-        </div>
-      </div>
+          <RouterLink to="/settings" class="text-button focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500">模型设置 →</RouterLink>
+        </template>
+      </StatusNotice>
       <ReportResults
         v-if="reports.report?.sessionId === id"
         :report="reports.report"
         :messages="store.session.messages"
       />
     </template>
-    <p v-else class="notice">模拟会话不生成真实评分或能力雷达图；以下保留模拟问答与逐轮反馈。</p>
-    <h2 class="report-history-heading">逐轮反馈</h2>
-    <div v-for="entry in assessments" :key="entry.id" class="defense-report-finding">
+    <StatusNotice v-else tone="info" compact :announce="false">模拟会话不生成真实评分或能力雷达图；以下保留模拟问答与逐轮反馈。</StatusNotice>
+    </section>
+    <section id="report-training" class="report-training-section aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out" aria-labelledby="report-training-heading">
+      <AeroDecor />
+      <div class="section-heading"><h2 id="report-training-heading">这次练习回顾</h2><a href="#report-evaluation" class="text-button focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-sky-500">返回评分 ↑</a></div>
+      <TrainingSummary :session="store.session" />
+      <DiscussionSummary :session="store.session" />
+    </section>
+    <section id="report-feedback" aria-labelledby="report-feedback-heading">
+    <h2 id="report-feedback-heading" class="report-history-heading">逐轮反馈</h2>
+    <div v-for="entry in assessments" :key="entry.id" class="defense-report-finding aero-panel group bg-white/40 backdrop-blur-xl border border-white/50 rounded-3xl shadow-xl transition-all duration-300 ease-out">
+      <AeroDecor />
       <h3>{{ answerEvaluationLabels[entry.assessment!.evaluation] }}</h3>
       <p>回答依据：「{{ entry.assessment!.answerQuote }}」</p>
       <p>{{ entry.assessment!.feedback }}</p>
@@ -134,10 +150,14 @@ const answers = computed(
         待验证风险（{{ risk.severity }}）：{{ risk.title }}
       </p>
     </div>
-    <p v-if="!assessments.length" class="notice">尚无成功保存的回答分析，可以查看完整问答记录。</p>
+    <StatusNotice v-if="!assessments.length && !store.session.closingFeedback" tone="info" compact>尚无成功保存的回答分析，可以查看完整问答记录。</StatusNotice>
     <AnswerFeedback v-if="store.session.closingFeedback" :assessment="store.session.closingFeedback.assessment" :demo="store.session.mode === 'demo'" />
-    <h2>完整答辩记录</h2>
+    </section>
+    <section id="report-transcript" aria-labelledby="report-transcript-heading">
+    <div class="section-heading"><h2 id="report-transcript-heading">完整答辩记录</h2><span class="section-meta">{{ answers }} 次回答 · 按时间顺序</span></div>
     <DefenseMessages :messages="store.session.messages" :demo="store.session.mode === 'demo'" :assistance="store.session.assistance" />
+    </section>
   </template>
-  <p v-else-if="store.session" class="notice">会话尚未结束，请返回会话结束答辩后查看报告。</p>
+  <StatusNotice v-else-if="store.session" tone="info" compact>会话尚未结束，请返回会话结束答辩后查看报告。</StatusNotice>
+  </div>
 </template>
