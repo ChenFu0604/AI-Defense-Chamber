@@ -20,6 +20,7 @@ import {
   modelSettingsService,
   type ModelSettingsService,
 } from './services/model-settings-service.js'
+import { embeddingSettingsService, type EmbeddingSettingsService } from './services/embedding-settings-service.js'
 
 export function createApp(
   options: {
@@ -27,6 +28,7 @@ export function createApp(
     askJudge?: JudgeService
     defense?: DefenseService
     modelSettings?: ModelSettingsService
+    embeddingSettings?: EmbeddingSettingsService
     reports?: ReportService
     attachments?: AttachmentService
     knowledge?: KnowledgeService
@@ -62,8 +64,8 @@ export function createApp(
   const reports = options.reports ?? createReportService(options.defense ?? defenseService)
   app.use('/api/v1', createReportsRouter(reports))
   app.use('/api', createReportsRouter(reports))
-  app.use('/api/v1', createSettingsRouter(options.modelSettings ?? modelSettingsService))
-  app.use('/api', createSettingsRouter(options.modelSettings ?? modelSettingsService))
+  app.use('/api/v1', createSettingsRouter(options.modelSettings ?? modelSettingsService, options.embeddingSettings ?? embeddingSettingsService))
+  app.use('/api', createSettingsRouter(options.modelSettings ?? modelSettingsService, options.embeddingSettings ?? embeddingSettingsService))
   app.use(notFound)
   app.use(errorHandler)
   return app

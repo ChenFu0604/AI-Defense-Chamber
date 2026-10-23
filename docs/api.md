@@ -150,8 +150,20 @@ POST /settings/model/models（同样支持 /api 与 /api/v1）。请求 `{baseUr
 
 新增 POST `/knowledge/library`、`/knowledge/index`、`/knowledge/search`、`/knowledge/answer`，支持 `/api/v1` 和 `/api` 前缀。响应和错误格式不变，请求体上限 2 MiB。
 
-共同范围为 `{project: Project, extraAttachments?: Attachment[]}`。`/index` 增加 `{attachmentId,ocr?}`，必须属于该范围；`/search` 和 `/answer` 增加 1～600 字的 `query`。索引/关键词检索不调用模型；资料问答使用现有模型配置，未命中时返回 `mode:local_no_match,model:null`，不调用模型。
+共同范围为 `{project: Project, extraAttachments?: Attachment[]}`。`/index` 增加 `{attachmentId,ocr?,mode?}`，必须属于该范围；`/search` 和 `/answer` 增加 1～600 字的 `query` 和可选 `mode:keyword|semantic|hybrid`。关键词搜索和原文索引不调用模型；语义/混合检索使用独立配置的 Embedding API。资料问答未命中时返回 `mode:local_no_match,model:null`，不调用回答模型（语义检索阶段可能已调用 Embedding）。
 
-`RagRetrieval` 保存检索策略（keyword/overview）、项目/版本范围指纹、实际片段、页码/字符位置和覆盖状态。分析记录、评委发言、答辩消息、最后一答与报告新增可选 `retrieval`，兼容旧记录；历史读取不重检索。问答的 `{sourceId,quote}` 必须对应本轮原文，答辩参考资料仅表示实际提供给模型。
+`RagRetrieval` 保存检索策略（keyword/overview/semantic/hybrid）、项目/版本范围指纹、实际片段、页码/字符位置和覆盖状态；语义结果另存 `embedding:{model,dimensions,minSimilarity}`，概览补充标记为 `overviewIncluded`。分析记录、评委发言、答辩消息、最后一答与报告新增可选 `retrieval`，兼容旧记录；历史读取不重检索。问答的 `{sourceId,quote}` 必须对应本轮原文，答辩参考资料仅表示实际提供给模型。
 
 新增错误包括 `RAG_SCOPE_MISMATCH`、`RAG_INDEX_BUSY`、`RAG_INDEX_CORRUPT`、`RAG_STORAGE_ERROR`、`RAG_TIMEOUT`、`RAG_INVALID_CITATION`、`DOCUMENT_SOURCE_CORRUPT`；模型错误复用 AIClient。解析、索引和资料范围边界详见 [RAG 首版记录](rag-v1.md)。本机单用户范围校验不等于多租户访问控制。
+
+`/index` 默认 `mode:keyword`，强制重建原文；`semantic/hybrid` 复用或建立原文，强制重建该文件向量。`/search`、`/answer` 未指定 mode 时，未启用 Embedding 使用关键词，启用则混合；界面默认明确发送 keyword。显式语义请求未配置时返回 503，不静默降级。每次最多 1200 个非空向量片段，超出返回 413；向量索引/搜索总处理期限为 150 秒。
+
+`KnowledgeDocument.vector?` 提供 `status:not_indexed|ready|stale|not_configured|failed`、模型、片段数、更新时间和可选错误说明。不同地址、模型、维度、内容的缓存不会混用；损坏需显式重建。新增错误包括 `RAG_VECTOR_BUSY`、`RAG_VECTOR_CORRUPT`、`RAG_VECTOR_MISMATCH`、`RAG_VECTOR_STORAGE_ERROR`、`RAG_VECTOR_SCOPE_TOO_LARGE` 和 `EMBEDDING_*`，见 [向量语义检索记录](rag-semantic.md)。
+
+## 独立向量模型设置
+
+GET/PUT `/api/v1/settings/embedding`（兼容 `/api`）、POST `/api/v1/settings/embedding/test` 沿用 `{success:true,data}`。仅本机连接和本机 Host、可信 Origin、`X-Settings-Request:1` 可访问，响应 `Cache-Control:no-store`。
+
+PUT/测试请求为 `{enabled,baseUrl,model,apiKey,timeoutMs,dimensions:null|1..4096,minSimilarity:0..1}`；后两项默认 null/0.35。禁用保存允许空模型和密钥；启用和测试需要有效模型及独立密钥。留空密钥可保留同地址已保存密钥，变更地址不能转发旧密钥。测试可在禁用时执行，不保存配置，只发送固定连接测试文本。公开配置只返回 `hasApiKey`，不返回真实密钥；测试返回 `{model,dimensions,latencyMs}`。
+
+后端调用 `${baseUrl}/embeddings`，发送 `{model,input:string[],encoding_format:'float',dimensions?}`。每批最多 32 条非空、900 字符内文本，响应最多 8 MiB；向量数量、index、有限非零值、维度均校验。设置保存至被 Git 忽略的 `.data/embedding-config.json`；支持独立的 `EMBEDDING_*` 环境变量回退。未验证所选服务商的真实检索质量，连接测试不能代替召回质量验收。

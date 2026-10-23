@@ -23,4 +23,10 @@ describe('saved retrieval sources UI', () => {
     expect(empty).toContain('本次没有检索到相关文字')
     expect(empty).toContain('不能据此断言整份材料没有证据')
   })
+  it('shows the saved semantic strategy, model and similarity interpretation', async () => {
+    const source = {...retrievalFixture(), strategy: 'hybrid' as const, overviewIncluded: true, embedding: {model: 'embedding-fixture', dimensions: 3, minSimilarity: 0.35}}
+    const html = await renderToString(createSSRApp(RagSources, {retrieval: source}))
+    expect(html).toContain('关键词与向量混合检索'); expect(html).toContain('含文档概览补充')
+    expect(html).toContain('embedding-fixture'); expect(html).toContain('3 维'); expect(html).toContain('不代表事实可信度')
+  })
 })

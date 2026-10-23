@@ -32,4 +32,13 @@ describe('knowledge API contract', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')))
     await expect(searchKnowledge(knowledgeScope, '是否付费')).rejects.toThrow('无法连接资料服务')
   })
+  it('sends the selected retrieval mode and separates local from vector index requests', async () => {
+    const semantic = {...retrievalFixture(), strategy: 'semantic', embedding: {model: 'embedding-fixture', dimensions: 3, minSimilarity: 0.35}}
+    const fetcher = vi.fn().mockResolvedValueOnce(response(semantic)).mockResolvedValueOnce(response({...knowledgeAnswerFixture(), retrieval: {...semantic, strategy: 'hybrid'}})).mockResolvedValueOnce(response(retrievalFixture().documents[0]))
+    vi.stubGlobal('fetch', fetcher)
+    expect((await searchKnowledge(knowledgeScope, '是否付费', undefined, 'semantic')).strategy).toBe('semantic')
+    expect((await answerKnowledge(knowledgeScope, '是否付费', undefined, 'hybrid')).retrieval.strategy).toBe('hybrid')
+    await indexKnowledgeDocument(knowledgeScope, knowledgeFile.id, false, undefined, 'semantic')
+    expect(fetcher.mock.calls.map(c => JSON.parse(c[1].body).mode)).toEqual(['semantic', 'hybrid', 'semantic'])
+  })
 })

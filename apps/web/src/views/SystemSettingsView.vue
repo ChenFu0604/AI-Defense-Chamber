@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ArrowRight, SlidersHorizontal, ShieldCheck } from 'lucide-vue-next'
 import ModelConfigCard from '../components/settings/ModelConfigCard.vue'
+import EmbeddingConfigCard from '../components/settings/EmbeddingConfigCard.vue'
 </script>
 <template>
   <div class="view-heading">
@@ -9,7 +10,7 @@ import ModelConfigCard from '../components/settings/ModelConfigCard.vue'
     <p>连接你的模型服务，为每一次答辩做好准备。</p>
   </div>
   <div class="settings-layout">
-    <div class="settings-main"><ModelConfigCard /></div>
+    <div class="settings-main"><ModelConfigCard /><EmbeddingConfigCard /></div>
     <aside class="settings-guide surface-panel" aria-labelledby="settings-guide-title">
 
       <span class="guide-icon"><SlidersHorizontal :size="22" /></span>
@@ -19,6 +20,7 @@ import ModelConfigCard from '../components/settings/ModelConfigCard.vue'
         <li><span>02</span><div><a href="#model-name">选择对话模型</a><p>获取模型列表，也可以手动填写模型名称。</p></div></li>
         <li><span>03</span><div><strong>测试连接，再保存</strong><p>测试通过后点击“保存到后端”，后续训练使用保存的配置。</p></div></li>
       </ol>
+      <p class="model-config-description">需要按意思找材料？在下方<a href="#embedding-config" class="text-button">向量模型配置</a>中设置独立 Embeddings 服务，测试后保存。</p>
       <div class="settings-guide-note"><ShieldCheck :size="18" /><p>密钥仅保存在本机后端。图片分析需要支持视觉的模型，文字连接测试不会验证图片能力。</p></div>
       <RouterLink to="/defense" class="app-button button-secondary control-button">
       前往答辩准备<ArrowRight :size="16" /></RouterLink>

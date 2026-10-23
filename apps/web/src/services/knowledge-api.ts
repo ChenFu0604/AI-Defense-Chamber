@@ -1,8 +1,9 @@
 import { z } from 'zod'
 import { apiErrorResponseSchema, knowledgeLibraryResponseSchema, knowledgeSearchResponseSchema,
-  knowledgeAnswerResponseSchema, knowledgeIndexResponseSchema, type KnowledgeScope } from '@defense/shared'
+  knowledgeAnswerResponseSchema, knowledgeIndexResponseSchema, type KnowledgeScope, type RetrievalMode } from '@defense/shared'
+export type KnowledgeSearchMode = RetrievalMode
 
-async function call<T>(path: string, input: KnowledgeScope & {query?: string; attachmentId?: string; ocr?: boolean}, schema: z.ZodType<{success: true; data: T}>, signal?: AbortSignal): Promise<T> {
+async function call<T>(path: string, input: KnowledgeScope & {query?: string; attachmentId?: string; ocr?: boolean; mode?: KnowledgeSearchMode}, schema: z.ZodType<{success: true; data: T}>, signal?: AbortSignal): Promise<T> {
   try {
     const response = await fetch('/api/v1/knowledge/' + path, {method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(input), signal: AbortSignal.any([AbortSignal.timeout(180000), ...(signal ? [signal] : [])])})
@@ -29,6 +30,6 @@ async function call<T>(path: string, input: KnowledgeScope & {query?: string; at
   }
 }
 export const loadKnowledgeLibrary = (scope: KnowledgeScope, signal?: AbortSignal) => call('library', scope, knowledgeLibraryResponseSchema, signal)
-export const indexKnowledgeDocument = (scope: KnowledgeScope, attachmentId: string, ocr?: boolean, signal?: AbortSignal) => call('index', {...scope, attachmentId, ocr}, knowledgeIndexResponseSchema, signal)
-export const searchKnowledge = (scope: KnowledgeScope, query: string, signal?: AbortSignal) => call('search', {...scope, query}, knowledgeSearchResponseSchema, signal)
-export const answerKnowledge = (scope: KnowledgeScope, query: string, signal?: AbortSignal) => call('answer', {...scope, query}, knowledgeAnswerResponseSchema, signal)
+export const indexKnowledgeDocument = (scope: KnowledgeScope, attachmentId: string, ocr?: boolean, signal?: AbortSignal, mode?: KnowledgeSearchMode) => call('index', {...scope, attachmentId, ocr, mode}, knowledgeIndexResponseSchema, signal)
+export const searchKnowledge = (scope: KnowledgeScope, query: string, signal?: AbortSignal, mode?: KnowledgeSearchMode) => call('search', {...scope, query, mode}, knowledgeSearchResponseSchema, signal)
+export const answerKnowledge = (scope: KnowledgeScope, query: string, signal?: AbortSignal, mode?: KnowledgeSearchMode) => call('answer', {...scope, query, mode}, knowledgeAnswerResponseSchema, signal)

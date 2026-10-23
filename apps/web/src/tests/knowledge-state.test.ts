@@ -63,4 +63,30 @@ describe('knowledge interaction state', () => {
     expect(ui.library.value?.projectId).toBe(other.project.id)
     scope.stop(); expect(ui.busy.value).toBe(false)
   })
+  it('keeps query and selected mode after semantic failures and resets results when modes change', async () => {
+    const {ui} = setup(); ui.query.value = '用户愿意掏钱吗'; ui.mode.value = 'semantic'
+    vi.mocked(searchKnowledge).mockRejectedValueOnce(new Error('请先配置向量模型'))
+    await ui.search()
+    expect(ui.error.value).toBe('请先配置向量模型'); expect(ui.query.value).toBe('用户愿意掏钱吗'); expect(ui.mode.value).toBe('semantic')
+    expect(vi.mocked(searchKnowledge).mock.calls[0]![3]).toBe('semantic')
+    await ui.search(); expect(ui.retrieval.value).not.toBeNull()
+    ui.mode.value = 'hybrid'
+    expect(ui.retrieval.value).toBeNull(); expect(ui.error.value).toBe(''); expect(ui.query.value).toBe('用户愿意掏钱吗')
+    await ui.ask(); expect(vi.mocked(answerKnowledge).mock.calls[0]![3]).toBe('hybrid')
+  })
+  it('builds vectors only on an explicit vector request and records returned state', async () => {
+    const {ui} = setup(); await ui.load(); const doc = libraryFixture().documents[0]!
+    await ui.index(doc.attachmentId, false)
+    expect(vi.mocked(indexKnowledgeDocument).mock.calls[0]![4]).toBe('keyword')
+    vi.mocked(indexKnowledgeDocument).mockResolvedValueOnce({...doc, vector: {status: 'ready', model: 'embedding-fixture', chunkCount: 2, updatedAt: '2026-10-24T01:00:00.000Z'}})
+    await ui.index(doc.attachmentId, false, 'semantic')
+    expect(vi.mocked(indexKnowledgeDocument).mock.calls[1]![4]).toBe('semantic')
+    expect(ui.library.value?.documents[0]?.vector?.status).toBe('ready'); expect(ui.notice.value).toContain('2 个片段')
+  })
+  it('does not claim vector indexing success when no searchable text was extracted', async () => {
+    const {ui} = setup(); await ui.load(); const doc = libraryFixture().documents[0]!
+    vi.mocked(indexKnowledgeDocument).mockResolvedValueOnce({...doc, status: 'no_text', chunkCount: 0, note: '没有提取到文字，请开启 OCR。', vector: {status: 'not_indexed', model: null, chunkCount: 0, updatedAt: null}})
+    await ui.index(doc.attachmentId, false, 'semantic')
+    expect(ui.notice.value).toBe('没有提取到文字，请开启 OCR。'); expect(ui.notice.value).not.toContain('已完成')
+  })
 })

@@ -22,15 +22,15 @@ export function createKnowledgeRouter(service: KnowledgeService) {
   router.post('/knowledge/library', async (req,res) => res.set('Cache-Control','no-store').json({success: true, data: await service.library(parse(knowledgeScopeSchema, req.body))}))
   router.post('/knowledge/index', async (req,res) => {
     const input = parse(knowledgeIndexRequestSchema, req.body)
-    await respond(res, signal => service.index(input, input.attachmentId, input.ocr, signal))
+    await respond(res, signal => service.index(input, input.attachmentId, input.ocr, signal, input.mode))
   })
   router.post('/knowledge/search', async (req,res) => {
     const input = parse(knowledgeSearchSchema, req.body)
-    await respond(res, signal => service.search(input, input.query, signal))
+    await respond(res, signal => service.search(input, input.query, signal, false, input.mode))
   })
   router.post('/knowledge/answer', async (req,res) => {
     const input = parse(knowledgeSearchSchema, req.body)
-    await respond(res, signal => service.answer(input, input.query, signal))
+    await respond(res, signal => service.answer(input, input.query, signal, input.mode))
   })
   return router
 }

@@ -5,6 +5,9 @@
   border-radius: 16px;
   padding: 28px;
 }
+.settings-main { display: grid; gap: 24px; }
+.embedding-enable { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; font-size: 14px; line-height: 1.7; cursor: pointer; }
+.model-config-form .embedding-enable input { width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--accent); }
 .model-config-heading {
   display: flex;
   flex-wrap: wrap;

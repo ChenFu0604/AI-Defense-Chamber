@@ -110,7 +110,7 @@ describe('project knowledge retrieval and grounded answers', () => {
     expect(parse).toHaveBeenCalledTimes(1)
     expect(results[0]).toEqual(results[1])
     const controller = new AbortController(); controller.abort()
-    await expect(service.search(env.scope, 'latency_tail', controller.signal)).rejects.toMatchObject({code: 'RAG_TIMEOUT'})
+    await expect(service.search(env.scope, 'latency_tail', controller.signal)).rejects.toMatchObject({code: 'REQUEST_CANCELLED'})
   })
   it('accepts only citations to returned verbatim sources, never calls AI on no-match and surfaces model failure', async () => {
     const env = await setup()

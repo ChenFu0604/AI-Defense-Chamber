@@ -24,7 +24,7 @@ function terms(text: string) {
   }
   return [...new Set(result.filter(t => !stopwords.has(t)))].slice(0, 80)
 }
-/** Retrieval adapter: an embedding/hybrid implementation can implement this contract later. */
+/** Local lexical ranking, also used as one input to hybrid retrieval. */
 export interface TextRetriever { search(query: string, chunks: RagSource[]): RagSource[] }
 export const keywordRetriever: TextRetriever = {
   search(query, chunks) {

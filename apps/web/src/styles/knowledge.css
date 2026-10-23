@@ -4,6 +4,9 @@
 .knowledge-page h2 { margin-bottom: 16px; font-size: 19px; }
 .knowledge-search form { display: grid; gap: 12px; }
 .knowledge-search textarea { width: 100%; }
+.knowledge-mode { width: 100%; max-width: 360px; padding: 11px 14px; color: var(--text-primary); background: var(--surface-subtle); border: 0; border-radius: 10px; font: inherit; font-size: 14px; }
+.knowledge-statuses { display: flex; flex-wrap: wrap; gap: 8px; }
+.knowledge-search .rag-muted > a { margin-left: 8px; }
 .rag-muted, .knowledge-document p { font-size: 13px; line-height: 1.8; color: var(--text-secondary); }
 .knowledge-document { display: flex; justify-content: space-between; gap: 24px; padding: 22px 0; border-top: 1px solid var(--line); }
 .knowledge-document > div { min-width: 0; }
