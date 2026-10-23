@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { DefenseSession } from './defense.js'
+import { ragRetrievalSchema } from './knowledge.js'
 
 export const reportDimensionIds = [
   'logic',
@@ -100,8 +101,9 @@ export const defenseReportSchema = z
     answerCount: z.number().int().min(1).max(100),
     overallScore: z.number().min(0).max(100),
     output: reportOutputSchema,
+    retrieval: ragRetrievalSchema.optional(),
   })
-  .refine((report) => report.overallScore === calculateOverallScore(report.output.dimensions), {
+  .refine((report) => report.overallScore === calculateOverallScore(report.output.dimensions) && (!report.retrieval || report.retrieval.projectId === report.projectId), {
     message: '综合评分与五维等权平均不一致。',
   })
 export type DefenseReport = z.infer<typeof defenseReportSchema>

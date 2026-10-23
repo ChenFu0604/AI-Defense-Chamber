@@ -10,6 +10,7 @@ import { createWorkflowFixture } from '../../../../tests/fixtures/workflow.js'
 import { scannedPdf, textPdf } from '../../../../tests/fixtures/files.js'
 import { analysisProject, validAnalysisOutput } from '../../../../tests/fixtures/analysis.js'
 import { extractMaterialText } from '../services/material-text.js'
+import { createKnowledgeService } from '../services/knowledge-service.js'
 
 const directories: string[] = []
 afterEach(async () => {
@@ -65,6 +66,10 @@ describe('local Chinese and English OCR using real pixels', () => {
     expect(scan.pageCount).toBe(4)
     expect(scan.truncated).toBe(true)
     expect((await fixture.attachments.read(scan.id)).attachment).toEqual(scan)
+    const retrieval = await createKnowledgeService(fixture.attachments).search({project: {...analysisProject, attachments: [scan]}}, 'PROJECT EVIDENCE')
+    expect(retrieval.sources[0]?.extraction).toBe('ocr')
+    expect(retrieval.documents[0]!.status).toBe('partial')
+    expect(retrieval.documents[0]!.skippedPages).toEqual([4])
   }, 90000)
   it('rejects invalid OCR options, empty recognition and an exceeded processing deadline', async () => {
     const fixture = await setup()

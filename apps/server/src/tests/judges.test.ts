@@ -15,6 +15,7 @@ import { createJudgeService } from '../services/judge-service.js'
 import { createAIClient, type AIClient } from '../services/ai-client.js'
 import { createApp } from '../app.js'
 import { AppError } from '../middleware/app-error.js'
+import { ragPolicy } from '../services/knowledge-service.js'
 import { analysisFixture, analysisProject } from '../../../../tests/fixtures/analysis.js'
 
 const input = (
@@ -139,7 +140,7 @@ describe('judge service and HTTP API', () => {
     }
     await createJudgeService(model)(input(id))
     expect(capture.mock.calls[0]![0].system).toBe(
-      judgeConfigs.find((j) => j.id === id)!.systemPrompt,
+      judgeConfigs.find((j) => j.id === id)!.systemPrompt + '\n' + ragPolicy,
     )
     expect(JSON.parse(capture.mock.calls[0]![0].user).profile).toEqual(input().analysis.output)
   })

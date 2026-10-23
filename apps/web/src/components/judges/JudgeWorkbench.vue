@@ -14,6 +14,7 @@ import JudgeSeat from './JudgeSeat.vue'
 import JudgeDetails from './JudgeDetails.vue'
 import AppButton from '../ui/AppButton.vue'
 import StatusNotice from '../ui/StatusNotice.vue'
+import RagSources from '../knowledge/RagSources.vue'
 import DefenseModePicker from '../defense/DefenseModePicker.vue'
 import { MessageSquarePlus, ListOrdered } from 'lucide-vue-next'
 const props = defineProps<{ project?: Project }>()
@@ -145,6 +146,7 @@ function run(all = false) {
           }}</span>
         </div>
         <h3>{{ statement.speech.question }}</h3>
+        <RagSources v-if="statement.retrieval" :retrieval="statement.retrieval" />
         <p>关注点：{{ statement.speech.focus }}</p>
         <p>{{ statement.speech.rationale }}</p>
       </article>

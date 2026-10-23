@@ -10,6 +10,7 @@ import ReportResults from '../components/report/ReportResults.vue'
 import DefenseMessages from '../components/defense/DefenseMessages.vue'
 import TrainingSummary from '../components/defense/TrainingSummary.vue'
 import AnswerFeedback from '../components/defense/AnswerFeedback.vue'
+import RagSources from '../components/knowledge/RagSources.vue'
 import DiscussionSummary from '../components/defense/DiscussionSummary.vue'
 import RequestWait from '../components/ui/RequestWait.vue'
 const route = useRoute(),
@@ -152,6 +153,7 @@ const answers = computed(
     </div>
     <StatusNotice v-if="!assessments.length && !store.session.closingFeedback" tone="info" compact>尚无成功保存的回答分析，可以查看完整问答记录。</StatusNotice>
     <AnswerFeedback v-if="store.session.closingFeedback" :assessment="store.session.closingFeedback.assessment" :demo="store.session.mode === 'demo'" />
+    <RagSources v-if="store.session.closingFeedback?.retrieval" :retrieval="store.session.closingFeedback.retrieval" />
     </section>
     <section id="report-transcript" aria-labelledby="report-transcript-heading">
     <div class="section-heading"><h2 id="report-transcript-heading">完整答辩记录</h2><span class="section-meta">{{ answers }} 次回答 · 按时间顺序</span></div>

@@ -2,6 +2,8 @@ import { trainingSettings, type DefenseSession, type DefenseQuestion } from '@de
 import { AppError } from '../middleware/app-error.js'
 import type { Attachment } from '@defense/shared'
 import { discussionPlan } from './defense-discussion.js'
+import { retrievalSummary } from './knowledge-service.js'
+import type { RagRetrieval } from '@defense/shared'
 
 export const MAX_DEFENSE_CONTEXT_CHARS = 32000
 export function buildDefenseContext(
@@ -10,6 +12,7 @@ export function buildDefenseContext(
   latestAnswer: string | null,
   judgeId: string,
   materials: { id: string; name: string; text: string; truncated: boolean }[] = [],
+  retrieval?: RagRetrieval,
 ) {
   const clip = (value: string, max: number) =>
     value.length > max ? value.slice(0, max) + '…[已截断]' : value
@@ -63,6 +66,7 @@ export function buildDefenseContext(
     currentQuestion: question,
     latestAnswer,
     materials,
+    retrieval: retrievalSummary(retrieval),
     projectAttachments: project.attachments?.map((a) => ({
       id: a.id,
       name: a.name,

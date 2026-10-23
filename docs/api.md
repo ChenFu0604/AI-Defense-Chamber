@@ -145,3 +145,13 @@ assessment 包含最新回答连续原文 answerQuote、evaluation（evidence_mi
 ### 模型列表
 
 POST /settings/model/models（同样支持 /api 与 /api/v1）。请求 `{baseUrl,apiKey?,timeoutMs}`，不要求 model 字段；后端以 Bearer 密钥请求 Base URL + /models，校验上游 `{data:[{id:string}]}`，仅返回去重排序的模型 ID：`{success:true,data:{models:string[]}}`。获取不保存，空列表返回空数组。接口不支持返回 MODEL_LIST_UNSUPPORTED；结构异常为 MODEL_LIST_INVALID_OUTPUT；连接失败为 MODEL_LIST_CONNECTION_FAILED。沿用设置访问限制、换地址密钥保护及超时处理。模型列表不构成对话能力或结构化输出能力的验证。
+
+## 项目资料库与本地 RAG
+
+新增 POST `/knowledge/library`、`/knowledge/index`、`/knowledge/search`、`/knowledge/answer`，支持 `/api/v1` 和 `/api` 前缀。响应和错误格式不变，请求体上限 2 MiB。
+
+共同范围为 `{project: Project, extraAttachments?: Attachment[]}`。`/index` 增加 `{attachmentId,ocr?}`，必须属于该范围；`/search` 和 `/answer` 增加 1～600 字的 `query`。索引/关键词检索不调用模型；资料问答使用现有模型配置，未命中时返回 `mode:local_no_match,model:null`，不调用模型。
+
+`RagRetrieval` 保存检索策略（keyword/overview）、项目/版本范围指纹、实际片段、页码/字符位置和覆盖状态。分析记录、评委发言、答辩消息、最后一答与报告新增可选 `retrieval`，兼容旧记录；历史读取不重检索。问答的 `{sourceId,quote}` 必须对应本轮原文，答辩参考资料仅表示实际提供给模型。
+
+新增错误包括 `RAG_SCOPE_MISMATCH`、`RAG_INDEX_BUSY`、`RAG_INDEX_CORRUPT`、`RAG_STORAGE_ERROR`、`RAG_TIMEOUT`、`RAG_INVALID_CITATION`、`DOCUMENT_SOURCE_CORRUPT`；模型错误复用 AIClient。解析、索引和资料范围边界详见 [RAG 首版记录](rag-v1.md)。本机单用户范围校验不等于多租户访问控制。

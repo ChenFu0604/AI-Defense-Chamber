@@ -13,6 +13,8 @@ import { createDemoDefenseTurn } from './defense-demo.js'
 import { defenseTurnSystemPrompt } from '../prompts/defense-turn.js'
 import { availableTopics, discussionPlan } from './defense-discussion.js'
 import { attachmentService, type AttachmentService } from './attachment-service.js'
+import { prepareRagMaterials } from './rag-materials.js'
+import { ragPolicy } from './knowledge-service.js'
 
 export function createDefenseModel(
   client: AIClient = aiClient,
@@ -28,14 +30,18 @@ export function createDefenseModel(
       session.messages.filter((m) => m.sender === 'user').at(-1)?.attachments ?? []
     const materials =
       session.mode === 'live'
-        ? await attachments.materials([...latestFiles, ...(session.training?.tasks?.flatMap(t => t.attachments ?? []) ?? []), ...(session.project.attachments ?? [])])
-        : { images: [], documents: [] }
+        ? await prepareRagMaterials(attachments, session.project,
+          (latestAnswer?.slice(-350) ?? '') + ' ' + (currentQuestion?.question.slice(0,180) ?? session.analysis.output.questionDirections.find(v => v.judge === judgeId)?.question ?? '项目需求与方案验证'),
+          [...latestFiles, ...(session.training?.tasks?.flatMap(t => t.attachments ?? []) ?? []),
+            ...session.messages.filter(m => m.sender === 'user').slice(-20).reverse().flatMap(m => m.attachments ?? [])], undefined, !currentQuestion && !latestAnswer)
+        : { images: [], documents: [], retrieval: undefined }
     const context = buildDefenseContext(
       session,
       currentQuestion,
       latestAnswer,
       judgeId,
       materials.documents,
+      materials.retrieval,
     )
     const retryGuidance = session.error?.code === 'AI_INVALID_TOPIC'
       ? '\n上次结果因议题选择不符合规则被拒绝。这次先评价最新回答，再核对候选分支：sufficient/change_direction 必须排除 currentTopicId。不要重复原选择，也不要更改用户回答或事实。'
@@ -45,7 +51,7 @@ export function createDefenseModel(
     const result = demo ?? await client.generate<unknown>({
             name: 'defense_turn',
             schema: session.discussion ? discussionTurnSchema : defenseTurnSchema,
-            system: role.systemPrompt + '\n' + defenseTurnSystemPrompt + retryGuidance,
+            system: role.systemPrompt + '\n' + defenseTurnSystemPrompt + retryGuidance + '\n' + ragPolicy,
             images: materials.images,
             user: JSON.stringify(context),
           })
@@ -98,6 +104,6 @@ export function createDefenseModel(
         'DUPLICATE_QUESTION',
         '追问与之前的问题过于相似，回答已保留，请重试。',
       )
-    return { data: parsed.data, model: result.model }
+    return { data: parsed.data, model: result.model, ...(materials.retrieval ? {retrieval: materials.retrieval} : {}) }
   }
 }

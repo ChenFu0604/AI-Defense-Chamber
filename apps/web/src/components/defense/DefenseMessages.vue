@@ -14,6 +14,7 @@ import DefenseActivity from './DefenseActivity.vue'
 import JudgeAvatar from '../judges/JudgeAvatar.vue'
 import { ArrowDown, UserRound } from 'lucide-vue-next'
 import AnswerFeedback from './AnswerFeedback.vue'
+import RagSources from '../knowledge/RagSources.vue'
 import { useConversationScroll } from '../../composables/useConversationScroll'
 const props = withDefaults(
   defineProps<{
@@ -84,6 +85,7 @@ const judgeName = (id: string) => judgeDefinitions.find((v) => v.id === id)?.nam
       </div>
       <AnswerFeedback v-if="variant === 'chat' && message.assessment" :assessment="message.assessment" :demo="demo" :rationale="message.question?.rationale" />
       <p class="defense-message-content">{{ message.content }}</p>
+      <RagSources v-if="message.retrieval" :retrieval="message.retrieval" />
       <AttachmentGallery v-if="message.attachments?.length" :items="message.attachments" />
       <p v-if="message.status === 'pending'">回答已保存，正在生成追问…</p>
       <p v-if="message.status === 'failed'" class="defense-source">

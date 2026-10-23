@@ -1,11 +1,14 @@
 import { createHash } from 'node:crypto'
 import { projectInputSchema, trainingSettings, discussionSummary, type DefenseSession } from '@defense/shared'
 import { AppError } from '../middleware/app-error.js'
+import { retrievalSummary } from './knowledge-service.js'
+import type { RagRetrieval } from '@defense/shared'
 
 export const MAX_REPORT_CONTEXT_CHARS = 180000
 export function buildReportContext(
   session: DefenseSession,
   materials: { id: string; name: string; text: string; truncated: boolean }[] = [],
+  retrieval?: RagRetrieval,
 ) {
   const answers = session.messages.filter(
     (message) => message.sender === 'user' && ['sent', 'failed'].includes(message.status),
@@ -25,6 +28,7 @@ export function buildReportContext(
       notice: '求助不是用户回答，不计入 answerCount；本次表现可能受提示辅助，不据此声称已具备独立作答能力。',
     },
     materials,
+    retrieval: retrievalSummary(retrieval),
     project: projectInputSchema.parse(session.project),
     profile: {
       coreValue: session.analysis.output.coreValue,

@@ -16,6 +16,7 @@ export const router = createRouter({
       path: '/',
       component: WorkspaceLayout,
       children: [
+        {path: 'projects/:id/knowledge', name: 'project-knowledge', component: () => import('../views/ProjectKnowledgeView.vue'), meta: {title: '项目资料库'}},
         {path: 'tasks', name: 'improvement-tasks', component: () => import('../views/ImprovementTasksView.vue'), meta: {title: '改进任务'}},
         {
           path: 'projects', name: 'projects',

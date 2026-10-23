@@ -165,7 +165,7 @@ export function createDefenseService(
           // Legacy sessions keep their original final-answer behavior.
           if (session.preferences && latestAnswer) {
             const feedback = await assessClosing(session, latestAnswer)
-            session.closingFeedback = { answerMessageId: latestAnswer.id, assessment: feedback.data, model: feedback.model }
+            session.closingFeedback = { answerMessageId: latestAnswer.id, assessment: feedback.data, model: feedback.model, ...('retrieval' in feedback && feedback.retrieval ? {retrieval: feedback.retrieval} : {}) }
             recordDiscussionAssessment(session, latestAnswer, feedback.data)
           }
           session.status = 'ended'
@@ -185,7 +185,7 @@ export function createDefenseService(
           if (!generated.data.question) {
             if (!session.discussion || topicId !== null || type !== 'answer' || !latestAnswer || !generated.data.assessment || availableTopics(session, generated.data.assessment).length)
               throw new AppError(502, 'AI_INVALID_TOPIC', '议题尚未完成，不能跳过提问或虚构小结。')
-            session.closingFeedback = {answerMessageId: latestAnswer.id, assessment: generated.data.assessment, model: generated.model}
+            session.closingFeedback = {answerMessageId: latestAnswer.id, assessment: generated.data.assessment, model: generated.model, ...('retrieval' in generated && generated.retrieval ? {retrieval: generated.retrieval} : {})}
             session.status = 'ended'; session.endedAt = new Date().toISOString()
           } else {
             const messageId = randomUUID()
@@ -201,6 +201,7 @@ export function createDefenseService(
               replyTo: latestAnswer?.id ?? null,
               requestId: payload.requestId,
               model: generated.model,
+              ...('retrieval' in generated && generated.retrieval ? {retrieval: generated.retrieval} : {}),
             }
             if (session.discussion) attachDiscussionQuestion(session, message, topicId!)
             session.messages.push(message)

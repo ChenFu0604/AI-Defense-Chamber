@@ -70,7 +70,7 @@ export function buildRiskGraph(input: RiskMapInput): RiskGraph {
               project.id,
               ref.field === 'materials'
                 ? 'attachment.' +
-                    (project.attachments?.find((a) => a.text.includes(ref.quote))?.id ?? 'unknown')
+                    (project.attachments?.find((a) => a.text.includes(ref.quote))?.id ?? analysis.retrieval?.sources.find(s => s.text.includes(ref.quote))?.attachmentId ?? 'unknown')
                 : ref.field,
               ref.quote,
             ),

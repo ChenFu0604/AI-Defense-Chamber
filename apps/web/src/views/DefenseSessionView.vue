@@ -12,6 +12,7 @@ import AttachmentGallery from '../components/attachments/AttachmentGallery.vue'
 import JudgeRolePicker from '../components/judges/JudgeRolePicker.vue'
 import JudgeAvatar from '../components/judges/JudgeAvatar.vue'
 import AnswerFeedback from '../components/defense/AnswerFeedback.vue'
+import RagSources from '../components/knowledge/RagSources.vue'
 import TrainingSummary from '../components/defense/TrainingSummary.vue'
 import { useDefenseDraftGuard } from '../composables/useDefenseDraftGuard'
 import DiscussionBoard from '../components/defense/DiscussionBoard.vue'
@@ -129,6 +130,7 @@ onBeforeUnmount(() => {
             <template #after-messages>
               <template v-if="store.session.status === 'ended'">
                 <AnswerFeedback v-if="store.session.closingFeedback" :assessment="store.session.closingFeedback.assessment" :demo="store.session.mode === 'demo'" />
+                <RagSources v-if="store.session.closingFeedback?.retrieval" :retrieval="store.session.closingFeedback.retrieval" />
                 <details class="chat-session-recap"><summary>回看讨论小结<ChevronDown :size="15" /></summary><DiscussionSummary :session="store.session" /></details>
                 <details v-if="store.draft.trim() || store.draftAttachments.length" class="chat-session-recap">
                   <summary>查看保留的回答草稿<ChevronDown :size="15" /></summary>

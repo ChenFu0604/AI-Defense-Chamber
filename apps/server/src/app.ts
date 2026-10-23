@@ -12,6 +12,8 @@ import { defenseService, type DefenseService } from './services/defense-service.
 import { createSettingsRouter } from './routes/settings.js'
 import { createReportsRouter } from './routes/reports.js'
 import { createAttachmentsRouter } from './routes/attachments.js'
+import { createKnowledgeRouter } from './routes/knowledge.js'
+import { knowledgeFor, type KnowledgeService } from './services/knowledge-service.js'
 import { attachmentService, type AttachmentService } from './services/attachment-service.js'
 import { createReportService, type ReportService } from './services/report-service.js'
 import {
@@ -27,6 +29,7 @@ export function createApp(
     modelSettings?: ModelSettingsService
     reports?: ReportService
     attachments?: AttachmentService
+    knowledge?: KnowledgeService
   } = {},
 ) {
   const app = express()
@@ -34,6 +37,7 @@ export function createApp(
   app.use(cors({ origin: env.WEB_ORIGIN }))
   app.use('/api/v1', createAttachmentsRouter(options.attachments ?? attachmentService))
   app.use('/api', createAttachmentsRouter(options.attachments ?? attachmentService))
+  app.use(['/api/v1/knowledge', '/api/knowledge'], express.json({limit: '2mb'}))
   // Bounded document text occurs in both project and analysis snapshots; keep the
   // smaller default limit for unrelated APIs.
   app.use(
@@ -46,6 +50,9 @@ export function createApp(
     express.json({ limit: '1mb' }),
   )
   app.use(express.json({ limit: '256kb' }))
+  const knowledge = options.knowledge ?? knowledgeFor(options.attachments ?? attachmentService)
+  app.use('/api/v1', createKnowledgeRouter(knowledge))
+  app.use('/api', createKnowledgeRouter(knowledge))
   app.use('/api/v1', healthRouter, createProjectsRouter(options.analyzeProject ?? analyzeProject))
   app.use('/api', healthRouter, createProjectsRouter(options.analyzeProject ?? analyzeProject))
   app.use('/api/v1', createJudgesRouter(options.askJudge ?? askJudge))

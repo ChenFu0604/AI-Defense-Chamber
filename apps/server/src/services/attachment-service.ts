@@ -13,8 +13,9 @@ import {
   type Attachment,
 } from '@defense/shared'
 import { AppError } from '../middleware/app-error.js'
-import { extractPdfText } from './pdf-text.js'
+import { MAX_KNOWLEDGE_TEXT } from '@defense/shared'
 import { extractMaterialText } from './material-text.js'
+import { storedDocumentSourceSchema, sourceChecksum, fromExtracted, textSource, parseDocumentSource, type DocumentSource } from './document-source.js'
 
 const storedSchema = z.strictObject({
   attachment: attachmentSchema,
@@ -58,8 +59,24 @@ export function createAttachmentService(
     }
   }
   return {
+    directory,
     read,
     validate,
+    async document(id: string, options: {ocr?: boolean; rebuild?: boolean; signal?: AbortSignal} = {}) {
+      const {attachment, bytes} = await read(id)
+      const sha256 = hash(bytes), ocr = options.ocr ?? !!attachment.ocr
+      if (!options.rebuild && ocr === !!attachment.ocr) {
+        try {
+          const stored = storedDocumentSourceSchema.parse(JSON.parse(await readFile(path(id, '.source.json'), 'utf8')))
+          if (stored.sha256 !== sha256 || stored.checksum !== sourceChecksum(stored.source)) throw new Error('source mismatch')
+          return {source: stored.source, sha256}
+        } catch (failure) {
+          if ((failure as NodeJS.ErrnoException).code !== 'ENOENT')
+            throw new AppError(500, 'DOCUMENT_SOURCE_CORRUPT', '已保存的解析正文损坏，请重新建立索引。')
+        }
+      }
+      return {source: await parseDocumentSource(attachment, bytes, ocr, options.signal), sha256}
+    },
     async upload(input: Buffer, filename: string, options: { ocr?: boolean } = {}) {
       if (active >= 2) throw new AppError(429, 'UPLOAD_BUSY', '正在处理其他文件，请稍后重试。')
       if (!input.length || input.length > MAX_DOCUMENT_BYTES)
@@ -77,10 +94,13 @@ export function createAttachmentService(
             .trim()
             .slice(0, 180) || '附件'
         let mimeType: Attachment['mimeType']
+        let document: DocumentSource | undefined
         if (input.subarray(0, 5).toString() === '%PDF-') {
           mimeType = 'application/pdf'
           name = name.replace(/\.[^.]+$/, '').slice(0, 175) + '.pdf'
-          ;({ text, pageCount, truncated, ocr } = await extractPdfText(input, options))
+          const extracted = await extractMaterialText(input, 'pdf', {...options, maxText: MAX_KNOWLEDGE_TEXT})
+          ;({text, pageCount, truncated, ocr} = extracted)
+          document = fromExtracted(extracted)
         } else if (/\.txt$/i.test(name)) {
           mimeType = 'text/plain'
           try {
@@ -92,8 +112,7 @@ export function createAttachmentService(
             throw new AppError(422, 'DOCUMENT_PARSE_FAILED', 'TXT 请使用 UTF-8 编码。')
           }
           if (!text) throw new AppError(422, 'DOCUMENT_PARSE_FAILED', '文档没有可用文字。')
-          truncated = text.length > MAX_DOCUMENT_TEXT
-          text = text.slice(0, MAX_DOCUMENT_TEXT)
+          document = textSource(text)
         } else {
           if (input.length > MAX_IMAGE_BYTES)
             throw new AppError(413, 'FILE_TOO_LARGE', '图片最多 4 MiB。')
@@ -125,7 +144,9 @@ export function createAttachmentService(
           if (options.ocr) {
             // Run OCR only after validating and normalizing the image. Failure
             // stays visible; users can explicitly turn OCR off for photo-only attachments.
-            ;({ text, truncated, ocr } = await extractMaterialText(bytes, 'image'))
+            const extracted = await extractMaterialText(bytes, 'image', {maxText: MAX_KNOWLEDGE_TEXT})
+            ;({text, truncated, ocr} = extracted)
+            document = fromExtracted(extracted)
           }
         }
         const attachment = attachmentSchema.parse({
@@ -133,9 +154,9 @@ export function createAttachmentService(
           name,
           mimeType,
           size: bytes.length,
-          text,
+          text: text.slice(0, MAX_DOCUMENT_TEXT),
           pageCount,
-          truncated,
+          truncated: truncated || text.length > MAX_DOCUMENT_TEXT,
           ...(ocr ? { ocr } : {}),
           createdAt: new Date().toISOString(),
         })
@@ -148,9 +169,10 @@ export function createAttachmentService(
             flag: 'wx',
             mode: 0o600,
           })
+          if (document) await writeFile(path(attachment.id, '.source.json'), JSON.stringify({version: 1, sha256: hash(bytes), checksum: sourceChecksum(document), source: document}), {flag: 'wx', mode: 0o600})
           await read(attachment.id)
         } catch {
-          await Promise.allSettled([unlink(binary), unlink(metadata)])
+          await Promise.allSettled([unlink(binary), unlink(metadata), unlink(path(attachment.id, '.source.json'))])
           throw new AppError(
             500,
             'ATTACHMENT_SAVE_FAILED',

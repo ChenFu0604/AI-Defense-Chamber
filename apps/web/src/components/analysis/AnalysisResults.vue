@@ -3,10 +3,12 @@ import { AlertTriangle, SearchCheck, MessageSquareText } from 'lucide-vue-next'
 import { severityLabels, judgeLabels, type AnalysisRecord } from '@defense/shared'
 import { formatProjectDate } from '../../utils/project-format'
 import AnalysisFindingCard from './AnalysisFindingCard.vue'
+import RagSources from '../knowledge/RagSources.vue'
 defineProps<{ record: AnalysisRecord }>()
 </script>
 <template>
   <div class="analysis-results">
+    <RagSources v-if="record.retrieval" :retrieval="record.retrieval" />
     <div class="analysis-provenance" :class="record.mode">
       <span class="source-badge">{{
         record.mode === 'demo' ? '模拟数据 · 未调用模型' : 'AI 模型分析 · 未外部核验'

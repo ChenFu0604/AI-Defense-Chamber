@@ -5,14 +5,16 @@ import { mkdtemp, copyFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, dirname } from 'node:path'
 import { z } from 'zod'
-import { attachmentSchema, MAX_DOCUMENT_TEXT, MAX_OCR_PAGES, OCR_TIMEOUT_MS } from '@defense/shared'
+import { attachmentSchema, MAX_DOCUMENT_TEXT, MAX_KNOWLEDGE_TEXT, MAX_OCR_PAGES, OCR_TIMEOUT_MS } from '@defense/shared'
 import { AppError } from '../middleware/app-error.js'
 
 const resultSchema = z.strictObject({
-  text: z.string().max(MAX_DOCUMENT_TEXT),
+  text: z.string().max(MAX_KNOWLEDGE_TEXT),
   pageCount: z.number().int().min(1).max(40).nullable(),
   truncated: z.boolean(),
   ocr: attachmentSchema.shape.ocr,
+  textPages: z.array(z.object({page: z.number().int().min(1).max(40), text: z.string().max(MAX_KNOWLEDGE_TEXT), extraction: z.enum(['document', 'ocr'])})).max(40),
+  unreadPages: z.array(z.number().int().min(1).max(40)).max(40),
 })
 export type ExtractedMaterial = z.infer<typeof resultSchema>
 
@@ -23,7 +25,7 @@ const { parentPort, workerData: data } = require('node:worker_threads');
 let recognizer, task;
 (async () => {
   let text = '', truncated = false, pageCount = null;
-  const pages = [], skippedPages = [], confidences = [];
+  const pages = [], skippedPages = [], confidences = [], textPages = [], unreadPages = [];
   async function recognize(bytes, page) {
     if (!recognizer) {
       const { createWorker } = require(data.tesseract);
@@ -43,6 +45,7 @@ let recognizer, task;
   if (data.kind === 'image') {
     text = await recognize(Buffer.from(data.bytes), 1);
     if (!text) throw new Error('OCR_NO_TEXT');
+    textPages.push({page: 1, text: text.slice(0, data.maxText), extraction: 'ocr'});
   } else {
     const { getDocument } = await import(data.pdfModule);
     task = getDocument({ data: new Uint8Array(data.bytes), isEvalSupported: false,
@@ -56,9 +59,10 @@ let recognizer, task;
       try {
         const content = await current.getTextContent();
         let value = content.items.map(item => 'str' in item ? item.str + (item.hasEOL ? '\n' : ' ') : '').join('').trim();
+        let extraction = 'document';
         if (!value && data.ocr) {
           if (pages.length >= data.maxPages) {
-            skippedPages.push(page); truncated = true; continue;
+            skippedPages.push(page); unreadPages.push(page); truncated = true; continue;
           }
           const base = current.getViewport({ scale: 1 });
           if (!Number.isFinite(base.width + base.height) || base.width <= 0 || base.height <= 0) throw new Error('BAD_PAGE');
@@ -67,9 +71,14 @@ let recognizer, task;
           try {
             await current.render({ canvas: canvas.canvas, viewport, background: '#ffffff' }).promise;
             value = await recognize(canvas.canvas.toBuffer('image/png'), page);
+            extraction = 'ocr';
           } finally { pdf.canvasFactory.destroy(canvas); }
         }
-        if (value) text += '[第 ' + page + ' 页]\n' + value + '\n';
+        if (value) {
+          const remaining = Math.max(0, data.maxText - text.length);
+          if (remaining) textPages.push({page, text: value.slice(0, remaining), extraction});
+          text += '[第 ' + page + ' 页]\n' + value + '\n';
+        } else { unreadPages.push(page); }
         if (text.length > data.maxText) { truncated = true; break; }
       } finally { current.cleanup(); }
     }
@@ -78,7 +87,7 @@ let recognizer, task;
   if (text.length > data.maxText) truncated = true;
   const ocr = pages.length ? { pages, skippedPages,
     confidence: Math.max(0, Math.min(100, Math.round(confidences.reduce((a,b) => a+b, 0) / confidences.length))) } : undefined;
-  return { text: text.slice(0, data.maxText).trim(), pageCount, truncated, ...(ocr ? { ocr } : {}) };
+  return { text: text.slice(0, data.maxText).trim(), pageCount, truncated, textPages, unreadPages, ...(ocr ? { ocr } : {}) };
 })().then(async result => {
   if (recognizer) await recognizer.terminate();
   if (task) await task.destroy();
@@ -93,10 +102,11 @@ let recognizer, task;
 export async function extractMaterialText(
   bytes: Buffer,
   kind: 'pdf' | 'image',
-  options: { ocr?: boolean; timeoutMs?: number } = {},
+  options: { ocr?: boolean; timeoutMs?: number; maxText?: number; signal?: AbortSignal } = {},
 ): Promise<ExtractedMaterial> {
   const require = createRequire(import.meta.url)
   const ocr = kind === 'image' || !!options.ocr
+  if (options.signal?.aborted) throw new AppError(499, 'REQUEST_CANCELLED', '资料处理已取消。')
   let languages: string | undefined
   try {
     if (ocr) {
@@ -127,7 +137,7 @@ export async function extractMaterialText(
             ) + '/',
           tesseract: ocr ? require.resolve('tesseract.js') : undefined,
           maxPages: MAX_OCR_PAGES,
-          maxText: MAX_DOCUMENT_TEXT,
+          maxText: Math.min(MAX_KNOWLEDGE_TEXT, Math.max(1, options.maxText ?? MAX_DOCUMENT_TEXT)),
         },
         resourceLimits: { maxOldGenerationSizeMb: 256 },
       })
@@ -136,6 +146,7 @@ export async function extractMaterialText(
         if (settled) return
         settled = true
         clearTimeout(timer)
+        options.signal?.removeEventListener('abort', onAbort)
         // Wait for termination before removing temporary language files.
         void worker.terminate().then(() => {
           if (error) reject(error)
@@ -155,6 +166,9 @@ export async function extractMaterialText(
           ),
         options.timeoutMs ?? (ocr ? OCR_TIMEOUT_MS : 15000),
       )
+      const onAbort = () => finish(new AppError(499, 'REQUEST_CANCELLED', '资料处理已取消。'))
+      options.signal?.addEventListener('abort', onAbort, {once: true})
+      if (options.signal?.aborted) onAbort()
       worker.once('message', (result) => {
         if (!result.error) {
           const parsed = resultSchema.safeParse(result)

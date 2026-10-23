@@ -10,6 +10,7 @@ import ReportReferences from './ReportReferences.vue'
 import { useImprovementsStore } from '../../stores/improvements'
 import AppButton from '../ui/AppButton.vue'
 import StatusNotice from '../ui/StatusNotice.vue'
+import RagSources from '../knowledge/RagSources.vue'
 const AbilityRadar = defineAsyncComponent(() => import('./AbilityRadar.vue'))
 defineProps<{ report: DefenseReport; messages: DefenseMessage[]; projectName?: string }>()
 const tasks = useImprovementsStore()
@@ -35,6 +36,7 @@ const priorities = { high: '优先处理', medium: '随后改进', low: '持续�
       <AbilityRadar :dimensions="report.output.dimensions" />
     </section>
   </div>
+  <RagSources v-if="report.retrieval" :retrieval="report.retrieval" />
   <p class="notice">
     AI 的主观训练评价，不是绝对客观的能力测评，也不代表项目已通过外部验证。{{
       report.output.limitations

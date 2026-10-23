@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { projectInputSchema, projectSchema } from './project.js'
+import { ragRetrievalSchema, type RagRetrieval } from './knowledge.js'
 
 const text = (max = 1600) => z.string().trim().min(1).max(max)
 export const evidenceReferenceSchema = z.strictObject({
@@ -71,6 +72,7 @@ export type AnalysisMode = AnalyzeProjectRequest['mode']
 export function analysisEvidenceIsValid(
   output: AnalysisOutput,
   project: z.infer<typeof projectInputSchema>,
+  retrieval?: RagRetrieval,
 ): boolean {
   const findings: AnalysisFinding[] = [
     output.coreValue,
@@ -84,7 +86,8 @@ export function analysisEvidenceIsValid(
     if (finding.certainty === 'provided' && finding.evidence.length === 0) return false
     return finding.evidence.every((reference) =>
       reference.field === 'materials'
-        ? !!project.attachments?.some((file) => !!file.text && file.text.includes(reference.quote))
+        ? !!project.attachments?.some((file) => (!!file.text && file.text.includes(reference.quote)) ||
+            retrieval?.sources.some(s => s.attachmentId === file.id && s.text.includes(reference.quote)))
         : project[reference.field].includes(reference.quote),
     )
   })
@@ -99,6 +102,7 @@ export const analysisRecordSchema = z
     mode: z.enum(['live', 'demo']),
     model: z.string().trim().min(1).max(200).nullable(),
     output: analysisOutputSchema,
+    retrieval: ragRetrievalSchema.optional(),
   })
   .superRefine((record, context) => {
     if (
@@ -106,7 +110,9 @@ export const analysisRecordSchema = z
       (record.mode === 'demo' && record.model !== null)
     )
       context.addIssue({ code: 'custom', message: '分析来源与模型元信息不一致。' })
-    if (!analysisEvidenceIsValid(record.output, record.projectSnapshot))
+    if (record.retrieval && (record.retrieval.projectId !== record.projectId || record.retrieval.sources.some(s => !record.projectSnapshot.attachments?.some(f => f.id === s.attachmentId))))
+      context.addIssue({code: 'custom', message: '画像检索资料不属于该项目。'})
+    if (!analysisEvidenceIsValid(record.output, record.projectSnapshot, record.retrieval))
       context.addIssue({ code: 'custom', message: '分析引用不属于项目资料，或材料结论缺少引用。' })
   })
 

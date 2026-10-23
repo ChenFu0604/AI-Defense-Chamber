@@ -17,6 +17,7 @@ import AttachmentGallery from '../components/attachments/AttachmentGallery.vue'
 import ProjectSnapshot from '../components/ProjectSnapshot.vue'
 import TrainingSummary from '../components/defense/TrainingSummary.vue'
 import AnswerFeedback from '../components/defense/AnswerFeedback.vue'
+import RagSources from '../components/knowledge/RagSources.vue'
 import DiscussionBoard from '../components/defense/DiscussionBoard.vue'
 import DiscussionSummary from '../components/defense/DiscussionSummary.vue'
 const route = useRoute(),
@@ -129,6 +130,7 @@ watch(id, store.load)
     </section>
     <h2>完整答辩消息</h2>
     <AnswerFeedback v-if="entry.session.closingFeedback" :assessment="entry.session.closingFeedback.assessment" :demo="entry.session.mode === 'demo'" />
+    <RagSources v-if="entry.session.closingFeedback?.retrieval" :retrieval="entry.session.closingFeedback.retrieval" />
     <DefenseMessages :messages="entry.session.messages" :demo="entry.session.mode === 'demo'" :assistance="entry.session.assistance" />
   </template>
   <div v-else class="empty-state surface-panel">

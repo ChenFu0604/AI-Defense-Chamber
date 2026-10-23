@@ -11,6 +11,8 @@ import { judgeConfigs } from '../config/judges.js'
 import { aiClient, type AIClient } from './ai-client.js'
 import { AppError } from '../middleware/app-error.js'
 import { attachmentService, type AttachmentService } from './attachment-service.js'
+import { prepareRagMaterials } from './rag-materials.js'
+import { ragPolicy, retrievalSummary } from './knowledge-service.js'
 
 export type JudgeService = (
   request: JudgeQuestionRequest,
@@ -106,14 +108,14 @@ export function createJudgeService(
     const judge = judgeConfigs.find((item) => item.id === request.judgeId)!
     const materials =
       request.mode === 'live'
-        ? await attachments.materials(request.project.attachments)
-        : { images: [], documents: [] }
+        ? await prepareRagMaterials(attachments, request.project, request.analysis.output.questionDirections.find(v => v.judge === request.judgeId)?.question ?? '项目需求方案与验证', [], signal, true)
+        : { images: [], documents: [], retrieval: undefined }
     const result =
       request.mode === 'demo'
         ? { data: demoQuestion(request), model: null }
         : await client.generate({
             name: 'judge_question',
-            system: judge.systemPrompt,
+            system: judge.systemPrompt + '\n' + ragPolicy,
             user: JSON.stringify({
               judgeId: request.judgeId,
               project: {
@@ -121,6 +123,7 @@ export function createJudgeService(
                 attachments: request.project.attachments?.map(({ id, name }) => ({ id, name })),
               },
               materials: materials.documents,
+              retrieval: retrievalSummary(materials.retrieval),
               profile: request.analysis.output,
               history: request.history,
             }),
@@ -146,6 +149,7 @@ export function createJudgeService(
       mode: request.mode,
       model: result.model,
       speech: parsed.data,
+      ...(materials.retrieval ? {retrieval: materials.retrieval} : {}),
     })
   }
 }

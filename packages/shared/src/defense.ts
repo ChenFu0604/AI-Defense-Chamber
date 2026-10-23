@@ -6,6 +6,7 @@ import { analysisRecordSchema, analysisMatchesProject } from './analysis.js'
 import { trainingPreferencesSchema, assistanceRecordSchema, assistanceRequestSchema, trainingSettings } from './training.js'
 import { discussionMemorySchema, discussionTopicIdSchema, discussionLinksAreValid, topicQuestionRequestSchema, topicStateRequestSchema } from './discussion.js'
 import { retrainingTaskSchema, retrainingTaskUpdatesSchema } from './improvements.js'
+import { ragRetrievalSchema } from './knowledge.js'
 
 export const MAX_DEFENSE_QUESTIONS = 30
 export const retrainingFocusSchema = z.strictObject({
@@ -59,6 +60,7 @@ export const defenseMessageSchema = z.strictObject({
   model: text(200).nullable(),
   attachments: attachmentListSchema.optional(),
   topicId: discussionTopicIdSchema.optional(),
+  retrieval: ragRetrievalSchema.optional(),
 })
 export type DefenseMessage = z.infer<typeof defenseMessageSchema>
 export const defenseStatusSchema = z.enum([
@@ -103,13 +105,18 @@ export const defenseSessionSchema = z
     closingFeedback: z.strictObject({
       answerMessageId: z.uuid(), assessment: answerAssessmentSchema,
       model: text(200).nullable(),
+      retrieval: ragRetrievalSchema.optional(),
     }).optional(),
   })
   .superRefine((session, context) => {
     const current = session.messages.find((v) => v.id === session.currentQuestionId)
     const pendingAnswer = session.messages.find((v) => v.id === session.pending?.answerMessageId)
+    const allowedFiles = new Set([...(session.project.attachments ?? []), ...(session.training?.tasks?.flatMap(t => t.attachments ?? []) ?? []),
+      ...session.messages.filter(m => m.sender === 'user').flatMap(m => m.attachments ?? [])].map(f => f.id))
+    const retrievals = [...session.messages.flatMap(m => m.retrieval ? [m.retrieval] : []), ...(session.closingFeedback?.retrieval ? [session.closingFeedback.retrieval] : [])]
     if (
       session.analysis.mode !== session.mode ||
+      retrievals.some(r => r.projectId !== session.project.id || session.mode !== 'live' || r.sources.some(s => !allowedFiles.has(s.attachmentId))) ||
       !discussionLinksAreValid(session) ||
       !analysisMatchesProject(session.analysis, session.project) ||
       (session.currentQuestionId !== null &&

@@ -25,6 +25,7 @@ import './styles/clean-workspace.css'
 import './styles/defense-chat.css'
 import './styles/ui-dialog.css'
 import './styles/improvements.css'
+import './styles/knowledge.css'
 
 const app = createApp(App).use(createPinia()).use(router)
 app.mount('#app')

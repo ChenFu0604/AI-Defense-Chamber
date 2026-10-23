@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { ragRetrievalSchema } from './knowledge.js'
 import { analysisRecordSchema, analysisMatchesProject } from './analysis.js'
 import { projectSchema } from './project.js'
 
@@ -122,8 +123,9 @@ export const judgeStatementSchema = z
     mode: z.enum(['live', 'demo']),
     model: text(200).nullable(),
     speech: judgeQuestionSchema,
+    retrieval: ragRetrievalSchema.optional(),
   })
-  .refine((record) => (record.mode === 'demo' ? record.model === null : record.model !== null), {
+  .refine((record) => (record.mode === 'demo' ? record.model === null && !record.retrieval : record.model !== null) && (!record.retrieval || record.retrieval.projectId === record.projectId), {
     message: '评委发言来源与模型信息不一致。',
   })
 export type JudgeStatement = z.infer<typeof judgeStatementSchema>
