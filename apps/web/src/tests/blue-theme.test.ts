@@ -23,6 +23,8 @@ async function renderPage(component: Component, path = '/', populated = false, a
       { path: '/projects/new', name: 'project-create', component: placeholder },
       { path: '/projects/:id', name: 'project-detail', component: placeholder },
       { path: '/defense', name: 'defense', component: placeholder },
+      { path: '/defense/sessions/:id', name: 'defense-session', component: placeholder },
+      { path: '/defense/sessions/:id/report', name: 'defense-report', component: placeholder },
       { path: '/history', name: 'history', component: placeholder },
       { path: '/settings', name: 'system-settings', component: placeholder },
     ],
@@ -78,6 +80,17 @@ function contrast(foreground: string, background: string) {
 }
 
 describe('clean blue workspace navigation', () => {
+  it('removes the global topbar only in the conversation and preserves report navigation', async () => {
+    const session = await renderPage(WorkspaceLayout, '/defense/sessions/test-session')
+    expect(session).toContain('conversation-layout')
+    expect(session).not.toContain('class="topbar')
+    expect(session).not.toContain('class="page-footer')
+    expect(session).toContain('aria-label="主导航"')
+    expect(session).toContain('href="/settings"')
+    const report = await renderPage(WorkspaceLayout, '/defense/sessions/test-session/report')
+    expect(report).not.toContain('conversation-layout')
+    expect(report).toContain('class="topbar')
+  })
   it('keeps the navigation on simple surfaces without obsolete scenery or theme controls', async () => {
     const html = await renderPage(WorkspaceLayout)
     expect(html).not.toMatch(/aero-scenery|aero-decor|aero-panel/)

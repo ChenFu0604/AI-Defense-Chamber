@@ -19,11 +19,12 @@ import { useProjectSync } from '../composables/useProjectSync'
 
 useProjectSync()
 const route = useRoute()
+const isConversation = computed(() => route.name === 'defense-session')
 const title = computed(() => (typeof route.meta.title === 'string' ? route.meta.title : '总览'))
 </script>
 <template>
   <a href="#main-content" class="skip-link">跳到主要内容</a>
-  <div class="app-shell">
+  <div class="app-shell" :class="{ 'conversation-layout': isConversation }">
 
     <aside class="sidebar surface-panel">
 
@@ -69,7 +70,7 @@ const title = computed(() => (typeof route.meta.title === 'string' ? route.meta.
       </div>
     </aside>
     <div class="main-shell">
-      <header class="topbar surface-panel">
+      <header v-if="!isConversation" class="topbar surface-panel">
 
         <div class="breadcrumb">
           <RouterLink to="/">工作空间</RouterLink><ChevronRight :size="13" /><span>{{
@@ -86,7 +87,7 @@ const title = computed(() => (typeof route.meta.title === 'string' ? route.meta.
       </header>
       <main id="main-content" class="main-content" tabindex="-1">
         <RouterView />
-        <footer class="page-footer">
+        <footer v-if="!isConversation" class="page-footer">
           <span>AI DEFENSE CHAMBER <span class="footer-dot">·</span> 在质疑中，让项目更强。</span
           ><RouterLink to="/settings">模型与系统设置<ArrowUpRight :size="12" /></RouterLink>
         </footer>

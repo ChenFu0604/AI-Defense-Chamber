@@ -1,28 +1,25 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { ArrowDown, ArrowLeft, ArrowUpRight, CheckCircle2, ChevronDown, MessagesSquare } from 'lucide-vue-next'
+import { ArrowLeft, ArrowUpRight, CheckCircle2, ChevronDown, PanelRight, Settings } from 'lucide-vue-next'
 import { judgeDefinitions, trainingSettings, questionTypeLabels } from '@defense/shared'
 import { useDefenseStore } from '../stores/defense'
 import DefenseMessages from '../components/defense/DefenseMessages.vue'
 import AppButton from '../components/ui/AppButton.vue'
-import AttachmentUploader from '../components/attachments/AttachmentUploader.vue'
+import AppDialog from '../components/ui/AppDialog.vue'
+import DefenseChatComposer from '../components/defense/DefenseChatComposer.vue'
 import AttachmentGallery from '../components/attachments/AttachmentGallery.vue'
 import JudgeRolePicker from '../components/judges/JudgeRolePicker.vue'
 import JudgeAvatar from '../components/judges/JudgeAvatar.vue'
-import DefenseSessionStatus from '../components/defense/DefenseSessionStatus.vue'
-import AssistancePanel from '../components/defense/AssistancePanel.vue'
 import AnswerFeedback from '../components/defense/AnswerFeedback.vue'
 import TrainingSummary from '../components/defense/TrainingSummary.vue'
 import { useDefenseDraftGuard } from '../composables/useDefenseDraftGuard'
-import { latestAnswerFeedback } from '../utils/defense-feedback'
 import DiscussionBoard from '../components/defense/DiscussionBoard.vue'
 import DiscussionSummary from '../components/defense/DiscussionSummary.vue'
-import DefenseActivity from '../components/defense/DefenseActivity.vue'
 import EndDefenseControl from '../components/defense/EndDefenseControl.vue'
 import RequestWait from '../components/ui/RequestWait.vue'
 import StatusNotice from '../components/ui/StatusNotice.vue'
-const uploading = ref(false)
+const uploading = ref(false), showTools = ref(false)
 const route = useRoute(),
   store = useDefenseStore()
 useDefenseDraftGuard()
@@ -33,7 +30,6 @@ const current = computed(() =>
 const judge = computed(() => judgeDefinitions.find((v) => v.id === store.session?.currentJudgeId))
 const limit = computed(() => store.session ? trainingSettings(store.session).questionLimit : 30)
 const helpRecords = computed(() => store.session?.assistance?.filter(v => v.questionId === current.value?.id) ?? [])
-const feedback = computed(() => latestAnswerFeedback(store.session, store.operation?.kind === 'answer'))
 const questions = computed(
   () => store.session?.messages.filter((v) => v.sender === 'judge').length ?? 0,
 )
@@ -58,13 +54,11 @@ const activeJudgeId = computed(
       : store.session?.currentJudgeId) ??
     'business',
 )
-const displayStatus = computed(() =>
-  activity.value === 'generating' || activity.value === 'reviewing' ? 'generating' : (store.session?.status ?? 'ready'),
-)
 let poll: ReturnType<typeof setInterval> | undefined
 watch(
   id,
   async (value, _previous, onCleanup) => {
+    showTools.value = false
     let active = true
     onCleanup(() => {
       active = false
@@ -98,167 +92,85 @@ onBeforeUnmount(() => {
 })
 </script>
 <template>
-  <div class="session-page">
-  <RouterLink to="/defense" class="back-link"><ArrowLeft :size="16" /> 返回答辩准备</RouterLink>
-  <header class="session-page-heading">
-    <div>
-      <h1>{{ store.session?.project.name ?? '恢复答辩会话' }}</h1>
-      <p>{{ store.session?.status === 'ended' ? '回看这一轮的发现，带着改进方向继续准备。' : '一次聊清一个问题。先说出想法，再和评委一起完善。' }}</p>
-    </div>
-    <a v-if="store.session" href="#session-history" class="app-button button-secondary session-history-link"><MessagesSquare :size="17" />查看本场记录<ArrowDown :size="15" /></a>
-  </header>
-  <StatusNotice v-if="store.error" tone="error" title="本次操作未完成">{{ store.error }}</StatusNotice>
-  <StatusNotice v-if="store.warning" tone="warning" compact>{{ store.warning }}</StatusNotice>
-  <AppButton v-if="!store.session" :disabled="store.busy" @click="store.load(id)">{{
-    store.busy ? '读取中…' : '重试读取会话'
-  }}</AppButton>
-  <template v-if="store.session">
-    <DefenseSessionStatus
-      :mode="store.session.mode"
-      :status="displayStatus"
-      :questions="questions"
-      :answers="answers"
-      :limit="limit"
-    />
-    <div class="session-workspace-grid">
-    <div class="session-primary">
-    <section v-if="store.session.status !== 'ended'" id="session-question" class="current-question-card surface-panel" aria-label="当前问题">
-
-      <div class="session-card-eyebrow"><span>当前问题</span><span v-if="questions">第 {{ questions }} 题</span></div>
-      <div class="current-question-header">
-        <JudgeAvatar :id="store.session.currentJudgeId" />
-        <div>
-          <span>由评委向你提问</span>
-          <h2>{{ judge?.name }}</h2>
+  <div class="session-page session-chat-page">
+    <header class="chat-page-heading">
+      <RouterLink to="/defense" class="back-link" aria-label="返回答辩准备"><ArrowLeft :size="15" /><span>返回答辩准备</span></RouterLink>
+      <h1 v-if="!store.session">恢复答辩会话</h1>
+      <RouterLink to="/settings" class="chat-model-settings app-button button-secondary" aria-label="模型与系统设置"><Settings :size="16" /></RouterLink>
+    </header>
+    <template v-if="!store.session">
+      <StatusNotice v-if="store.error" tone="error" title="会话读取未完成">{{ store.error }}</StatusNotice>
+      <StatusNotice v-if="store.busy" busy>正在恢复已保存的对话…</StatusNotice>
+      <AppButton :disabled="store.busy" @click="store.load(id)">{{ store.busy ? '读取中…' : '重试读取会话' }}</AppButton>
+    </template>
+    <div v-else class="session-chat-workspace">
+      <section class="session-chat-column" aria-label="答辩对话工作区">
+        <div class="chat-conversation-heading">
+          <div class="chat-judge-context">
+            <JudgeAvatar :id="store.session.currentJudgeId" :size="18" />
+            <div><h2>{{ judge?.name }}</h2><p>{{ store.session.status === 'ended' ? '本场已结束 · 完整对话已保存' : current?.question ? questionTypeLabels[current.question.questionType] + ' · 一次聊清一个问题' : '准备开始对话' }}</p></div>
+            <AppButton variant="ghost" :aria-expanded="showTools" aria-controls="session-chat-tools" aria-haspopup="dialog" @click="showTools = true"><PanelRight :size="15" />{{ store.session.status === 'ended' ? '训练设置' : '切换评委' }}</AppButton>
+          </div>
+          <h1 class="chat-project-title">{{ store.session.project.name }}</h1>
+          <div class="chat-conversation-status">
+            <span class="chat-source-label" :class="store.session.mode">{{ store.session.mode === 'demo' ? '模拟演示 · 未调用模型' : '真实模型会话' }}</span>
+            <span class="chat-turn-count">{{ answers }} 次回答 · {{ questions }} / {{ limit }} 题</span>
+            <EndDefenseControl v-if="store.session.status !== 'ended'" :disabled="blocked || uploading"
+              :has-draft="!!store.draft.trim() || !!store.draftAttachments.length" :has-pending-answer="store.operation?.kind === 'answer'" @end="store.end" />
+          </div>
         </div>
-        <span v-if="current?.question" class="question-type-chip">{{
-          questionTypeLabels[current.question.questionType]
-        }}</span>
-      </div>
-      <Transition name="ink-reveal" mode="out-in">
-      <p v-if="current?.question" :key="current.id" class="current-question-text">{{ current.content }}</p>
-      <p v-else key="waiting" class="current-question-placeholder">
-        {{
-          store.session.status === 'failed'
-            ? '首问生成失败，请重试上次操作。'
-            : '正在准备本轮的第一个问题。'
-        }}
-      </p>
-      </Transition>
-    </section>
-    <AnswerFeedback v-if="feedback && store.session.status !== 'ended'" :assessment="feedback.assessment" :demo="store.session.mode === 'demo'" :rationale="feedback.rationale" />
-    <DefenseActivity v-if="activity" :judge-id="activeJudgeId" :phase="activity" :has-messages="!!questions" :demo="store.session.mode === 'demo'">
-      <RequestWait embedded :active="blocked && !!store.operation && store.session.mode === 'live'" :request-key="store.operation?.body.requestId" />
-    </DefenseActivity>
-    <div v-if="store.session.status !== 'ended'" class="defense-composer surface-panel">
-
-      <div class="session-composer-heading"><h2>说说你的想法</h2><span>不必一次答得完美</span></div>
-      <label for="defense-answer"
-        >你的回答 <span>{{ store.draft.length }} / 4000</span></label
-      >
-      <textarea
-        id="defense-answer"
-        :value="store.draft"
-        maxlength="4000"
-        rows="5"
-        :disabled="blocked || !!store.operation || store.session.status !== 'awaiting_answer'"
-        placeholder="说明你的判断和依据；附图时请解释图中要证明的内容…"
-        @input="store.updateDraft(($event.target as HTMLTextAreaElement).value)"
-      />
-      <p class="session-input-hint">可以从一个具体例子开始。暂时没有数据，也可以说明准备怎样验证。</p>
-      <details class="session-answer-materials" :open="store.draftAttachments.length > 0 || undefined">
-        <summary >补充图片或文档<span>{{ store.draftAttachments.length ? store.draftAttachments.length + ' 份附件' : '可选' }}</span><ChevronDown :size="16" /></summary>
-        <AttachmentUploader
-        :model-value="store.draftAttachments"
-        :disabled="blocked || !!store.operation || store.session.status !== 'awaiting_answer'"
-        label="为本次回答补充图片与文档"
-        @update:model-value="store.updateAttachments"
-        @busy="uploading = $event"
-      />
-      </details>
-      <div class="defense-actions">
-        <AppButton
-          v-if="store.session.status === 'awaiting_answer' && !store.operation"
-          :disabled="blocked || uploading || !store.draft.trim()"
-          :busy="store.busy"
-          @click="store.answer"
-          >{{ questions >= limit ? '提交最后回答并结束' : '提交回答并追问' }}</AppButton
-        ><AppButton
-          v-if="store.operation && store.operation.kind !== 'help' && !store.busy && store.session.status !== 'generating'"
-          :disabled="blocked"
-          @click="store.retry"
-          >重试上次操作</AppButton
-        ><AppButton
-          v-if="store.session.status === 'ready' && !store.operation"
-          :disabled="blocked"
-          @click="store.initial"
-          >生成首问</AppButton
-        ><AppButton variant="ghost" :disabled="store.busy || uploading" @click="store.load(id)"
-          >刷新会话状态</AppButton
-        >
-      </div>
-      <p v-if="store.operation?.kind !== 'help'" class="judge-disclaimer">
-        提交失败会保留输入和原请求。若回答已保存，请使用“重试上次操作”，避免产生重复回答。
-      </p>
-      <AssistancePanel v-if="store.session.status === 'awaiting_answer'" :records="helpRecords"
-        :disabled="blocked || uploading || !!store.operation" :loading="store.busy && store.operation?.kind === 'help'"
-        :failed="!store.busy && store.operation?.kind === 'help'" :demo="store.session.mode === 'demo'"
-        @help="store.help" @retry="store.retry" @cancel="store.cancelHelp" />
-      <EndDefenseControl :disabled="blocked || uploading" :has-draft="!!store.draft.trim() || !!store.draftAttachments.length" :has-pending-answer="store.operation?.kind === 'answer'" @end="store.end" />
-    </div>
-    <div v-else class="defense-ended surface-panel">
-
-      <div class="session-ended-heading"><span><CheckCircle2 :size="28" /></span><div><div class="eyebrow">本场已保存</div><h2>这一轮，先到这里。</h2></div></div>
-      <p class="session-ended-copy">答辩已结束，完整记录已保存。共留下 {{ answers }} 次回答，可以回看讨论小结，或进入报告查看下一步建议。</p>
-      <div class="session-ended-actions">
-      <RouterLink :to="{ name: 'defense-report', params: { id } }" class="app-button button-primary control-button"
-        >
-      查看诊断报告<ArrowUpRight :size="17" /></RouterLink
-      >
-      <a href="#session-history" class="app-button button-secondary">回看完整对话</a>
-      </div>
-      <DiscussionSummary :session="store.session" />
-      <details v-if="store.draft.trim() || store.draftAttachments.length" class="history-card surface-panel">
-        <summary >查看保留的回答草稿</summary>
-
-        <p>以下内容不因结束操作而追加到会话；已经提交的回答请以下方记录为准。</p>
-        <textarea  :value="store.draft" readonly rows="5" aria-label="结束时保留的回答草稿" />
-        <AttachmentGallery :items="store.draftAttachments" />
-      </details>
-    </div>
-    <AnswerFeedback v-if="feedback && store.session.status === 'ended'" :assessment="feedback.assessment" :demo="store.session.mode === 'demo'" :rationale="feedback.rationale" />
-    </div>
-    <aside class="session-side" aria-label="评委与训练辅助">
-    <section class="session-judge-panel surface-panel">
-
-      <div class="session-side-heading"><span class="section-kicker">{{ store.session.status === 'ended' ? '最后对话的评委' : '正在与你对话' }}</span></div>
-      <div class="session-judge-profile"><JudgeAvatar :id="store.session.currentJudgeId" /><div><h2>{{ judge?.name }}</h2><span>{{ store.session.status === 'ended' ? '本场记录已保留' : '换个视角，发现新的思路' }}</span></div></div>
-      <p>{{ judge?.introduction }}</p>
-    <details v-if="store.session.status !== 'ended'" class="session-tools session-judge-switch">
-      <summary ><span>切换评委 · 当前 {{ judge?.name }}</span><ChevronDown :size="16" /></summary>
-      <p>换个视角继续讨论。切换会生成新问题并计入题数，当前未回答的问题会保留为已跳过。</p>
-      <JudgeRolePicker :model-value="store.session.currentJudgeId" label="选择下一位评委" active
-        :disabled="blocked || uploading || !!store.operation || store.session.status !== 'awaiting_answer' || questions >= limit" @update:model-value="store.switchJudge" />
-    </details>
-    </section>
-    <DiscussionBoard :session="store.session" :disabled="blocked || uploading || !!store.operation" :question-limit-reached="questions >= limit" :read-only="store.session.status === 'ended'" @update="store.updateTopic" @focus="store.changeTopic" />
-    <details class="session-tools session-settings surface-panel"><summary ><span>训练设置与项目附件</span><ChevronDown :size="16" /></summary>
-
-      <TrainingSummary :session="store.session" />
-      <section v-if="store.session.training" class="session-training-focus">
-        <h3>本次训练重点</h3>
-        <p>基于上一场已保存报告，不预设本次成绩。</p>
-        <ul><li v-for="focus in store.session.training.focus" :key="focus">{{ focus }}</li></ul>
+        <div id="session-history" class="chat-conversation" aria-labelledby="session-history-title">
+          <h2 id="session-history-title" class="sr-only">本场对话记录</h2>
+          <DefenseMessages :key="id" variant="chat" :messages="store.session.messages" :demo="store.session.mode === 'demo'"
+            :current-question-id="store.session.status !== 'ended' ? store.session.currentQuestionId : null"
+            :activity="activity" :judge-id="activeJudgeId" :assistance="store.session.assistance"
+            :retryable-answer-id="store.session.status !== 'ended' ? store.session.pending?.answerMessageId ?? undefined : undefined">
+            <template #activity><RequestWait embedded :active="blocked && !!store.operation && store.session.mode === 'live'" :request-key="store.operation?.body.requestId" /></template>
+            <template #after-messages>
+              <template v-if="store.session.status === 'ended'">
+                <AnswerFeedback v-if="store.session.closingFeedback" :assessment="store.session.closingFeedback.assessment" :demo="store.session.mode === 'demo'" />
+                <details class="chat-session-recap"><summary>回看讨论小结<ChevronDown :size="15" /></summary><DiscussionSummary :session="store.session" /></details>
+                <details v-if="store.draft.trim() || store.draftAttachments.length" class="chat-session-recap">
+                  <summary>查看保留的回答草稿<ChevronDown :size="15" /></summary>
+                  <p>未提交的内容不计入本场记录，可以复制后继续整理。</p>
+                  <textarea :value="store.draft" readonly rows="4" aria-label="结束时保留的回答草稿" />
+                  <AttachmentGallery :items="store.draftAttachments" />
+                </details>
+              </template>
+            </template>
+          </DefenseMessages>
+        </div>
+        <div class="chat-compose-dock">
+          <StatusNotice v-if="store.error" tone="error" title="本次操作未完成" compact>{{ store.error }}</StatusNotice>
+          <StatusNotice v-if="store.warning" tone="warning" compact>{{ store.warning }}</StatusNotice>
+          <DefenseChatComposer v-if="store.session.status !== 'ended'" :blocked="blocked" :questions="questions" :limit="limit" :help-records="helpRecords" @busy="uploading = $event" />
+          <div v-else class="chat-ended-state">
+            <CheckCircle2 :size="22" /><div><strong>这一轮，先到这里。</strong><p>已保存 {{ answers }} 次回答，可以继续回看对话。</p></div>
+            <RouterLink :to="{ name: 'defense-report', params: { id } }" class="app-button button-primary">查看诊断报告<ArrowUpRight :size="16" /></RouterLink>
+          </div>
+        </div>
       </section>
-      <AttachmentGallery v-if="store.session.project.attachments?.length" :items="store.session.project.attachments" />
-    </details>
-    </aside>
+      <AppDialog id="session-chat-tools" v-model="showTools" :title="store.session.status === 'ended' ? '训练设置' : '切换评委'" description="查看本场评委、议题进度、训练设置和项目材料。">
+      <aside class="session-side session-chat-side" aria-label="评委与训练辅助">
+        <section class="session-judge-panel surface-panel">
+          <div class="session-judge-profile"><JudgeAvatar :id="store.session.currentJudgeId" /><div><h2>{{ judge?.name }}</h2><span>{{ store.session.status === 'ended' ? '最后对话的评委' : '正在与你对话' }}</span></div></div>
+          <p>{{ judge?.introduction }}</p>
+          <details v-if="store.session.status !== 'ended'" class="session-tools session-judge-switch" open>
+            <summary><span>切换评委 · 当前 {{ judge?.name }}</span><ChevronDown :size="16" /></summary>
+            <p>切换会生成新问题并计入题数，当前未回答的问题会保留为已跳过。</p>
+            <JudgeRolePicker :model-value="store.session.currentJudgeId" label="选择下一位评委" active
+              :disabled="blocked || uploading || !!store.operation || store.session.status !== 'awaiting_answer' || questions >= limit" @update:model-value="store.switchJudge" />
+          </details>
+        </section>
+        <DiscussionBoard :session="store.session" :disabled="blocked || uploading || !!store.operation" :question-limit-reached="questions >= limit" :read-only="store.session.status === 'ended'" @update="store.updateTopic" @focus="store.changeTopic" />
+        <details class="session-tools session-settings surface-panel"><summary><span>训练设置与项目附件</span><ChevronDown :size="16" /></summary>
+          <TrainingSummary :session="store.session" />
+          <section v-if="store.session.training" class="session-training-focus"><h3>本次训练重点</h3><p>基于上一场已保存报告，不预设本次成绩。</p><ul><li v-for="focus in store.session.training.focus" :key="focus">{{ focus }}</li></ul></section>
+          <AttachmentGallery v-if="store.session.project.attachments?.length" :items="store.session.project.attachments" />
+        </details>
+        <AppButton variant="secondary" :disabled="store.busy || uploading" @click="store.load(id)">刷新会话状态</AppButton>
+      </aside>
+      </AppDialog>
     </div>
-    <section id="session-history" class="session-history" aria-labelledby="session-history-title">
-    <div class="session-history-heading"><div><span class="section-kicker">回看你的思考过程</span><h2 id="session-history-title">本场对话记录 <span>{{ answers }} 次回答</span></h2><p>按原始顺序保留问题、回答、附件与反馈。</p></div><a v-if="store.session.status !== 'ended'" href="#session-question" class="text-button">返回当前问题 ↑</a></div>
-    <DefenseMessages :messages="store.session.messages" :demo="store.session.mode === 'demo'" :assistance="store.session.assistance"
-      :retryable-answer-id="store.session.status !== 'ended' ? store.session.pending?.answerMessageId ?? undefined : undefined" />
-    </section>
-  </template>
   </div>
 </template>

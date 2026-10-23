@@ -22,6 +22,8 @@ import './styles/defense-layout.css'
 import './styles/page-layouts.css'
 import './styles/interaction-motion.css'
 import './styles/clean-workspace.css'
+import './styles/defense-chat.css'
+import './styles/ui-dialog.css'
 
 const app = createApp(App).use(createPinia()).use(router)
 app.mount('#app')

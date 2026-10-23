@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import {
   judgeDefinitions,
   questionTypeLabels,
@@ -11,6 +11,10 @@ import {
 } from '@defense/shared'
 import AttachmentGallery from '../attachments/AttachmentGallery.vue'
 import DefenseActivity from './DefenseActivity.vue'
+import JudgeAvatar from '../judges/JudgeAvatar.vue'
+import { ArrowDown, UserRound } from 'lucide-vue-next'
+import AnswerFeedback from './AnswerFeedback.vue'
+import { useConversationScroll } from '../../composables/useConversationScroll'
 const props = withDefaults(
   defineProps<{
     messages: DefenseMessage[]
@@ -19,12 +23,14 @@ const props = withDefaults(
     judgeId?: import('@defense/shared').JudgeId
     assistance?: AssistanceRecord[]
     retryableAnswerId?: string
+    variant?: 'record' | 'chat'
+    currentQuestionId?: string | null
   }>(),
-  { activity: null, judgeId: 'business' },
+  { activity: null, judgeId: 'business', variant: 'record' },
 )
-const feed = ref<HTMLElement | null>(null),
-  follow = ref(true),
-  revealIncoming = ref(false)
+const feed = ref<HTMLElement | null>(null), revealIncoming = ref(false)
+const { following, unread, onScroll, jumpToLatest } = useConversationScroll(feed,
+  () => props.messages.map(message => message.id).join(',') + ':' + (props.activity ?? ''))
 watch(
   () => ({ ids: props.messages.map((message) => message.id), activity: props.activity }),
   (current, previous) => {
@@ -32,21 +38,10 @@ watch(
     revealIncoming.value = !!previous.activity && current.ids.some((id) => !previous.ids.includes(id))
   },
 )
-function onScroll() {
-  if (feed.value)
-    follow.value = feed.value.scrollHeight - feed.value.scrollTop - feed.value.clientHeight < 100
-}
-watch(
-  () => [props.messages.length, props.activity],
-  async () => {
-    await nextTick()
-    if (follow.value && feed.value) feed.value.scrollTop = feed.value.scrollHeight
-  },
-  { immediate: true },
-)
 const judgeName = (id: string) => judgeDefinitions.find((v) => v.id === id)?.name
 </script>
 <template>
+  <div class="defense-feed" :class="{ 'chat-feed': variant === 'chat' }">
   <div
     ref="feed"
     class="defense-messages"
@@ -65,10 +60,16 @@ const judgeName = (id: string) => judgeDefinitions.find((v) => v.id === id)?.nam
     <article
       v-for="message in messages"
       :key="message.id"
-      :id="message.sender === 'user' ? 'answer-' + message.id : undefined"
+      :id="message.sender === 'user' ? 'answer-' + message.id : variant === 'chat' && message.id === currentQuestionId ? 'session-question' : undefined"
       class="defense-message"
-      :class="message.sender"
+      :class="[message.sender, { 'is-current': variant === 'chat' && message.id === currentQuestionId }]"
+      :aria-label="variant === 'chat' && message.id === currentQuestionId ? '当前问题' : undefined"
     >
+      <span v-if="variant === 'chat'" class="chat-message-avatar" aria-hidden="true">
+        <JudgeAvatar v-if="message.sender === 'judge'" :id="message.judgeId" :size="18" />
+        <UserRound v-else :size="18" />
+      </span>
+      <div class="defense-message-body">
       <div class="defense-message-meta">
         <strong>{{ message.sender === 'user' ? '我的回答' : judgeName(message.judgeId) }}</strong
         ><time :datetime="message.createdAt">{{
@@ -79,7 +80,9 @@ const judgeName = (id: string) => judgeDefinitions.find((v) => v.id === id)?.nam
           >{{ questionTypeLabels[message.question.questionType] }} ·
           {{ severityLabels[message.question.riskLevel] }}</span
         >
+        <span v-if="variant === 'chat' && message.id === currentQuestionId" class="chat-current-label">{{ message.status === 'answered' ? '已回答' : message.status === 'superseded' ? '已跳过' : '当前问题' }}</span>
       </div>
+      <AnswerFeedback v-if="variant === 'chat' && message.assessment" :assessment="message.assessment" :demo="demo" :rationale="message.question?.rationale" />
       <p class="defense-message-content">{{ message.content }}</p>
       <AttachmentGallery v-if="message.attachments?.length" :items="message.attachments" />
       <p v-if="message.status === 'pending'">回答已保存，正在生成追问…</p>
@@ -93,7 +96,7 @@ const judgeName = (id: string) => judgeDefinitions.find((v) => v.id === id)?.nam
         <summary >{{ assistanceKindLabels[help.kind] }} · {{ help.mode === 'demo' ? '模拟提示' : '系统辅助记录' }}</summary>
         <p>{{ help.content }}</p><small>提示不属于用户回答，不作为用户已提供的证据。</small>
       </details>
-      <details v-if="message.assessment">
+      <details v-if="message.assessment && variant === 'record'">
         <summary>
           回答分析 · {{ answerEvaluationLabels[message.assessment.evaluation]
           }}{{ demo ? '（模拟）' : '' }}
@@ -104,6 +107,7 @@ const judgeName = (id: string) => judgeDefinitions.find((v) => v.id === id)?.nam
           待验证风险：{{ risk.title }}
         </p>
       </details>
+      </div>
     </article>
     </TransitionGroup>
     <DefenseActivity
@@ -112,6 +116,9 @@ const judgeName = (id: string) => judgeDefinitions.find((v) => v.id === id)?.nam
       :phase="activity"
       :has-messages="messages.length > 0"
       :demo="demo"
-    />
+    ><template v-if="$slots.activity" #default><slot name="activity" /></template></DefenseActivity>
+    <slot name="after-messages" />
+  </div>
+  <button v-if="!following" type="button" class="chat-jump-latest control-button" @click="jumpToLatest"><ArrowDown :size="15" />{{ unread ? '有新消息，回到最新' : '回到最新消息' }}</button>
   </div>
 </template>
