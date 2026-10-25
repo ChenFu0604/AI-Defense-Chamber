@@ -30,7 +30,7 @@ watch(
   }),
   (_current, previous) => {
     if (previous) analyses.cancel(previous.id)
-    analyses.restore(props.project)
+    void analyses.restore(props.project)
   },
   { immediate: true },
 )
@@ -45,7 +45,7 @@ onBeforeUnmount(() => analyses.cancel(props.project.id))
         <p>从核心价值、技术可行性到风险与证据，整理你的答辩起点。</p>
       </div>
       <div class="analysis-actions">
-        <AppButton :disabled="state.status === 'loading'" @click="analyses.run(project, 'live')"
+        <AppButton :disabled="state.status === 'loading' || state.restoring || !state.loaded" @click="analyses.run(project, 'live')"
           ><LoaderCircle
             v-if="state.status === 'loading' && state.activeMode === 'live'"
             :size="16"
@@ -58,7 +58,7 @@ onBeforeUnmount(() => analyses.cancel(props.project.id))
           }}<ArrowUpRight v-if="!state.live && state.status !== 'loading'" :size="16" /></AppButton
         ><AppButton
           variant="secondary"
-          :disabled="state.status === 'loading'"
+          :disabled="state.status === 'loading' || state.restoring || !state.loaded"
           @click="analyses.run(project, 'demo')"
           ><FlaskConical :size="15" />{{ state.demo ? '刷新模拟示例' : '查看模拟示例' }}</AppButton
         >
@@ -67,6 +67,10 @@ onBeforeUnmount(() => analyses.cancel(props.project.id))
     <p class="analysis-transmission-note">
       点击“分析项目”会将这份项目资料发送至服务端配置的模型服务；模拟示例不调用模型。
     </p>
+    <StatusNotice v-if="state.restoring" busy compact>正在读取服务端保存的项目画像…</StatusNotice>
+    <StatusNotice v-if="!state.loaded && state.status === 'error'" tone="error" compact>
+      {{ state.error }}<template #actions><AppButton variant="secondary" @click="analyses.restore(project, true)">重试读取画像</AppButton></template>
+    </StatusNotice>
     <div
       v-if="state.status === 'loading'"
       class="analysis-loading"
@@ -92,7 +96,7 @@ onBeforeUnmount(() => analyses.cancel(props.project.id))
         <X :size="14" />取消分析
       </button>
     </div>
-    <div v-if="state.status === 'error'" class="notice notice-error analysis-error" role="alert">
+    <div v-if="state.loaded && state.status === 'error'" class="notice notice-error analysis-error" role="alert">
       <AlertCircle :size="18" />
       <div>
         <strong>{{ configError ? '需要配置模型服务' : '这次分析未完成' }}</strong>
@@ -136,7 +140,7 @@ onBeforeUnmount(() => analyses.cancel(props.project.id))
       </button>
     </div>
     <AnalysisResults v-if="record" :record="record" />
-    <div v-else-if="state.status === 'idle'" class="analysis-initial">
+    <div v-else-if="state.status === 'idle' && !state.restoring" class="analysis-initial">
       <Sparkles :size="26" :stroke-width="1.3" />
       <h3>从一份画像，看清下一步。</h3>
       <p>分析将整理八类信息，并明确标记材料依据、待验证推测与证据不足。</p>

@@ -35,7 +35,7 @@ it('exercises the real HTTP transport against a local model-protocol test server
       timeoutMs: 2000,
       responseFormat: 'json_schema',
     })
-    const app = createApp({ analyzeProject: createProjectAnalysisService(client) })
+    const app = createApp({ workspace: false, analyzeProject: createProjectAnalysisService(client) })
     const result = await request(app)
       .post('/api/projects/analyze')
       .send({ project: analysisProject })

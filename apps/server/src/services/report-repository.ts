@@ -1,22 +1,24 @@
 import { mkdir, readFile, writeFile, rename, unlink } from 'node:fs/promises'
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { randomUUID } from 'node:crypto'
 import { z } from 'zod'
 import { defenseReportSchema, type DefenseReport } from '@defense/shared'
 import { AppError } from '../middleware/app-error.js'
+import { createSqliteReportRepository } from '../storage/database.js'
 
 export interface ReportRepository {
   get(sessionId: string): Promise<DefenseReport | null>
   save(report: DefenseReport): Promise<void>
 }
 export function createReportRepository(
-  directory = fileURLToPath(new URL('../../.data/defense-reports/', import.meta.url)),
+  directory?: string,
 ): ReportRepository {
+  if (directory === undefined) return createSqliteReportRepository()
+  const legacyDirectory = directory
   function path(id: string) {
     if (!z.uuid().safeParse(id).success)
       throw new AppError(400, 'VALIDATION_ERROR', '会话 ID 无效。')
-    return join(directory, id + '.json')
+    return join(legacyDirectory, id + '.json')
   }
   return {
     async get(sessionId) {

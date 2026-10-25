@@ -10,13 +10,15 @@ import AppButton from '../components/ui/AppButton.vue'
 const projects = useProjectsStore()
 const search = ref(''), scope = ref('active'), error = ref('')
 const drafts = ref<ProjectDraft[]>([])
-function load() {
-  projects.loadProjects()
+async function load() {
+  const request = projects.loadProjects()
   try { drafts.value = readProjectDrafts(); error.value = '' }
   catch (failure) { error.value = failure instanceof Error ? failure.message : '草稿读取失败。' }
+  await request
 }
-onMounted(() => { load(); window.addEventListener('storage', load) })
-onBeforeUnmount(() => window.removeEventListener('storage', load))
+const loadDrafts = () => {try {drafts.value = readProjectDrafts(); error.value = ''} catch (failure) {error.value = failure instanceof Error ? failure.message : '草稿读取失败。'}}
+onMounted(() => { void load(); window.addEventListener('storage', loadDrafts) })
+onBeforeUnmount(() => window.removeEventListener('storage', loadDrafts))
 const filtered = computed(() => projects.projects.filter((p) => {
   const archived = projects.archivedIds.includes(p.id)
   return (scope.value === 'archived' ? archived : !archived) &&
@@ -44,7 +46,7 @@ const filteredDrafts = computed(() => drafts.value.filter((d) =>
 
     <label class="project-search-field"><span><Search :size="15" />搜索项目</span><input  v-model="search" type="search" placeholder="搜索项目名称或简介" /></label>
     <label class="project-scope-field">查看范围<select  v-model="scope"><option value="active">使用中的项目</option><option value="archived">已归档项目</option></select></label>
-    <AppButton variant="secondary" @click="load"><RefreshCw :size="15" />刷新</AppButton>
+    <AppButton variant="secondary" :busy="projects.loading" @click="load"><RefreshCw :size="15" />刷新</AppButton>
   </div>
   <section v-if="scope === 'active' && filteredDrafts.length" class="project-library-section project-draft-section" aria-labelledby="drafts-heading">
     <div class="project-section-heading"><div><h2 id="drafts-heading">接着上次继续<span>{{ filteredDrafts.length }}</span></h2><p>这些是已保存的草稿，补齐后即可创建或更新项目。</p></div><FilePenLine :size="21" /></div>
@@ -62,7 +64,7 @@ const filteredDrafts = computed(() => drafts.value.filter((d) =>
   </section>
   <section class="project-library-section" aria-labelledby="saved-projects-heading">
     <div class="project-section-heading"><div><h2 id="saved-projects-heading">{{ scope === 'archived' ? '已归档项目' : '已建档项目' }}<span>{{ filtered.length }}</span></h2><p>{{ scope === 'archived' ? '恢复项目后，可以继续围绕原有资料训练。' : '选择一个项目，查看画像、完善资料或开始训练。' }}</p></div></div>
-    <StatusNotice v-if="!projects.loaded && !projects.loadError" busy compact>正在读取本地项目…</StatusNotice>
+    <StatusNotice v-if="projects.loading" busy compact>正在读取服务端项目…</StatusNotice>
     <div class="project-library-grid">
       <article v-for="project in filtered" :key="project.id" class="library-card surface-panel">
 

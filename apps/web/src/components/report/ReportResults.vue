@@ -65,7 +65,7 @@ const priorities = { high: '优先处理', medium: '随后改进', low: '持续�
         <p>{{ item.action }}</p>
         <p><strong>完成标准：</strong>{{ item.acceptanceCriteria }}</p>
         <ReportReferences :references="item.references" :messages="messages" />
-        <div class="report-task-actions"><AppButton variant="secondary" :disabled="tasks.tasks.some(t => t.sourceReportId === report.id && t.improvementIndex === index)" @click="tasks.add(report, index, projectName ?? '项目')">{{ tasks.tasks.some(t => t.sourceReportId === report.id && t.improvementIndex === index) ? '已加入改进任务' : '加入改进任务' }}</AppButton></div>
+        <div class="report-task-actions"><AppButton variant="secondary" :disabled="tasks.busy || tasks.loading || tasks.tasks.some(t => t.sourceReportId === report.id && t.improvementIndex === index)" @click="tasks.add(report, index, projectName ?? '项目')">{{ tasks.tasks.some(t => t.sourceReportId === report.id && t.improvementIndex === index) ? '已加入改进任务' : tasks.busy ? '正在保存…' : '加入改进任务' }}</AppButton></div>
       </li>
     </ol>
   </section>

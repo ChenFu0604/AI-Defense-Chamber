@@ -131,7 +131,7 @@ describe('attachment frontend integration', () => {
       '不是有效图片',
     )
   })
-  it('restores unsent attachment drafts and full historical message references', async () => {
+  it('restores unsent attachment drafts and reads full historical message references from the server', async () => {
     const session = endedReportSession()
     session.status = 'awaiting_answer'
     session.endedAt = null
@@ -150,8 +150,9 @@ describe('attachment frontend integration', () => {
     vi.mocked(defenseApi).mockResolvedValueOnce(saved)
     await restored.load(session.id)
     expect(
-      readHistory().entries[0]!.session.messages.find((m) => m.sender === 'user')!.attachments,
+      restored.session!.messages.find((m) => m.sender === 'user')!.attachments,
     ).toEqual([file])
+    expect(readHistory().entries).toEqual([])
   })
   it('renders image cards, document excerpts and project fields as separate cards', async () => {
     const doc = {

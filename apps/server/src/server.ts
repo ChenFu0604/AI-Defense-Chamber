@@ -1,6 +1,8 @@
 import { app } from './app.js'
 import { env } from './config/env.js'
+import { workspaceDatabase } from './storage/database.js'
 
+await workspaceDatabase.initialize()
 const server = app.listen(env.PORT, env.HOST, () => {
   console.info(`AI 答辩压力舱 API: http://${env.HOST}:${env.PORT}`)
 })
@@ -15,7 +17,7 @@ server.on('error', (error: NodeJS.ErrnoException) => {
 })
 
 function shutdown() {
-  server.close(() => process.exit(0))
+  server.close(() => { void workspaceDatabase.close().then(() => process.exit(0), () => process.exit(1)) })
   setTimeout(() => process.exit(1), 5000).unref()
 }
 process.on('SIGINT', shutdown)

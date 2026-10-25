@@ -2,7 +2,6 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { DefenseReport } from '@defense/shared'
 import { requestReport, ReportApiError } from '../services/report-api'
-import { archiveReport } from '../services/history-storage'
 
 export const useReportStore = defineStore('defense-report', () => {
   const report = ref<DefenseReport | null>(null)
@@ -29,12 +28,6 @@ export const useReportStore = defineStore('defense-report', () => {
       if (epoch !== token) return
       report.value = result
       status.value = 'success'
-      try {
-        archiveReport(result)
-      } catch (failure) {
-        warning.value =
-          failure instanceof Error ? failure.message : '报告已保存在后端，本地归档失败。'
-      }
     } catch (failure) {
       if (epoch !== token) return
       const code = failure instanceof ReportApiError ? failure.code : 'REPORT_FAILED'

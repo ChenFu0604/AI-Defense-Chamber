@@ -13,9 +13,8 @@ import {
   retrainRequestSchema, type RetrainRequest,
 } from '@defense/shared'
 import { defenseApi, DefenseApiError } from '../services/defense-api'
-import { rememberDefense, readDefenseDraft, saveDefenseDraft } from '../services/defense-storage'
+import { readDefenseDraft, saveDefenseDraft } from '../services/defense-storage'
 import {
-  archiveSession,
   readPendingCreation,
   savePendingCreation,
 } from '../services/history-storage'
@@ -109,18 +108,7 @@ export const useDefenseStore = defineStore('defense-session', () => {
       operation.value = null
       error.value = '问题已变化，上次提示请求已停止；回答草稿保留，请核对当前问题。'
     }
-    try {
-      rememberDefense(record)
-    } catch {
-      warning.value = '浏览器会话入口保存失败，可通过当前会话地址恢复服务端记录。'
-    }
     persist()
-    try {
-      archiveSession(record)
-    } catch (failure) {
-      warning.value =
-        failure instanceof Error ? failure.message : '本地历史归档失败，后端会话保留。'
-    }
   }
   async function start(input: Omit<CreateDefenseRequest, 'requestId'>) {
     if (busy.value) return null
@@ -143,11 +131,6 @@ export const useDefenseStore = defineStore('defense-session', () => {
             : { ...input, requestId: crypto.randomUUID() }
       }
       savePendingCreation({ kind: 'create', input: creation })
-      try {
-        rememberDefense({ id: creation.requestId, project: input.project, mode: input.mode })
-      } catch {
-        warning.value = '浏览器入口保存失败，请保留会话地址。'
-      }
       const record = await defenseApi('', creation)
       if (epoch !== token) return null
       if (record.id !== creation.requestId) throw new Error('创建会话返回标识不一致。')

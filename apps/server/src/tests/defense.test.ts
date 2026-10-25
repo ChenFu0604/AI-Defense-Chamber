@@ -38,7 +38,7 @@ function setup(mode: 'live' | 'demo' = 'demo', model = createDefenseModel()) {
     repository,
     records,
     service,
-    app: createApp({ defense: service }),
+    app: createApp({ workspace: false, defense: service }),
     input: defenseInput(mode),
   }
 }
@@ -281,7 +281,7 @@ describe('defense workflow API', () => {
         throw new AppError(500, 'SESSION_STORAGE_ERROR', '保存失败')
       },
     }
-    const response = await request(createApp({ defense: createDefenseService(repository) }))
+    const response = await request(createApp({ workspace: false, defense: createDefenseService(repository) }))
       .post('/api/defense/sessions')
       .send(defenseInput('demo'))
       .expect(500)

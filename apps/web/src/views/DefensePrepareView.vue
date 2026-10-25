@@ -32,7 +32,7 @@ const selected = computed(() => projects.findProject(selectedId.value))
   </div>
   <StorageNotice />
   <StatusNotice v-if="!projects.loaded && !projects.loadError" busy compact>
-    正在读取本地项目…
+    正在读取服务端项目…
   </StatusNotice>
   <template v-else-if="!projects.loadError">
     <div :class="{ 'preparation-layout': selected }">

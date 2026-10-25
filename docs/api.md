@@ -2,6 +2,8 @@
 
 第六阶段新增报告生成与历史读取接口，类型、错误码和去重规则见 [评分报告接口说明](phase-6.md#api)。
 
+2026-10-25 工作区持久化更新：项目 CRUD、画像读取、历史列表、改进任务和旧浏览器导入接口见 [SQLite 工作区 API](sqlite-workspace.md#api)。正式训练记录以服务端 SQLite 为准，原答辩与报告路径保持兼容。
+
 2026-10-25 报告版本更新：新生成 `DefenseReport.version=2`，维度增加 `status: assessed | insufficient`；观察不足的 `score` 必须为 `null`，有任意不足维度时 `overallScore` 必须为 `null`。读取继续兼容原版 `version=1`，缓存不自动升级。前后端须配套更新，结构、计算与对比规则见 [评分观察覆盖说明](report-observation-coverage.md)。
 
 统一响应：成功为 `{ success: true, data }`，失败为 `{ success: false, error: { code, message } }`。

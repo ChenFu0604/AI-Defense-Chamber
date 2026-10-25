@@ -31,7 +31,7 @@ const selectedStatements = computed(() =>
 watch(
   () => props.project,
   (project) => {
-    if (project) analysisStore.restore(project)
+    if (project) void analysisStore.restore(project)
   },
   { immediate: true, deep: true },
 )

@@ -63,7 +63,7 @@ const projects = useProjectsStore()
 const confirmExample = ref(false)
 const savedProject = ref<Project | null>(null)
 const formElement = ref<HTMLFormElement | null>(null)
-const navigationNote = '项目已保存到此浏览器，可通过下方链接查看。'
+const navigationNote = '项目已保存到服务端，可通过下方链接查看。'
 
 function applyExample() {
   Object.assign(form, exampleProject)
@@ -375,7 +375,7 @@ function importDocument() {
     <div id="project-form-save" class="form-submit-bar">
       <p>
         <ShieldCheck :size="15" /><span
-          >项目资料保存到此浏览器，附件保存在本机后端。<br />上传与创建不调用模型；分析时才会发送资料与附件。</span
+          >正式项目与附件保存在本机后端，未提交草稿保存在此浏览器。<br />上传与创建不调用模型；分析时才会发送资料与附件。</span
         >
       </p>
       <AppButton type="submit" :disabled="projects.saving || !!savedProject || uploading"

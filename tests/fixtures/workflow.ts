@@ -13,9 +13,10 @@ import { validAnalysisOutput } from './analysis.js'
 import { reportOutputFixture } from './report.js'
 import { createModelSettingsService } from '../../apps/server/src/services/model-settings-service.js'
 import { createAttachmentService } from '../../apps/server/src/services/attachment-service.js'
+import { createSqliteDefenseRepository, createSqliteReportRepository, type WorkspaceDatabase } from '../../apps/server/src/storage/database.js'
 
 /** Local test adapter only: exercises the real JSON client without network/model access. */
-export function createWorkflowFixture(directory: string, options: { turnDelayMs?: number } = {}) {
+export function createWorkflowFixture(directory: string, options: { turnDelayMs?: number; database?: WorkspaceDatabase } = {}) {
   const calls = { project_analysis: 0, defense_turn: 0, defense_report: 0, defense_assistance: 0, defense_assessment: 0 }
   const modelInputs: { task: string; images: number; context: Record<string, unknown> }[] = []
   const failedAnswers = new Set<string>()
@@ -135,8 +136,8 @@ export function createWorkflowFixture(directory: string, options: { turnDelayMs?
       )
     },
   )
-  const repository = createDefenseRepository(join(directory, 'sessions'))
-  const reportRepository = createReportRepository(join(directory, 'reports'))
+  const repository = options.database ? createSqliteDefenseRepository(options.database) : createDefenseRepository(join(directory, 'sessions'))
+  const reportRepository = options.database ? createSqliteReportRepository(options.database) : createReportRepository(join(directory, 'reports'))
   const attachments = createAttachmentService(join(directory, 'attachments'))
   const defense = createDefenseService(
     repository,
@@ -147,6 +148,7 @@ export function createWorkflowFixture(directory: string, options: { turnDelayMs?
   )
   const reports = createReportService(defense, reportRepository, client, attachments)
   const app = createApp({
+    workspace: options.database ?? false,
     analyzeProject: createProjectAnalysisService(client, attachments),
     attachments,
     defense,

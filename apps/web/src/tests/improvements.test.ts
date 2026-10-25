@@ -5,9 +5,11 @@ import { MemoryStorage } from './project-fixtures'
 import { reportFixture } from '../../../../tests/fixtures/report'
 import { IMPROVEMENT_STORAGE_KEY, addImprovementTask, readImprovementTasks, updateImprovementTask } from '../services/improvement-storage'
 import { useImprovementsStore } from '../stores/improvements'
+import { serverRequest } from '../services/server-api'
+vi.mock('../services/server-api', () => ({ serverRequest: vi.fn() }))
 
 let storage: MemoryStorage
-beforeEach(() => { storage = new MemoryStorage(); vi.stubGlobal('localStorage', storage); setActivePinia(createPinia()) })
+beforeEach(() => { storage = new MemoryStorage(); vi.stubGlobal('localStorage', storage); setActivePinia(createPinia()); vi.mocked(serverRequest).mockReset() })
 afterEach(() => vi.unstubAllGlobals())
 const add = () => addImprovementTask(reportFixture(), 0, '训练项目', storage)
 describe('saved project improvement tasks', () => {
@@ -42,12 +44,15 @@ describe('saved project improvement tasks', () => {
     expect(improvementTaskSchema.safeParse({...task, status: 'verified'}).success).toBe(false)
     expect(improvementCollectionSchema.safeParse({version: 1, tasks: [task, {...task, id: crypto.randomUUID()}]}).success).toBe(false)
   })
-  it('surfaces write/read-back failures and keeps the store state unchanged', () => {
+  it('surfaces server failures without changing store state and preserves legacy write/read-back protection', async () => {
     const store = useImprovementsStore()
-    storage.dropWrites = true
-    expect(store.add(reportFixture(), 0, '训练项目')).toBe(false)
+    vi.mocked(serverRequest).mockRejectedValueOnce(new Error('无法确认服务端已保存'))
+    expect(await store.add(reportFixture(), 0, '训练项目')).toBe(false)
     expect(store.error).toContain('无法确认')
     expect(store.tasks).toEqual([])
+    storage.dropWrites = true
+    expect(() => add()).toThrow('无法确认')
+    expect(readImprovementTasks(storage)).toEqual([])
     storage.dropWrites = false; storage.denyWrites = true
     expect(() => add()).toThrow('无法确认')
   })

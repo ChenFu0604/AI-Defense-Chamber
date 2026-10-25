@@ -10,6 +10,7 @@ import { createProjectAnalysisService } from '../services/project-analysis-servi
 import type { AIClient } from '../services/ai-client.js'
 import { AppError } from '../middleware/app-error.js'
 import { analysisProject, validAnalysisOutput } from '../../../../tests/fixtures/analysis.js'
+import { createWorkspaceDatabase } from '../storage/database.js'
 
 function clientWith(output: AnalysisOutput): AIClient {
   return {
@@ -75,6 +76,7 @@ describe('project analysis contracts and evidence', () => {
 
 describe('project analysis HTTP API', () => {
   const app = createApp({
+    workspace: false,
     analyzeProject: createProjectAnalysisService(clientWith(validAnalysisOutput())),
   })
   it.each(['/api/projects/analyze', '/api/v1/projects/analyze'])(
@@ -92,7 +94,7 @@ describe('project analysis HTTP API', () => {
     { project: analysisProject, mode: 'bad' },
   ])('rejects invalid input before calling the model', async (body) => {
     const analyzeProject = vi.fn()
-    const result = await request(createApp({ analyzeProject }))
+    const result = await request(createApp({ workspace: false, analyzeProject }))
       .post('/api/projects/analyze')
       .send(body)
       .expect(400)
@@ -102,21 +104,28 @@ describe('project analysis HTTP API', () => {
   it('shows missing configuration without silently returning demo results', async () => {
     vi.stubEnv('OPENAI_API_KEY', '')
     vi.stubEnv('OPENAI_MODEL', '')
-    const result = await request(createApp())
+    const database = createWorkspaceDatabase(':memory:')
+    await database.importBrowser({requestId: crypto.randomUUID(), projects: {version: 1, projects: [analysisProject], revisions: [], archivedIds: []}, analyses: [], history: null, tasks: []})
+    const result = await request(createApp({workspace: database}))
       .post('/api/projects/analyze')
       .send({ project: analysisProject })
       .expect(503)
     expect(result.body.error.code).toBe('AI_NOT_CONFIGURED')
     expect(result.body).not.toHaveProperty('data')
+    await database.close()
   })
   it('still allows explicit demo while credentials are missing', async () => {
     vi.stubEnv('OPENAI_API_KEY', '')
     vi.stubEnv('OPENAI_MODEL', '')
-    const result = await request(createApp())
+    const database = createWorkspaceDatabase(':memory:')
+    await database.importBrowser({requestId: crypto.randomUUID(), projects: {version: 1, projects: [analysisProject], revisions: [], archivedIds: []}, analyses: [], history: null, tasks: []})
+    const result = await request(createApp({workspace: database}))
       .post('/api/projects/analyze')
       .send({ project: analysisProject, mode: 'demo' })
       .expect(200)
     expect(result.body.data).toMatchObject({ mode: 'demo', model: null })
+    expect((await database.listAnalyses(analysisProject.id))[0]?.id).toBe(result.body.data.id)
+    await database.close()
   })
   it.each([
     [504, 'AI_TIMEOUT'],
@@ -124,6 +133,7 @@ describe('project analysis HTTP API', () => {
     [429, 'AI_RATE_LIMITED'],
   ])('preserves typed AI error %s %s', async (status, code) => {
     const failing = createApp({
+      workspace: false,
       analyzeProject: async () => {
         throw new AppError(Number(status), String(code), '明确的失败原因')
       },
@@ -136,6 +146,7 @@ describe('project analysis HTTP API', () => {
   })
   it('does not expose secrets or stack traces in unexpected failures', async () => {
     const failing = createApp({
+      workspace: false,
       analyzeProject: async () => {
         throw new Error('private-secret-key')
       },

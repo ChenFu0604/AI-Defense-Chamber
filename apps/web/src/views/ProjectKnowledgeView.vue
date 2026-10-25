@@ -54,7 +54,7 @@ const needsOcr = (id: string) => ocrIds.value.includes(id) || !!files.value.find
       </section>
     </template>
     <StatusNotice v-else-if="projects.loadError" tone="error">{{ projects.loadError }}</StatusNotice>
-    <div v-else-if="projects.loaded" class="empty-state surface-panel"><h1>没有找到这个项目</h1><p>请在当前浏览器恢复项目资料后重试。</p><RouterLink to="/projects" class="app-button button-primary">查看已有项目</RouterLink></div>
+    <div v-else-if="projects.loaded" class="empty-state surface-panel"><h1>没有找到这个项目</h1><p>当前服务端未找到项目，旧浏览器资料可通过迁移入口导入后重试。</p><RouterLink to="/projects" class="app-button button-primary">查看已有项目</RouterLink></div>
     <StatusNotice v-else busy compact>正在读取项目…</StatusNotice>
   </div>
 </template>

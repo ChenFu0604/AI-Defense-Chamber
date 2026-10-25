@@ -51,7 +51,7 @@ async function start(retry = false) {
           <div class="retraining-section-heading"><span>01</span><div><h2 id="retraining-source-heading">选择本次项目资料</h2><p>沿用当时的资料，或检验修改后的版本。</p></div></div>
           <fieldset class="retraining-source-options" :disabled="busy || !!pending" aria-describedby="retraining-source-note"><legend class="sr-only">本次使用哪份项目资料？</legend>
             <label class="retraining-source-choice" :class="{'is-selected': sourceMode === 'original'}"><input v-model="sourceMode" name="retraining-source" type="radio" value="original" /><span><strong><FileText :size="16" aria-hidden="true" />原答辩资料与画像</strong><time :datetime="entry.session.project.updatedAt">{{ new Date(entry.session.project.updatedAt).toLocaleString('zh-CN') }}</time><small>保留原项目与画像快照，便于对照前后回答。</small></span></label>
-            <label class="retraining-source-choice" :class="{'is-selected': sourceMode === 'current', 'is-unavailable': !currentProject}"><input v-model="sourceMode" name="retraining-source" type="radio" value="current" :disabled="!currentProject" /><span><strong><RefreshCw :size="16" aria-hidden="true" />当前浏览器保存的最新版本</strong><time v-if="currentProject" :datetime="currentProject.updatedAt">{{ new Date(currentProject.updatedAt).toLocaleString('zh-CN') }}</time><small>{{ currentProject ? '缺少匹配画像时先调用模型重新分析，再创建复训。' : '当前浏览器未找到原项目，可以沿用原资料训练。' }}</small></span></label>
+            <label class="retraining-source-choice" :class="{'is-selected': sourceMode === 'current', 'is-unavailable': !currentProject}"><input v-model="sourceMode" name="retraining-source" type="radio" value="current" :disabled="!currentProject" /><span><strong><RefreshCw :size="16" aria-hidden="true" />当前保存的最新版本</strong><time v-if="currentProject" :datetime="currentProject.updatedAt">{{ new Date(currentProject.updatedAt).toLocaleString('zh-CN') }}</time><small>{{ currentProject ? '缺少匹配画像时先调用模型重新分析，再创建复训。' : '服务端未找到原项目，可以沿用原资料训练。' }}</small></span></label>
           </fieldset>
           <p id="retraining-source-note" class="retraining-caption">原问答和评分保持原样，本次训练创建新的独立会话。</p>
         </section>
@@ -82,8 +82,9 @@ async function start(retry = false) {
       </aside>
     </div>
   </template>
-  <StatusNotice v-else-if="!history.error" tone="info" compact>
-    本地缺少已结束真实会话的评分报告，请先同步或生成原报告。
+  <StatusNotice v-else-if="history.loading" busy compact>正在读取原答辩和评分报告…</StatusNotice>
+  <StatusNotice v-else-if="!history.error && history.loaded" tone="info" compact>
+    尚无这场已结束真实会话的评分报告，请先生成原报告；旧浏览器记录可通过迁移入口导入。
   </StatusNotice>
   </div>
 </template>

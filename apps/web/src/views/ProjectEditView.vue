@@ -23,6 +23,7 @@ async function saved(record: Project) {
   <RouterLink to="/projects" class="back-link">← 返回我的项目</RouterLink>
   <div class="view-heading"><h1>编辑项目资料</h1><p>保存后保留旧版本，已有答辩和报告继续使用当时的资料。新训练需要匹配新版资料的画像。</p></div>
   <StorageNotice />
+  <StatusNotice v-if="projects.loading" busy compact>正在读取服务端项目…</StatusNotice>
   <StatusNotice v-if="error" tone="error" compact>{{ error }}</StatusNotice>
   <ProjectForm v-if="project" :key="project.id" :project="project" @created="saved" />
   <div v-else-if="projects.loaded && !projects.loadError" class="empty-state surface-panel">

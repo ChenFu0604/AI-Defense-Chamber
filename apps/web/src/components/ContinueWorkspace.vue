@@ -1,32 +1,26 @@
 <script setup lang="ts">
 import StatusNotice from './ui/StatusNotice.vue'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { type ProjectDraft } from '@defense/shared'
 import { readProjectDrafts } from '../services/project-drafts'
-import { loadHistorySources } from '../services/history-service'
-const draft = ref<ProjectDraft | null>(null), error = ref('')
-const sessions = ref<{ id: string; name: string; mode: string; known: boolean }[]>([])
+import { useServerHistoryFeed } from '../composables/useServerHistoryFeed'
+const draft = ref<ProjectDraft | null>(null), draftError = ref('')
+const feed = useServerHistoryFeed(), loading = feed.loading
+const error = computed(() => [draftError.value, feed.error.value].filter(Boolean).join(' '))
+const sessions = computed(() => (feed.archive.value?.entries ?? [])
+  .filter(entry => entry.session.status !== 'ended')
+  .sort((a, b) => Date.parse(b.session.updatedAt) - Date.parse(a.session.updatedAt))
+  .slice(0, 3).map(({session}) => ({ id: session.id, name: session.project.name, mode: session.mode, known: true })))
 onMounted(() => {
-  const warnings: string[] = []
   try { draft.value = readProjectDrafts()[0] ?? null }
-  catch (failure) { warnings.push(failure instanceof Error ? failure.message : '草稿读取失败。') }
-  try {
-    const source = loadHistorySources()
-    sessions.value = source.archive.entries
-      .filter((e) => e.session.status !== 'ended')
-      .sort((a, b) => Date.parse(b.session.updatedAt) - Date.parse(a.session.updatedAt))
-      .map((e) => ({ id: e.session.id, name: e.session.project.name, mode: e.session.mode, known: true }))
-    sessions.value.push(...source.legacy.map((e) => ({ id: e.id, name: e.name, mode: e.mode, known: false })))
-    sessions.value = sessions.value.slice(0, 3)
-    warnings.push(...source.warnings)
-  } catch (failure) { warnings.push(failure instanceof Error ? failure.message : '历史读取失败。') }
-  error.value = warnings.join(' ')
+  catch (failure) { draftError.value = failure instanceof Error ? failure.message : '草稿读取失败。' }
 })
 </script>
 <template>
-  <section v-if="draft || sessions.length || error" class="continue-workspace">
+  <section v-if="draft || sessions.length || error || loading" class="continue-workspace">
     <div class="section-heading"><h2>接着上次，继续向前。</h2><RouterLink to="/projects" class="text-button">我的项目 →</RouterLink></div>
     <StatusNotice v-if="error" tone="warning" compact>{{ error }}</StatusNotice>
+    <StatusNotice v-if="loading" busy compact>正在读取服务端训练记录…</StatusNotice>
     <div class="project-library-grid">
       <article v-if="draft" class="library-card surface-panel">
       <span class="library-tag">资料草稿</span><h3>{{ draft.input.name || '未命名项目' }}</h3><p>你的输入已保存，可以接着整理。</p><RouterLink :to="draft.baseProject ? { name: 'project-edit', params: { id: draft.baseProject.id } } : { name: 'project-create' }" class="app-button button-secondary control-button">

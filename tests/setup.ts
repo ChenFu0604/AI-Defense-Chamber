@@ -1,5 +1,18 @@
 import { vi } from 'vitest'
 
+// Default services imported by tests must never open the real training database
+// or scan legacy .data files. SQLite integration tests inject temporary stores.
+vi.mock('../apps/server/src/storage/database.js', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../apps/server/src/storage/database.js')>()
+  const workspaceDatabase = original.createWorkspaceDatabase(':memory:')
+  return {
+    ...original,
+    workspaceDatabase,
+    createSqliteDefenseRepository: (database = workspaceDatabase) => original.createSqliteDefenseRepository(database),
+    createSqliteReportRepository: (database = workspaceDatabase) => original.createSqliteReportRepository(database),
+  }
+})
+
 // Tests may read their own temporary config files, never the user's saved key.
 vi.mock('../apps/server/src/config/model-settings-file.js', async (importOriginal) => {
   const original =

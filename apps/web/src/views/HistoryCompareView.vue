@@ -56,7 +56,8 @@ const label = (entry: (typeof records.value)[number]) =>
   <StatusNotice v-if="store.error || comparison.error" tone="error" compact>
     {{ store.error || comparison.error }}
   </StatusNotice>
-  <StatusNotice v-if="records.length < 2" tone="info" compact>
+  <StatusNotice v-if="store.loading" busy compact>正在读取已保存报告…</StatusNotice>
+  <StatusNotice v-if="records.length < 2 && store.loaded && !store.loading && !store.error" tone="info" compact>
     至少需要两份已保存的评分报告。完成二次训练并生成新报告后再来对比。
   </StatusNotice>
   <div class="history-compare-select surface-panel">

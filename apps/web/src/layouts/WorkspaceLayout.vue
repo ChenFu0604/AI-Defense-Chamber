@@ -17,6 +17,7 @@ import {
 import BrandMark from '../components/BrandMark.vue'
 import HealthStatus from '../components/HealthStatus.vue'
 import { useProjectSync } from '../composables/useProjectSync'
+import WorkspaceImportNotice from '../components/WorkspaceImportNotice.vue'
 
 useProjectSync()
 const route = useRoute()
@@ -67,7 +68,7 @@ const title = computed(() => (typeof route.meta.title === 'string' ? route.meta.
           ><Settings :size="18" />系统设置</RouterLink
         >
         <div class="version">
-          <span class="status-dot online"></span>本地项目工作区
+          <span class="status-dot online"></span>本机 SQLite 工作区
         </div>
       </div>
     </aside>
@@ -88,6 +89,7 @@ const title = computed(() => (typeof route.meta.title === 'string' ? route.meta.
         </div>
       </header>
       <main id="main-content" class="main-content" tabindex="-1">
+        <WorkspaceImportNotice />
         <RouterView />
         <footer v-if="!isConversation" class="page-footer">
           <span>AI DEFENSE CHAMBER <span class="footer-dot">·</span> 在质疑中，让项目更强。</span

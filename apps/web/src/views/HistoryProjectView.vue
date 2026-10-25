@@ -29,11 +29,12 @@ onMounted(store.load)
       <ProjectSnapshot :project="project" />
       <AttachmentGallery v-if="project.attachments?.length" :items="project.attachments" />
       <RouterLink :to="{ name: 'defense', query: { project: id } }" class="text-button"
-        >使用当前浏览器项目继续准备 →</RouterLink
+        >使用服务端当前项目继续准备 →</RouterLink
       >
     </section>
     <AnalysisResults v-for="record in analyses" :key="record.id" :record="record" />
     <StatusNotice v-if="!analyses.length" tone="info" compact>暂无保存的项目分析。</StatusNotice></template
   >
-  <StatusNotice v-else-if="!store.error" tone="info" compact>没有找到该项目档案。</StatusNotice>
+  <StatusNotice v-else-if="store.loading" busy compact>正在读取服务端项目档案…</StatusNotice>
+  <StatusNotice v-else-if="!store.error && store.loaded" tone="info" compact>没有找到该项目档案。</StatusNotice>
 </template>

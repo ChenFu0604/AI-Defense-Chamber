@@ -85,7 +85,7 @@ describe('targeted retraining', () => {
   it('rejects another project, a stale/mismatched profile, duplicate tasks and nonexistent suggestions', async () => {
     const env = setup(), input = {requestId: crypto.randomUUID(), judgeId: 'user' as const}
     await expect(env.service.retrain(env.source.id, {...input, current: {project: {...env.source.project, id: crypto.randomUUID()}, analysis: env.source.analysis}})).rejects.toMatchObject({code: 'RETRAIN_PROJECT_MISMATCH'})
-    const app = createApp({defense: env.service}), url = `/api/v1/defense/sessions/${env.source.id}/retrain`
+    const app = createApp({workspace: false, defense: env.service}), url = `/api/v1/defense/sessions/${env.source.id}/retrain`
     await request(app).post(url).send({...input, current: {project: {...env.source.project, technicalPlan: '已变化'}, analysis: env.source.analysis}}).expect(400)
     const task = {improvementIndex: 0, status: 'todo', note: ''}
     await request(app).post(url).send({...input, taskUpdates: [task, task]}).expect(400)
@@ -215,7 +215,7 @@ describe('targeted retraining', () => {
   })
   it('accepts retraining HTTP requests and rejects invalid parameters before creation', async () => {
     const env = setup(),
-      app = createApp({ defense: env.service }),
+      app = createApp({ workspace: false, defense: env.service }),
       url = `/api/v1/defense/sessions/${env.source.id}/retrain`
     const result = await request(app)
       .post(url)

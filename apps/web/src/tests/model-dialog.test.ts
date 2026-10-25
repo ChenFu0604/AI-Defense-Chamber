@@ -7,7 +7,7 @@ import type { TrainingPreferences } from '@defense/shared'
 import DefenseStartPanel from '../components/defense/DefenseStartPanel.vue'
 import ModelSettingsDialog from '../components/settings/ModelSettingsDialog.vue'
 import { analysisProject } from '../../../../tests/fixtures/analysis'
-import { DEFENSE_RECENT_KEY } from '../services/defense-storage'
+import { endedReportSession } from '../../../../tests/fixtures/report'
 import { MemoryStorage } from './project-fixtures'
 
 const preparation = vi.hoisted(() => ({ value: null as unknown as {
@@ -16,13 +16,18 @@ const preparation = vi.hoisted(() => ({ value: null as unknown as {
   state: Ref<{ status: string; warning: string }>; analysis: Ref<null>; busy: Ref<boolean>; error: Ref<string>;
   start: ReturnType<typeof vi.fn>;
 } }))
+const historyFeed = vi.hoisted(() => ({ value: null as unknown as {
+  archive: Ref<unknown>; loading: Ref<boolean>; error: Ref<string>; refresh: ReturnType<typeof vi.fn>;
+} }))
 vi.mock('../composables/useTrainingPreparation', () => ({ useTrainingPreparation: () => preparation.value }))
+vi.mock('../composables/useServerHistoryFeed', () => ({ useServerHistoryFeed: () => historyFeed.value }))
 
 beforeEach(() => {
   vi.stubGlobal('localStorage', new MemoryStorage())
   preparation.value = { mode: ref('live'), judgeId: ref('technical'),
     preferences: ref({style: 'rehearsal', goal: 'technical', questionLimit: 10}), confirmed: ref(true),
     state: ref({status: 'idle', warning: ''}), analysis: ref(null), busy: ref(false), error: ref(''), start: vi.fn() }
+  historyFeed.value = {archive: ref(null), loading: ref(false), error: ref(''), refresh: vi.fn()}
 })
 afterEach(() => vi.unstubAllGlobals())
 
@@ -61,7 +66,8 @@ describe('training model settings modal presentation', () => {
 
   it('connects the trigger to its dialog and retains training choices and existing session links', async () => {
     const id = '99999999-9999-4999-8999-999999999999'
-    localStorage.setItem(DEFENSE_RECENT_KEY, JSON.stringify([{id, projectId: analysisProject.id, name: analysisProject.name, mode: 'live'}]))
+    historyFeed.value.archive.value = {version: 1, projects: [analysisProject], analyses: [],
+      entries: [{session: {...endedReportSession(), id, project: analysisProject}, report: null, archivedAt: analysisProject.updatedAt}]}
     const html = await renderPreparation()
     const control = html.match(/aria-controls="([^"]+-model-settings)"/)?.[1]
     expect(control).toBeTruthy()

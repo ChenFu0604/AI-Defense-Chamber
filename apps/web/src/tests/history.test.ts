@@ -11,7 +11,7 @@ import {
   readPendingCreation,
 } from '../services/history-storage'
 import { loadHistorySources, syncHistoricalSession } from '../services/history-service'
-import { useProjectsStore } from '../stores/projects'
+import { serverRequest } from '../services/server-api'
 import { useDefenseStore } from '../stores/defense'
 import { useHistoryStore } from '../stores/history'
 import { defenseApi } from '../services/defense-api'
@@ -27,6 +27,7 @@ vi.mock('../services/report-api', async (original) => ({
   ...(await original<typeof import('../services/report-api')>()),
   requestReport: vi.fn(),
 }))
+vi.mock('../services/server-api', () => ({ serverRequest: vi.fn() }))
 let storage: MemoryStorage
 beforeEach(() => {
   storage = new MemoryStorage()
@@ -34,16 +35,13 @@ beforeEach(() => {
   setActivePinia(createPinia())
   vi.mocked(defenseApi).mockReset()
   vi.mocked(requestReport).mockReset()
+  vi.mocked(serverRequest).mockReset()
 })
 afterEach(() => vi.unstubAllGlobals())
 describe('local history archive', () => {
-  it('archives a newly created project through the existing store and recovers it after refresh', async () => {
-    const project = await useProjectsStore().createProject(analysisProject)
-    expect(readHistory().projects[0]!.id).toBe(project.id)
-    setActivePinia(createPinia())
-    const history = useHistoryStore()
-    history.load()
-    expect(history.archive.projects[0]).toEqual(project)
+  it('keeps old project archives readable as a migration source', () => {
+    archiveProject(analysisProject)
+    expect(readHistory().projects[0]).toEqual(analysisProject)
   })
   it('persists project, analysis, full messages and exact report without model calls', () => {
     const session = endedReportSession(),
@@ -73,9 +71,7 @@ describe('local history archive', () => {
     archiveSession(later)
     archiveReport(partial)
     const raw = storage.data.get(HISTORY_KEY)
-    setActivePinia(createPinia())
-    const history = useHistoryStore()
-    history.load()
+    const history = readHistory()
     expect(history.entries.find(entry => entry.session.id === original.id)?.report).toEqual(legacy)
     expect(history.entries.find(entry => entry.session.id === later.id)?.report).toEqual(partial)
     expect(storage.data.get(HISTORY_KEY)).toBe(raw)
@@ -150,11 +146,15 @@ describe('local history archive', () => {
     expect(() => archiveSession({ ...session, id: crypto.randomUUID() })).toThrow('3 MiB')
     expect(storage.data.get(HISTORY_KEY)).toBe(previous)
   })
-  it('recovers full sessions from saved entries even if the current browser project list is gone', () => {
+  it('reads authoritative server history without blending unimported browser archives into it', async () => {
     archiveSession(endedReportSession())
-    const result = loadHistorySources()
-    expect(result.archive.projects[0]).toEqual(analysisProject)
-    expect(result.archive.analyses[0]).toEqual(analysisFixture())
+    const raw = storage.data.get(HISTORY_KEY)
+    const remote = { version: 1, projects: [], analyses: [], entries: [] }
+    vi.mocked(serverRequest).mockResolvedValue(remote)
+    const result = await loadHistorySources()
+    expect(result.archive).toEqual(remote)
+    expect(serverRequest).toHaveBeenCalledWith('/history', expect.anything(), { signal: undefined })
+    expect(storage.data.get(HISTORY_KEY)).toBe(raw)
   })
 })
 describe('history comparison and readonly sync', () => {
@@ -190,15 +190,15 @@ describe('history comparison and readonly sync', () => {
     vi.mocked(defenseApi).mockResolvedValue(endedReportSession())
     vi.mocked(requestReport).mockResolvedValue(reportFixture())
     await syncHistoricalSession(endedReportSession().id)
-    expect(readHistory().entries[0]!.report).toEqual(reportFixture())
+    expect(readHistory().entries).toEqual([])
     expect(vi.mocked(defenseApi).mock.calls[0]).toEqual(['/' + endedReportSession().id])
     expect(vi.mocked(requestReport).mock.calls[0]).toEqual([endedReportSession().id, false])
   })
-  it('does not treat an API failure as a missing report; preserves the already synced session', async () => {
+  it('does not treat an API failure as a missing report or create a browser copy', async () => {
     vi.mocked(defenseApi).mockResolvedValue(endedReportSession())
     vi.mocked(requestReport).mockRejectedValue(new ReportApiError('NETWORK_ERROR', '网络失败'))
     await expect(syncHistoricalSession(endedReportSession().id)).rejects.toThrow('网络失败')
-    expect(readHistory().entries[0]!.report).toBeNull()
+    expect(readHistory().entries).toEqual([])
   })
 })
 describe('new training creation recovery', () => {
@@ -254,6 +254,6 @@ describe('new training creation recovery', () => {
     expect(result?.id).toBe(id)
     expect(vi.mocked(defenseApi).mock.calls[1]![1]).toEqual(pending.input)
     expect(readPendingCreation()).toBeNull()
-    expect(readHistory().entries[0]!.session.id).toBe(id)
+    expect(useDefenseStore().session?.id).toBe(id)
   })
 })

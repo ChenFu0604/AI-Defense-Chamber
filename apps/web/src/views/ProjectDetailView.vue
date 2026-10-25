@@ -53,7 +53,7 @@ const analysisStatus = computed(() => {
       开始答辩<ArrowUpRight :size="16" /></RouterLink>
         </div>
       </header>
-      <StatusNotice tone="success" compact :announce="false">项目资料已保存在此浏览器，可刷新后继续查看。</StatusNotice>
+      <StatusNotice tone="success" compact :announce="false">项目资料已保存在服务端，刷新后可以继续查看。</StatusNotice>
       <StatusNotice v-if="projects.historyWarning" tone="warning" compact>{{ projects.historyWarning }}</StatusNotice>
       <nav class="project-section-nav" aria-label="项目内容导航">
         <a href="#analysis">项目画像</a><a href="#project-brief">项目资料</a>
@@ -111,14 +111,14 @@ const analysisStatus = computed(() => {
             <RouterLink v-if="analyses.stateFor(project.id).demo" :to="{ name: 'project-risks', params: { id: project.id }, query: { mode: 'demo' } }">查看已保存模拟画像的地图（模拟）<ArrowUpRight :size="15" /></RouterLink>
             <RouterLink to="/projects/new">再创建一个项目<ArrowUpRight :size="15" /></RouterLink>
           </div>
-          <p class="local-storage-note"><ShieldCheck :size="16" /><span>资料仅保存在当前浏览器，更换设备或清除浏览器数据后无法读取。</span></p>
+          <p class="local-storage-note"><ShieldCheck :size="16" /><span>正式项目和版本保存在当前服务端；未提交的表单草稿仍保存在此浏览器。</span></p>
         </aside>
       </div>
     </template>
     <div v-else-if="!projects.loadError" class="empty-state missing-project surface-panel">
 
       <FolderOpen :size="32" /><h1>这里没有找到该项目。</h1>
-      <p>记录可能在另一个浏览器中，或已被清除。你可以返回我的项目查看其他项目。</p>
+      <p>当前服务端未找到该记录；旧浏览器资料需要先通过数据迁移导入。你可以返回我的项目查看已有项目。</p>
       <div class="empty-actions"><RouterLink to="/projects" class="app-button button-secondary control-button">
       查看已有项目</RouterLink><RouterLink to="/projects/new" class="app-button button-primary control-button">
       创建项目<ArrowUpRight :size="15" /></RouterLink></div>

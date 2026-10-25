@@ -50,9 +50,10 @@ watch(id, store.load)
   <div class="view-heading">
 
     <h1>历史答辩与报告</h1>
-    <p>读取本地保存的记录，附件预览从本机后端加载；不重新调用模型。</p>
+    <p>读取服务端保存的历史快照与附件；不重新调用模型。</p>
   </div>
   <StatusNotice v-if="store.error" tone="error" compact>{{ store.error }}</StatusNotice>
+  <StatusNotice v-if="store.loading" busy compact>正在读取历史答辩…</StatusNotice>
   <template v-else-if="entry">
     <TrainingSummary :session="entry.session" />
     <DiscussionSummary v-if="entry.session.status === 'ended'" :session="entry.session" />
@@ -90,7 +91,7 @@ watch(id, store.load)
           >
       与另一场评分对比</RouterLink
         ><AppButton variant="ghost" :disabled="store.busy" @click="store.sync(id)"
-          >只读同步后端快照</AppButton
+          >刷新服务端快照</AppButton
         >
       </div>
     </div>
@@ -133,10 +134,10 @@ watch(id, store.load)
     <RagSources v-if="entry.session.closingFeedback?.retrieval" :retrieval="entry.session.closingFeedback.retrieval" />
     <DefenseMessages :messages="entry.session.messages" :demo="entry.session.mode === 'demo'" :assistance="entry.session.assistance" />
   </template>
-  <div v-else class="empty-state surface-panel">
+  <div v-else-if="!store.loading && !store.error && store.loaded" class="empty-state surface-panel">
 
-    <h2>尚未找到本地完整历史</h2>
-    <p>可返回历史列表，从旧版会话入口只读同步。原后端记录不会因本地缺失被删除。</p>
+    <h2>尚未找到这场历史答辩</h2>
+    <p>请返回历史列表核对会话，旧浏览器记录可通过迁移入口导入。</p>
     <RouterLink to="/history" class="app-button button-primary control-button">
       返回历史列表</RouterLink>
   </div>

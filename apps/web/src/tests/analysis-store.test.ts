@@ -10,6 +10,9 @@ import {
 } from '../services/analysis-storage'
 import { MemoryStorage } from './project-fixtures'
 import { analysisFixture, analysisProject } from '../../../../tests/fixtures/analysis'
+import { serverRequest, ServerApiError } from '../services/server-api'
+import { createWorkspaceApiFixture } from './server-workspace-fixture'
+vi.mock('../services/server-api', async original => ({...(await original<typeof import('../services/server-api')>()), serverRequest: vi.fn()}))
 
 vi.mock('../services/analysis-api', async (importOriginal) => {
   const original = await importOriginal<typeof import('../services/analysis-api')>()
@@ -17,11 +20,14 @@ vi.mock('../services/analysis-api', async (importOriginal) => {
 })
 const requestAnalysis = vi.mocked(requestProjectAnalysis)
 let storage: MemoryStorage
+let backend: ReturnType<typeof createWorkspaceApiFixture>
 beforeEach(() => {
   setActivePinia(createPinia())
   storage = new MemoryStorage()
   vi.stubGlobal('localStorage', storage)
   requestAnalysis.mockReset()
+  backend = createWorkspaceApiFixture({projects: [analysisProject]})
+  vi.mocked(serverRequest).mockReset(); vi.mocked(serverRequest).mockImplementation(backend.request)
 })
 afterEach(() => vi.unstubAllGlobals())
 
@@ -43,12 +49,12 @@ describe('frontend analysis states', () => {
     resolve(analysisFixture())
     await pending
     expect(store.stateFor(analysisProject.id).status).toBe('success')
-    expect(readAnalysisRecords(storage)).toEqual([analysisFixture()])
+    expect(readAnalysisRecords(storage)).toEqual([])
   })
   it('preserves a prior live result on failed reanalysis and supports retry', async () => {
-    saveAnalysisRecord(analysisFixture(), storage)
+    backend.analyses.push(analysisFixture())
     const store = useAnalysisStore()
-    store.restore(analysisProject)
+    await store.restore(analysisProject)
     requestAnalysis.mockRejectedValueOnce(new AnalysisApiError('AI_TIMEOUT', '模型超时'))
     expect(await store.run(analysisProject)).toBeNull()
     expect(store.stateFor(analysisProject.id)).toMatchObject({
@@ -81,10 +87,11 @@ describe('frontend analysis states', () => {
     requestAnalysis.mockResolvedValueOnce(analysisFixture('demo'))
     await store.run(analysisProject, 'demo')
     expect(store.stateFor(analysisProject.id).activeMode).toBe('demo')
-    expect(readAnalysisRecords(storage)).toHaveLength(2)
+    expect(readAnalysisRecords(storage)).toHaveLength(0)
+    backend.analyses.push(analysisFixture(), analysisFixture('demo'))
     setActivePinia(createPinia())
     const restored = useAnalysisStore()
-    restored.restore(analysisProject)
+    await restored.restore(analysisProject)
     expect(restored.stateFor(analysisProject.id)).toMatchObject({
       activeMode: 'live',
       live: analysisFixture(),
@@ -129,7 +136,7 @@ describe('frontend analysis states', () => {
     await old
     expect(store.stateFor(analysisProject.id).live?.id).toBe(newer.id)
   })
-  it('shows a persistence warning without hiding a genuinely generated result', async () => {
+  it('accepts a confirmed service response without writing a duplicate browser record', async () => {
     storage.denyWrites = true
     requestAnalysis.mockResolvedValue(analysisFixture())
     const store = useAnalysisStore()
@@ -138,26 +145,45 @@ describe('frontend analysis states', () => {
       status: 'success',
       live: analysisFixture(),
     })
-    expect(store.stateFor(analysisProject.id).warning).toContain('无法确认')
+    expect(store.stateFor(analysisProject.id).warning).toBe('')
     expect(storage.data.has(ANALYSIS_STORAGE_KEY)).toBe(false)
   })
-  it('does not overwrite corrupt saved analysis data', async () => {
+  it('does not read or overwrite corrupt legacy browser analysis data', async () => {
     storage.data.set(ANALYSIS_STORAGE_KEY, '{broken')
     requestAnalysis.mockResolvedValue(analysisFixture())
     const store = useAnalysisStore()
-    store.restore(analysisProject)
-    expect(store.stateFor(analysisProject.id).warning).toContain('损坏')
+    await store.restore(analysisProject)
+    expect(store.stateFor(analysisProject.id).warning).toBe('')
     await store.run(analysisProject)
     expect(storage.data.get(ANALYSIS_STORAGE_KEY)).toBe('{broken')
-    expect(store.stateFor(analysisProject.id).warning).toContain('未被覆盖')
+    expect(store.stateFor(analysisProject.id).warning).toBe('')
   })
-  it('does not reuse a portrait for changed project material', () => {
-    saveAnalysisRecord(analysisFixture(), storage)
+  it('does not reuse a portrait for changed project material', async () => {
+    backend.analyses.push(analysisFixture())
     const store = useAnalysisStore()
-    store.restore(analysisProject)
-    store.restore({ ...analysisProject, name: '新的项目说明' })
+    await store.restore(analysisProject)
+    await store.restore({ ...analysisProject, name: '新的项目说明' })
     expect(store.stateFor(analysisProject.id).live).toBeNull()
     expect(store.stateFor(analysisProject.id).warning).toContain('资料已变化')
+  })
+  it('reports backend read failure rather than using an old browser portrait', async () => {
+    saveAnalysisRecord(analysisFixture(), storage)
+    backend.failNext(new ServerApiError('DATABASE_ERROR', '画像读取失败'))
+    const store = useAnalysisStore()
+    expect(await store.restore(analysisProject)).toBe(false)
+    expect(store.stateFor(analysisProject.id)).toMatchObject({loaded: false, live: null, status: 'error', error: '画像读取失败'})
+    backend.analyses.push(analysisFixture())
+    expect(await store.restore(analysisProject)).toBe(true)
+    expect(store.stateFor(analysisProject.id).live).toEqual(analysisFixture())
+  })
+  it('ignores a late restore after a fresh generation result', async () => {
+    let finish!: (value: unknown) => void
+    vi.mocked(serverRequest).mockImplementationOnce(() => new Promise(resolve => {finish = resolve}))
+    const store = useAnalysisStore(), restoring = store.restore(analysisProject)
+    requestAnalysis.mockResolvedValueOnce(analysisFixture())
+    await store.run(analysisProject)
+    finish([]); await restoring
+    expect(store.stateFor(analysisProject.id)).toMatchObject({status: 'success', live: analysisFixture(), restoring: false})
   })
 })
 

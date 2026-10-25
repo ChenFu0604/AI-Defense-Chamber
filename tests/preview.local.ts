@@ -9,6 +9,7 @@ import express from 'express'
 import sharp from 'sharp'
 import { textPdf } from './fixtures/files.js'
 import { createWorkflowFixture } from './fixtures/workflow.js'
+import { createWorkspaceDatabase } from '../apps/server/src/storage/database.js'
 const directory = await mkdtemp(join(tmpdir(), 'defense-ui-check-'))
 await writeFile(
   join(directory, 'sample-project.pdf'),
@@ -21,7 +22,9 @@ await sharp(
 )
   .png()
   .toFile(join(directory, 'sample-project.png'))
-const fixture = createWorkflowFixture(directory, { turnDelayMs: 1800 })
+const database = createWorkspaceDatabase(join(directory, 'workspace.sqlite'))
+await database.initialize()
+const fixture = createWorkflowFixture(directory, { turnDelayMs: 1800, database })
 const app = express()
 app.get(['/api/health', '/api/v1/health'], (_req, res) =>
   res.json({

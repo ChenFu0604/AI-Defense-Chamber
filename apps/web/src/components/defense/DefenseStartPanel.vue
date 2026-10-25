@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, toRef, useId, watch } from 'vue'
+import { computed, ref, toRef, useId, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { type Project } from '@defense/shared'
 import { useDefenseStore } from '../../stores/defense'
-import { recentDefenseSessions } from '../../services/defense-storage'
+import { useServerHistoryFeed } from '../../composables/useServerHistoryFeed'
 import AppButton from '../ui/AppButton.vue'
 import { SlidersHorizontal } from 'lucide-vue-next'
 import JudgeRolePicker from '../judges/JudgeRolePicker.vue'
@@ -22,22 +22,21 @@ const system = useSystemStore()
 const { mode, judgeId, preferences, confirmed, state, analysis, busy, error, start: prepareAndStart } = useTrainingPreparation(toRef(props, 'project'))
 const settingsOpen = ref(false), navigationError = ref('')
 const settingsDialogId = useId() + '-model-settings'
-const recent = ref<ReturnType<typeof recentDefenseSessions>>([])
-const recentError = ref('')
+const recentFeed = useServerHistoryFeed(), recentError = recentFeed.error
+const recent = computed(() => (recentFeed.archive.value?.entries ?? [])
+  .filter(entry => entry.session.project.id === props.project.id)
+  .sort((a, b) => Date.parse(b.session.updatedAt) - Date.parse(a.session.updatedAt)).slice(0, 20)
+  .map(({session}) => ({id: session.id, projectId: session.project.id, name: session.project.name,
+    mode: session.mode, createdAt: session.createdAt, updatedAt: session.updatedAt, status: session.status,
+    answerCount: session.messages.filter(message => message.sender === 'user').length})))
 watch(settingsOpen, (open, previous) => { if (!open && previous) void system.checkHealth() })
-function refreshRecent() {
-  recent.value = []
-  recentError.value = ''
-  try { recent.value = recentDefenseSessions().filter((value) => value.projectId === props.project.id) }
-  catch { recentError.value = '无法读取浏览器会话入口；仍可用已保存的会话地址恢复。' }
-}
 watch(
   () => props.project,
   () => {
     settingsOpen.value = false
-    refreshRecent()
+    void recentFeed.refresh()
   },
-  { immediate: true, deep: true },
+  { deep: true },
 )
 async function start() {
   if (mode.value === 'live' && system.checking) return
@@ -48,7 +47,7 @@ async function start() {
   }
   const session = await prepareAndStart()
   if (session) {
-    refreshRecent()
+    void recentFeed.refresh()
     try { await router.push({ name: 'defense-session', params: { id: session.id } }) }
     catch { navigationError.value = '会话已创建，跳转失败；请通过下方会话入口恢复。' }
   }

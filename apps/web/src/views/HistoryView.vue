@@ -8,7 +8,6 @@ import { downloadHistoryBackup } from '../services/history-service'
 import AppButton from '../components/ui/AppButton.vue'
 import {
   RefreshCw,
-  ArchiveRestore,
   Download,
   ChartNoAxesCombined,
   ArrowUpRight,
@@ -29,12 +28,16 @@ onMounted(() => {
 const entries = computed(() =>
   store.entries.filter((entry) => !projectId.value || entry.session.project.id === projectId.value),
 )
-function backup() {
+const exporting = ref(false)
+async function backup() {
+  if (exporting.value) return
+  exporting.value = true
   try {
-    downloadHistoryBackup()
+    await downloadHistoryBackup()
+    exportError.value = ''
   } catch (error) {
     exportError.value = error instanceof Error ? error.message : '导出失败。'
-  }
+  } finally { exporting.value = false }
 }
 const date = (value: string) => new Date(value).toLocaleString('zh-CN')
 const coverageText = (report: DefenseReport) => {
@@ -57,14 +60,11 @@ function latestReportText(id: string) {
 
     <div class="history-toolbar-actions">
       <div class="history-tool-group">
-        <AppButton variant="secondary" @click="store.load"
-          ><RefreshCw :size="15" />刷新本地历史</AppButton
+        <AppButton variant="secondary" :disabled="store.loading" @click="store.load"
+          ><RefreshCw :size="15" />刷新训练记录</AppButton
         >
-        <AppButton variant="secondary" @click="store.archiveProjects"
-          ><ArchiveRestore :size="15" />补存项目与画像</AppButton
-        >
-        <AppButton variant="secondary" @click="backup"
-          ><Download :size="15" />导出本地归档</AppButton
+        <AppButton variant="secondary" :disabled="exporting" :busy="exporting" @click="backup"
+          ><Download :size="15" />导出历史记录</AppButton
         >
       </div>
       <RouterLink to="/history/compare" class="app-button button-secondary history-compare-link control-button"
@@ -109,12 +109,13 @@ function latestReportText(id: string) {
   <StatusNotice v-if="store.error || exportError" tone="error" compact>
     {{ store.error || exportError }}
   </StatusNotice>
+  <StatusNotice v-if="store.loading" busy compact>正在读取服务端历史…</StatusNotice>
   <StatusNotice v-if="store.warning || store.message" :tone="store.warning ? 'warning' : 'success'" compact>
     {{ store.warning }} {{ store.message }}
   </StatusNotice>
   <div
     v-if="
-      !store.error &&
+      !store.error && !store.loading && store.loaded &&
       !store.entries.length &&
       !store.archive.projects.length &&
       !store.legacy.length
@@ -191,7 +192,7 @@ function latestReportText(id: string) {
   </section>
   <section v-if="store.legacy.length">
     <h2>旧版会话入口</h2>
-    <p>这些入口还没有完整本地快照。只读同步会从后端补齐记录，不生成新报告。</p>
+    <p>这些旧入口尚未导入。读取服务端原记录不会生成新报告。</p>
     <article v-for="entry in store.legacy" :key="entry.id" class="history-card surface-panel">
 
       <h3>{{ entry.name }}</h3>

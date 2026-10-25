@@ -1,22 +1,24 @@
 import { mkdir, readFile, writeFile, rename, unlink } from 'node:fs/promises'
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { randomUUID } from 'node:crypto'
 import { z } from 'zod'
 import { defenseSessionSchema, type DefenseSession } from '@defense/shared'
 import { AppError } from '../middleware/app-error.js'
+import { createSqliteDefenseRepository } from '../storage/database.js'
 
 export interface DefenseRepository {
   get(id: string): Promise<DefenseSession | null>
   save(session: DefenseSession): Promise<void>
 }
 export function createDefenseRepository(
-  directory = fileURLToPath(new URL('../../.data/defense-sessions/', import.meta.url)),
+  directory?: string,
 ): DefenseRepository {
+  if (directory === undefined) return createSqliteDefenseRepository()
+  const legacyDirectory = directory
   function path(id: string) {
     if (!z.uuid().safeParse(id).success)
       throw new AppError(400, 'VALIDATION_ERROR', '会话 ID 无效。')
-    return join(directory, id + '.json')
+    return join(legacyDirectory, id + '.json')
   }
   return {
     async get(id) {

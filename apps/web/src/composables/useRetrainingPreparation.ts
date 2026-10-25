@@ -1,11 +1,10 @@
 import { computed, getCurrentInstance, onMounted, onScopeDispose, ref, watch, type Ref } from 'vue'
-import { projectSchema, analysisMatchesProject, type HistoryEntry, type JudgeId, type RetrainRequest } from '@defense/shared'
+import { projectSchema, projectRecordResponseSchema, taskListResponseSchema, analysisMatchesProject, type HistoryEntry, type JudgeId, type RetrainRequest } from '@defense/shared'
 import { useProjectsStore } from '../stores/projects'
 import { useAnalysisStore } from '../stores/analysis'
 import { useDefenseStore } from '../stores/defense'
 import { useImprovementsStore } from '../stores/improvements'
-import { readProjectWorkspace } from '../services/project-storage'
-import { readImprovementTasks } from '../services/improvement-storage'
+import { serverRequest } from '../services/server-api'
 import { readPendingCreation, type PendingCreation } from '../services/history-storage'
 
 export function useRetrainingPreparation(id: Ref<string>, entry: Ref<HistoryEntry | undefined>, requestedTask: Ref<string>) {
@@ -51,24 +50,33 @@ export function useRetrainingPreparation(id: Ref<string>, entry: Ref<HistoryEntr
         if (pending.value) throw new Error('上次创建结果尚待确认，请先读取会话或使用“安全重试原创建”。')
         if (selectedIds.value.length !== chosen.value.length || chosen.value.length > 5) throw new Error('所选改进任务已变化，最多选择 5 项，请重新核对。')
         if (chosen.value.length) {
-          const saved = readImprovementTasks()
+          const saved = await serverRequest('/improvements', taskListResponseSchema)
+          if (token !== generation) return null
           if (chosen.value.some(t => JSON.stringify(saved.find(s => s.id === t.id)) !== JSON.stringify(t)))
             throw new Error('任务已在其他页面更新，请刷新后重新核对。')
           options.taskUpdates = chosen.value.map(t => ({improvementIndex: t.improvementIndex, status: t.status, note: t.note,
             ...(t.attachments?.length ? {attachments: t.attachments} : {})}))
         }
         if (sourceMode.value === 'current') {
-          if (!currentProject.value) throw new Error('当前浏览器没有这个项目，请选择原资料或先恢复项目。')
+          if (!currentProject.value) throw new Error('服务端没有这个项目，请选择原资料或先恢复项目。')
           const project = projectSchema.parse(currentProject.value)
-          const unchanged = () => JSON.stringify(readProjectWorkspace().projects.find(p => p.id === project.id)) === JSON.stringify(project)
-          if (!unchanged()) throw new Error('项目资料已更新，请刷新页面后重新确认。')
-          analyses.restore(project)
+          const unchanged = async () => JSON.stringify(await serverRequest('/projects/' + project.id, projectRecordResponseSchema)) === JSON.stringify(project)
+          if (!await unchanged()) throw new Error('项目资料已更新，请刷新页面后重新确认。')
+          if (token !== generation) return null
+          if (!await analyses.restore(project, true)) throw new Error(analyses.stateFor(project.id).error || '无法读取服务端画像，请重试。')
+          if (token !== generation) return null
           const analysis = analyses.stateFor(project.id).live ?? await analyses.run(project, 'live')
           if (token !== generation) return null
           if (!analysis || !analysisMatchesProject(analysis, project)) throw new Error(analyses.stateFor(project.id).error || '当前版本的项目分析尚未完成，请重试。')
-          if (!unchanged()) throw new Error('分析期间项目资料发生变化，未创建训练，请刷新后重新确认。')
+          if (!await unchanged()) throw new Error('分析期间项目资料发生变化，未创建训练，请刷新后重新确认。')
           options.current = {project, analysis}
         }
+      }
+      if (!retry && chosen.value.length) {
+        const saved = await serverRequest('/improvements', taskListResponseSchema)
+        if (token !== generation) return null
+        if (chosen.value.some(task => JSON.stringify(saved.find(current => current.id === task.id)) !== JSON.stringify(task)))
+          throw new Error('准备期间改进任务已更新，请刷新后重新核对，尚未创建训练。')
       }
       if (token !== generation) return null
       const session = await defense.retrain(id.value, selectedJudge, options)

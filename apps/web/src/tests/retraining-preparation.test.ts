@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { effectScope, ref, type EffectScope } from 'vue'
-import { type RetrainRequest, type HistoryEntry, type AnalysisRecord } from '@defense/shared'
+import { createImprovementTask, type RetrainRequest, type HistoryEntry, type AnalysisRecord } from '@defense/shared'
 import { useRetrainingPreparation } from '../composables/useRetrainingPreparation'
 import { requestProjectAnalysis, AnalysisApiError } from '../services/analysis-api'
 import { defenseApi, DefenseApiError } from '../services/defense-api'
 import { readPendingCreation } from '../services/history-storage'
-import { writeProjectWorkspace } from '../services/project-storage'
-import { saveAnalysisRecord } from '../services/analysis-storage'
+import { serverRequest } from '../services/server-api'
+import { createWorkspaceApiFixture } from './server-workspace-fixture'
 import { useProjectsStore } from '../stores/projects'
 import { useImprovementsStore } from '../stores/improvements'
 import { endedReportSession, reportFixture } from '../../../../tests/fixtures/report'
@@ -15,6 +15,8 @@ import { MemoryStorage } from './project-fixtures'
 
 vi.mock('../services/analysis-api', async original => ({...(await original<typeof import('../services/analysis-api')>()), requestProjectAnalysis: vi.fn()}))
 vi.mock('../services/defense-api', async original => ({...(await original<typeof import('../services/defense-api')>()), defenseApi: vi.fn()}))
+vi.mock('../services/server-api', async original => ({...(await original<typeof import('../services/server-api')>()), serverRequest: vi.fn()}))
+let backend: ReturnType<typeof createWorkspaceApiFixture>
 const api = vi.mocked(defenseApi), analyze = vi.mocked(requestProjectAnalysis)
 const scopes: EffectScope[] = []
 const source = endedReportSession()
@@ -26,11 +28,12 @@ function setup() {
   const preparation = scope.run(() => useRetrainingPreparation(ref(source.id), entry, ref('')))!
   return {preparation, scope}
 }
-beforeEach(() => {
+beforeEach(async () => {
   setActivePinia(createPinia()); vi.stubGlobal('localStorage', new MemoryStorage())
-  writeProjectWorkspace({version: 1, projects: [project], revisions: [], archivedIds: []})
-  useProjectsStore().loadProjects()
-  api.mockReset(); analyze.mockReset(); analyze.mockResolvedValue(profile)
+  backend = createWorkspaceApiFixture({projects: [project]})
+  vi.mocked(serverRequest).mockReset(); vi.mocked(serverRequest).mockImplementation(backend.request)
+  await useProjectsStore().loadProjects()
+  api.mockReset(); analyze.mockReset(); analyze.mockImplementation(async () => {backend.analyses.push(profile); return profile})
   api.mockImplementation(async (_url, body) => {
     const input = body as RetrainRequest
     return {...structuredClone(source), id: input.requestId, project: input.current?.project ?? source.project,
@@ -41,8 +44,9 @@ beforeEach(() => {
 afterEach(() => { scopes.splice(0).forEach(s => s.stop()); vi.unstubAllGlobals() })
 describe('current-version targeted training preparation', () => {
   it('requires confirmation, generates a matching current profile, includes saved task progress and prevents double submit', async () => {
-    const tasks = useImprovementsStore(); tasks.add(reportFixture(), 0, project.name)
-    tasks.update(tasks.tasks[0]!, {status: 'done', note: '已整理匿名访谈记录'})
+    const tasks = useImprovementsStore()
+    const task = {...createImprovementTask(reportFixture(), 0, project.name, crypto.randomUUID(), new Date().toISOString()), status: 'done' as const, note: '已整理匿名访谈记录'}
+    backend.tasks.push(task); tasks.tasks = [task]
     const {preparation: ui} = setup()
     ui.sourceMode.value = 'current'; ui.selectedIds.value = [tasks.tasks[0]!.id]
     expect(await ui.start()).toBeNull()
@@ -56,7 +60,7 @@ describe('current-version targeted training preparation', () => {
     expect(api.mock.calls[0]![1]).toMatchObject({current: {project, analysis: profile}, taskUpdates: [{improvementIndex: 0, status: 'done', note: '已整理匿名访谈记录'}]})
   })
   it('reuses a current real profile and leaves original-snapshot training free of analysis calls', async () => {
-    saveAnalysisRecord(profile)
+    backend.analyses.push(profile)
     const {preparation: ui} = setup()
     ui.sourceMode.value = 'current'; ui.confirmed.value = true
     await ui.start()
@@ -105,21 +109,37 @@ describe('current-version targeted training preparation', () => {
     const {preparation: ui} = setup()
     ui.sourceMode.value = 'current'; ui.confirmed.value = true
     const running = ui.start()
-    writeProjectWorkspace({version: 1, projects: [{...project, description: '另一页面的新内容'}], revisions: [], archivedIds: []})
+    await vi.waitFor(() => expect(analyze).toHaveBeenCalledTimes(1))
+    backend.workspace.projects = [{...project, description: '另一页面的新内容'}]
     finish(profile)
     expect(await running).toBeNull()
     expect(ui.error.value).toContain('分析期间')
     expect(api).not.toHaveBeenCalled()
-    writeProjectWorkspace({version: 1, projects: [project], revisions: [], archivedIds: []})
+    backend.workspace.projects = [project]
     // A separate scope with no cache exercises disposal while a model request is pending.
-    setActivePinia(createPinia()); useProjectsStore().loadProjects()
+    setActivePinia(createPinia()); await useProjectsStore().loadProjects()
     vi.stubGlobal('localStorage', new MemoryStorage())
-    writeProjectWorkspace({version: 1, projects: [project], revisions: [], archivedIds: []})
+    backend.workspace.projects = [project]
     analyze.mockImplementationOnce(() => new Promise(resolve => {finish = resolve}))
     const other = setup()
     other.preparation.sourceMode.value = 'current'; other.preparation.confirmed.value = true
-    const stopped = other.preparation.start(); other.scope.stop(); finish(profile)
+    const stopped = other.preparation.start(); await vi.waitFor(() => expect(analyze).toHaveBeenCalledTimes(2)); other.scope.stop(); finish(profile)
     expect(await stopped).toBeNull()
+    expect(api).not.toHaveBeenCalled()
+  })
+  it('rechecks selected task progress after waiting for the current-project analysis', async () => {
+    const task = createImprovementTask(reportFixture(), 0, project.name, crypto.randomUUID(), new Date().toISOString())
+    backend.tasks.push(task); useImprovementsStore().tasks = [task]
+    let finish!: (record: AnalysisRecord) => void
+    analyze.mockImplementationOnce(() => new Promise(resolve => {finish = resolve}))
+    const {preparation: ui} = setup()
+    ui.sourceMode.value = 'current'; ui.selectedIds.value = [task.id]; ui.confirmed.value = true
+    const pending = ui.start()
+    await vi.waitFor(() => expect(analyze).toHaveBeenCalledTimes(1))
+    backend.tasks[0] = {...task, note: '另一个页面已更新任务'}
+    finish(profile)
+    expect(await pending).toBeNull()
+    expect(ui.error.value).toContain('改进任务已更新')
     expect(api).not.toHaveBeenCalled()
   })
 })

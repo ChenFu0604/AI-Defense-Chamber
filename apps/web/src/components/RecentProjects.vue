@@ -17,7 +17,7 @@ const projects = useProjectsStore()
       <RouterLink to="/projects" class="section-action">全部项目<ArrowUpRight :size="14" /></RouterLink>
     </div>
     <StorageNotice />
-    <StatusNotice v-if="!projects.loaded && !projects.loadError" busy compact>正在读取本地项目…</StatusNotice>
+    <StatusNotice v-if="!projects.loaded && !projects.loadError" busy compact>正在读取服务端项目…</StatusNotice>
     <div
       v-else-if="projects.loaded && !projects.loadError && projects.activeProjects.length === 0"
       class="empty-state surface-panel"
@@ -29,7 +29,7 @@ const projects = useProjectsStore()
       <RouterLink to="/projects/new" class="app-button button-secondary control-button"
         >
       {{ projects.projects.length ? '创建新项目' : '创建第一个项目' }}<ArrowUpRight :size="15" /></RouterLink
-      ><small>资料保存在当前浏览器，无需账号。</small>
+      ><small>正式资料保存在本机后端，无需账号。</small>
     </div>
     <div v-if="projects.recentProjects.length" class="project-grid">
       <ProjectCard

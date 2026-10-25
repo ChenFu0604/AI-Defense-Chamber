@@ -71,7 +71,7 @@ const answers = computed(
         :to="{ name: 'history-detail', params: { id } }"
         class="app-button button-secondary control-button"
         >
-      本地历史与二次训练 →</RouterLink
+      历史记录与二次训练 →</RouterLink
       >
       <RouterLink
         :to="{ name: 'session-risks', params: { id } }"

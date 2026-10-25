@@ -7,13 +7,16 @@ import { useProjectForm } from '../composables/useProjectForm'
 import { PROJECT_STORAGE_KEY, readProjectWorkspace, writeProjects } from '../services/project-storage'
 import { PROJECT_DRAFTS_KEY, readProjectDrafts } from '../services/project-drafts'
 import { useAnalysisStore } from '../stores/analysis'
-import { saveAnalysisRecord, readAnalysisRecords } from '../services/analysis-storage'
 import { archiveSession, readHistory } from '../services/history-storage'
 import { analysisFixture, analysisProject } from '../../../../tests/fixtures/analysis'
 import { defenseFixture } from '../../../../tests/fixtures/defense'
 import { fixtureProject, MemoryStorage, validInput } from './project-fixtures'
+import { serverRequest, ServerApiError } from '../services/server-api'
+import { createWorkspaceApiFixture } from './server-workspace-fixture'
+vi.mock('../services/server-api', async original => ({...(await original<typeof import('../services/server-api')>()), serverRequest: vi.fn()}))
 
 let storage: MemoryStorage
+let backend: ReturnType<typeof createWorkspaceApiFixture>
 const scopes: EffectScope[] = []
 function form(project?: ReturnType<typeof fixtureProject>) {
   const scope = effectScope()
@@ -25,6 +28,7 @@ beforeEach(() => {
   storage = new MemoryStorage()
   vi.stubGlobal('localStorage', storage)
   vi.useFakeTimers()
+  backend = createWorkspaceApiFixture(); vi.mocked(serverRequest).mockReset(); vi.mocked(serverRequest).mockImplementation(backend.request)
 })
 afterEach(() => {
   scopes.splice(0).forEach((scope) => scope.stop())
@@ -112,66 +116,66 @@ describe('project revisions and reversible archiving', () => {
     expect(storage.data.get(PROJECT_STORAGE_KEY)).toBe(raw)
   })
   it('preserves an old snapshot and historical sessions, invalidates only the current analysis', async () => {
-    writeProjects([analysisProject], storage)
-    saveAnalysisRecord(analysisFixture(), storage)
+    backend.workspace.projects.push(analysisProject)
+    backend.analyses.push(analysisFixture())
     const session = defenseFixture()
     archiveSession(session, storage)
     const previousSession = JSON.stringify(readHistory(storage).entries[0])
     const analyses = useAnalysisStore(), projects = useProjectsStore()
-    projects.loadProjects()
-    analyses.restore(analysisProject)
+    await projects.loadProjects()
+    await analyses.restore(analysisProject)
     expect(analyses.stateFor(analysisProject.id).live).toBeTruthy()
     const updated = await projects.updateProject(analysisProject, { ...analysisProject, name: '修改后的项目' })
     expect(updated.id).toBe(analysisProject.id)
     expect(updated.createdAt).toBe(analysisProject.createdAt)
     expect(updated.updatedAt).not.toBe(analysisProject.updatedAt)
-    expect(readProjectWorkspace(storage).revisions[0]!.snapshots).toEqual([analysisProject])
-    analyses.restore(updated)
+    expect(backend.workspace.revisions[0]!.snapshots).toEqual([analysisProject])
+    await analyses.restore(updated)
     expect(analyses.stateFor(updated.id).live).toBeNull()
     expect(analyses.stateFor(updated.id).warning).toContain('资料已变化')
-    expect(readAnalysisRecords(storage)).toEqual([analysisFixture()])
+    expect(backend.analyses).toEqual([analysisFixture()])
     expect(JSON.stringify(readHistory(storage).entries[0])).toBe(previousSession)
   })
   it('rejects an edit based on an obsolete snapshot without losing the newer version', async () => {
     const base = fixtureProject(), projects = useProjectsStore()
-    writeProjects([base], storage)
+    backend.workspace.projects.push(base)
     const updated = await projects.updateProject(base, { ...base, name: '他人修改' })
     await expect(projects.updateProject(base, { ...base, name: '过期修改' })).rejects.toThrow('其他页面更新')
-    expect(readProjectWorkspace(storage).projects).toEqual([updated])
-    expect(readProjectWorkspace(storage).revisions[0]!.snapshots).toHaveLength(1)
+    expect(backend.workspace.projects).toEqual([updated])
+    expect(backend.workspace.revisions[0]!.snapshots).toHaveLength(1)
   })
   it('does not add a duplicate revision on retry after an unconfirmed edit', async () => {
     const base = fixtureProject(), projects = useProjectsStore()
-    writeProjects([base], storage)
-    storage.failNextReadAfterWrite = true
+    backend.workspace.projects.push(base)
+    backend.failAfterCommit()
     await expect(projects.updateProject(base, { ...base, name: '新版本' })).rejects.toThrow('无法确认')
     storage.denyReads = false
     const confirmed = await projects.updateProject(base, { ...base, name: '新版本' })
     expect(confirmed.name).toBe('新版本')
-    expect(readProjectWorkspace(storage).revisions[0]!.snapshots).toHaveLength(1)
+    expect(backend.workspace.revisions[0]!.snapshots).toHaveLength(1)
   })
   it('keeps both saved versions and memory intact on a failed edit', async () => {
     const base = fixtureProject(), projects = useProjectsStore()
-    writeProjects([base], storage)
-    projects.loadProjects()
-    storage.denyWrites = true
+    backend.workspace.projects.push(base)
+    await projects.loadProjects()
+    backend.failNext(new ServerApiError('DATABASE_ERROR', '保存失败'))
     await expect(projects.updateProject(base, { ...base, name: '未保存' })).rejects.toThrow('保存失败')
     expect(projects.findProject(base.id)).toEqual(base)
-    expect(readProjectWorkspace(storage).revisions).toEqual([])
+    expect(backend.workspace.revisions).toEqual([])
   })
   it('archives and restores without deleting projects or revision snapshots', async () => {
     const base = fixtureProject(), projects = useProjectsStore()
-    writeProjects([base], storage)
+    backend.workspace.projects.push(base)
     await projects.updateProject(base, { ...base, name: '新版' })
-    projects.setArchived(base.id, true)
+    await projects.setArchived(base.id, true)
     expect(projects.activeProjects).toHaveLength(0)
     expect(projects.projects).toHaveLength(1)
     expect(projects.revisions[0]!.snapshots).toEqual([base])
-    projects.setArchived(base.id, false)
+    await projects.setArchived(base.id, false)
     expect(projects.activeProjects).toHaveLength(1)
     setActivePinia(createPinia())
     const restored = useProjectsStore()
-    restored.loadProjects()
+    await restored.loadProjects()
     expect(restored.revisions[0]!.snapshots).toEqual([base])
   })
   it('rejects invalid version references without overwriting source data', () => {

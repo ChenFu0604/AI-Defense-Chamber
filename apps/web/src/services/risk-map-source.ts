@@ -1,7 +1,6 @@
 import { z } from 'zod'
-import { buildRiskGraph, type AnalysisMode, type DefenseReport } from '@defense/shared'
-import { readProjects } from './project-storage'
-import { readAnalysisRecords } from './analysis-storage'
+import { analysisListResponseSchema, analysisMatchesProject, buildRiskGraph, projectRecordResponseSchema, type AnalysisMode, type DefenseReport } from '@defense/shared'
+import { serverRequest } from './server-api'
 import { defenseApi } from './defense-api'
 import { requestReport, ReportApiError } from './report-api'
 
@@ -12,11 +11,11 @@ export async function loadRiskMap(source: RiskMapSource, signal?: AbortSignal) {
   if (!z.uuid().safeParse(source.id).success) throw new Error('项目或会话 ID 无效。')
   signal?.throwIfAborted()
   if (source.kind === 'project') {
-    const project = readProjects().find((item) => item.id === source.id)
-    if (!project) throw new Error('当前浏览器没有该项目，请返回项目列表或从答辩报告打开漏洞地图。')
+    const project = await serverRequest('/projects/' + source.id, projectRecordResponseSchema, { signal })
+    signal?.throwIfAborted()
     const analysis =
-      readAnalysisRecords().find(
-        (item) => item.projectId === project.id && item.mode === source.mode,
+      (await serverRequest('/projects/' + source.id + '/analyses', analysisListResponseSchema, { signal })).find(
+        (item) => item.mode === source.mode && analysisMatchesProject(item, project),
       ) ?? null
     return {
       title: project.name,
