@@ -1,5 +1,7 @@
 # 第六阶段：评分报告与能力雷达图
 
+> 2026-10-25 更新：下文保留本阶段历史实现记录。新版报告已支持独立观察不足状态、空分、五维完整覆盖后才计算综合分，以及旧报告兼容；当前行为见 [评分观察覆盖说明](report-observation-coverage.md)。
+
 ## 实现
 
 沿用 Vue 3、Pinia、Express、TypeScript、Zod、统一 AIClient 和本地文件存储。新增 ECharts 6.1，按需加载 RadarChart、RadarComponent、AriaComponent 和 SVGRenderer，报告未成功生成时不加载图表模块。

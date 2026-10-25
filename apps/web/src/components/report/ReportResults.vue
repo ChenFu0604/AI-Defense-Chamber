@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { defineAsyncComponent, onMounted } from 'vue'
+import { computed, defineAsyncComponent, onMounted } from 'vue'
 import {
+  getDimensionAssessment,
+  getReportCoverage,
   reportDimensionIds,
   reportDimensionLabels,
   type DefenseReport,
@@ -12,7 +14,8 @@ import AppButton from '../ui/AppButton.vue'
 import StatusNotice from '../ui/StatusNotice.vue'
 import RagSources from '../knowledge/RagSources.vue'
 const AbilityRadar = defineAsyncComponent(() => import('./AbilityRadar.vue'))
-defineProps<{ report: DefenseReport; messages: DefenseMessage[]; projectName?: string }>()
+const props = defineProps<{ report: DefenseReport; messages: DefenseMessage[]; projectName?: string }>()
+const coverage = computed(() => getReportCoverage(props.report))
 const tasks = useImprovementsStore()
 onMounted(tasks.load)
 const priorities = { high: '优先处理', medium: '随后改进', low: '持续优化' }
@@ -22,8 +25,14 @@ const priorities = { high: '优先处理', medium: '随后改进', low: '持续�
     <section class="report-card report-score surface-panel">
 
       <h2>综合评分</h2>
-      <div class="report-score-number">{{ report.overallScore }}<span>/ 100</span></div>
-      <p>五个维度各占 20%，取算术平均，保留一位小数。</p>
+      <div v-if="report.overallScore !== null" class="report-score-number">{{ report.overallScore }}<span>/ 100</span></div>
+      <p v-else class="report-score-unavailable">观察不足，暂不生成综合分</p>
+      <p v-if="coverage.legacy" class="report-coverage-note">旧版报告 · 观察覆盖未标注。保留原评分，不重新计算。</p>
+      <template v-else>
+        <p class="report-coverage-note">已评估 {{ coverage.assessed }} / {{ coverage.total }} 个维度</p>
+        <p v-if="report.overallScore === null">未充分评估的维度不记为 0 分；五个维度均完成评估后，才按等权平均计算综合分。</p>
+        <p v-else>五个维度各占 20%，取算术平均，保留一位小数。</p>
+      </template>
       <p>{{ report.output.summary }}</p>
       <small
         >基于 {{ report.answerCount }} 次回答 · {{ report.model }}<br />生成于
@@ -64,15 +73,18 @@ const priorities = { high: '优先处理', medium: '随后改进', low: '持续�
 
     <h2>分项评分与回答依据</h2>
     <div class="report-dimensions-grid">
-    <div v-for="key in reportDimensionIds" :key="key" class="report-dimension">
+    <div v-for="key in reportDimensionIds" :key="key" class="report-dimension" :class="{ 'is-insufficient': getDimensionAssessment(report.output.dimensions[key]) === 'insufficient' }">
       <h3>
         {{ reportDimensionLabels[key]
-        }}<strong>{{ report.output.dimensions[key].score }} <small>/ 100</small></strong>
+        }}<strong v-if="report.output.dimensions[key].score !== null">{{ report.output.dimensions[key].score }} <small>/ 100</small></strong>
+        <span v-else class="report-assessment-state">未充分评估</span>
       </h3>
+      <span v-if="getDimensionAssessment(report.output.dimensions[key]) === 'legacy'" class="report-assessment-legacy">旧版评分 · 观察状态未记录</span>
       <meter
+        v-if="report.output.dimensions[key].score !== null"
         min="0"
         max="100"
-        :value="report.output.dimensions[key].score"
+        :value="report.output.dimensions[key].score!"
         :aria-label="reportDimensionLabels[key]"
       />
       <p>{{ report.output.dimensions[key].reason }}</p>
@@ -118,3 +130,10 @@ const priorities = { high: '优先处理', medium: '随后改进', low: '持续�
     </section>
   </div>
 </template>
+<style scoped>
+.report-score-unavailable { margin: 16px 0 12px; color: var(--text-primary); font-size: 22px; font-weight: var(--weight-strong); line-height: 1.5; }
+.report-coverage-note { color: var(--text-secondary); font-size: 13px; }
+.report-assessment-state { padding: 4px 8px; border-radius: 7px; background: var(--warning-soft); color: var(--warning); font-size: 12px; font-weight: var(--weight-medium); line-height: 1.6; }
+.report-assessment-legacy { display: inline-block; color: var(--text-secondary); font-size: 12px; line-height: 1.7; }
+.report-dimension.is-insufficient h3 { flex-wrap: wrap; gap: 8px; }
+</style>

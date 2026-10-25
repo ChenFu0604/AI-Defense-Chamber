@@ -17,7 +17,7 @@ import { useHistoryStore } from '../stores/history'
 import { defenseApi } from '../services/defense-api'
 import { requestReport, ReportApiError } from '../services/report-api'
 import { analysisProject, analysisFixture } from '../../../../tests/fixtures/analysis'
-import { endedReportSession, reportFixture } from '../../../../tests/fixtures/report'
+import { endedReportSession, legacyReportFixture, reportFixture } from '../../../../tests/fixtures/report'
 import { MemoryStorage } from './project-fixtures'
 vi.mock('../services/defense-api', async (original) => ({
   ...(await original<typeof import('../services/defense-api')>()),
@@ -59,6 +59,28 @@ describe('local history archive', () => {
     expect(defenseApi).not.toHaveBeenCalled()
     expect(requestReport).not.toHaveBeenCalled()
     expect(storage.data.get(HISTORY_KEY)).not.toMatch(/apiKey|Authorization|OPENAI_API_KEY/)
+  })
+  it('restores legacy and partial reports together without migrating or rescoring either snapshot', () => {
+    const original = endedReportSession(), legacy = legacyReportFixture()
+    const later = { ...endedReportSession(), id: crypto.randomUUID() }
+    const partial = { ...reportFixture(), id: crypto.randomUUID(), sessionId: later.id }
+    partial.output.dimensions.technical = {
+      status: 'insufficient', score: null, reason: '本轮未讨论技术方案。', references: [],
+    }
+    partial.overallScore = null
+    archiveSession(original)
+    archiveReport(legacy)
+    archiveSession(later)
+    archiveReport(partial)
+    const raw = storage.data.get(HISTORY_KEY)
+    setActivePinia(createPinia())
+    const history = useHistoryStore()
+    history.load()
+    expect(history.entries.find(entry => entry.session.id === original.id)?.report).toEqual(legacy)
+    expect(history.entries.find(entry => entry.session.id === later.id)?.report).toEqual(partial)
+    expect(storage.data.get(HISTORY_KEY)).toBe(raw)
+    expect(defenseApi).not.toHaveBeenCalled()
+    expect(requestReport).not.toHaveBeenCalled()
   })
   it('retains original historical snapshots when the current project changes', () => {
     const session = endedReportSession()
@@ -141,8 +163,11 @@ describe('history comparison and readonly sync', () => {
       after = structuredClone(before)
     after.sessionId = crypto.randomUUID()
     after.id = crypto.randomUUID()
-    after.output.dimensions.logic.score += 9
-    after.output.dimensions.evidence.score -= 4
+    const { logic, evidence } = after.output.dimensions
+    if (logic.status !== 'assessed' || evidence.status !== 'assessed')
+      throw new Error('本用例需要两项已评估的固定测试分数。')
+    logic.score += 9
+    evidence.score -= 4
     after.overallScore = calculateOverallScore(after.output.dimensions)
     archiveSession(endedReportSession())
     archiveReport(before)

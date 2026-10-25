@@ -2,7 +2,7 @@
 import StatusNotice from '../components/ui/StatusNotice.vue'
 import { computed, onMounted, ref } from 'vue'
 import { readPendingCreation, type PendingCreation } from '../services/history-storage'
-import { defenseStatusLabels, projectTypeLabels } from '@defense/shared'
+import { defenseStatusLabels, getReportCoverage, projectTypeLabels, type DefenseReport } from '@defense/shared'
 import { useHistoryStore } from '../stores/history'
 import { downloadHistoryBackup } from '../services/history-service'
 import AppButton from '../components/ui/AppButton.vue'
@@ -37,6 +37,15 @@ function backup() {
   }
 }
 const date = (value: string) => new Date(value).toLocaleString('zh-CN')
+const coverageText = (report: DefenseReport) => {
+  const coverage = getReportCoverage(report)
+  return coverage.legacy ? '旧版评分 · 观察覆盖未记录' : `已评估 ${coverage.assessed} / ${coverage.total} 维`
+}
+function latestReportText(id: string) {
+  const report = store.entries.find((entry) => entry.session.project.id === id && entry.report)?.report
+  if (!report) return '暂无已保存报告'
+  return `${report.overallScore === null ? '观察不足，暂不计算综合分' : report.overallScore + ' 分'} · ${coverageText(report)}`
+}
 </script>
 <template>
   <div class="view-heading">
@@ -134,8 +143,9 @@ const date = (value: string) => new Date(value).toLocaleString('zh-CN')
         {{ date(entry.session.createdAt) }}
       </p>
       <div class="history-score">
-        <strong>{{ entry.report ? entry.report.overallScore : '—' }}</strong
-        ><span>{{ entry.report ? '本场综合分 / 100' : '本场尚无已保存评分' }}</span
+        <strong>{{ entry.report?.overallScore ?? '—' }}</strong
+        ><span>{{ entry.report ? entry.report.overallScore === null ? '观察不足 · 暂不计算综合分' : '本场综合分 / 100' : '本场尚无已保存评分' }}</span
+        ><span v-if="entry.report">{{ coverageText(entry.report) }}</span
         ><span>{{ defenseStatusLabels[entry.session.status] }}</span>
       </div>
       <div class="defense-actions">
@@ -172,10 +182,7 @@ const date = (value: string) => new Date(value).toLocaleString('zh-CN')
       <p>{{ projectTypeLabels[project.projectType] }} · {{ date(project.createdAt) }}</p>
       <p>{{ project.description }}</p>
       <p>
-        最近一次已保存综合分：{{
-          store.entries.find((entry) => entry.session.project.id === project.id && entry.report)
-            ?.report?.overallScore ?? '暂无'
-        }}
+        最近一次已保存报告：{{ latestReportText(project.id) }}
       </p>
       <RouterLink :to="{ name: 'history-project', params: { id: project.id } }" class="text-button"
         >打开项目 →</RouterLink

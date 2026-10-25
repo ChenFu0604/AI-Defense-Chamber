@@ -2,7 +2,7 @@
 import StatusNotice from '../components/ui/StatusNotice.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { compareHistoryReports, projectInputSchema, reportDimensionLabels } from '@defense/shared'
+import { compareHistoryReports, getReportCoverage, projectInputSchema, reportDimensionLabels, type DefenseReport } from '@defense/shared'
 import { useHistoryStore } from '../stores/history'
 const store = useHistoryStore(),
   route = useRoute()
@@ -35,8 +35,15 @@ const comparison = computed(() => {
   }
 })
 const signed = (n: number) => (n > 0 ? `+${n}` : String(n))
+const scoreText = (report: DefenseReport) => report.overallScore === null ? '暂不计算' : `${report.overallScore} 分`
+const coverageText = (report: DefenseReport) => {
+  const coverage = getReportCoverage(report)
+  return coverage.legacy ? '旧版评分 · 观察覆盖未记录' : `已评估 ${coverage.assessed} / ${coverage.total} 维`
+}
+const unavailableText = (status: 'comparable' | 'insufficient' | 'legacy_mismatch') =>
+  status === 'legacy_mismatch' ? '旧版未记录观察状态，不计算变化' : '观察不足，暂不比较'
 const label = (entry: (typeof records.value)[number]) =>
-  `${entry.session.project.name} · ${new Date(entry.session.createdAt).toLocaleString('zh-CN')} · ${entry.report!.overallScore} 分 · ${entry.session.id.slice(0, 8)}`
+  `${entry.session.project.name} · ${new Date(entry.session.createdAt).toLocaleString('zh-CN')} · ${scoreText(entry.report!)} · ${coverageText(entry.report!)} · ${entry.session.id.slice(0, 8)}`
 </script>
 <template>
   <RouterLink to="/history" class="back-link">← 返回历史记录</RouterLink>
@@ -78,11 +85,13 @@ const label = (entry: (typeof records.value)[number]) =>
     </StatusNotice>
     <div class="history-card surface-panel">
 
-      <h2>综合分 {{ before.report!.overallScore }} → {{ after.report!.overallScore }}</h2>
-      <strong class="history-delta" :class="{ 'positive-text': comparison.data.overall > 0 }"
-        >{{ signed(comparison.data.overall) }} 分</strong
-      >
-      <p>两个综合分均为各场五维等权平均。</p>
+      <h2>综合分 {{ scoreText(before.report!) }} → {{ scoreText(after.report!) }}</h2>
+      <strong v-if="comparison.data.overall !== null" class="history-delta" :class="{ 'positive-text': comparison.data.overall > 0 }"
+        >{{ signed(comparison.data.overall) }} 分</strong>
+      <p v-else class="history-comparison-unavailable">{{ unavailableText(comparison.data.overallStatus) }}。未充分评估不代表低分或能力退步。</p>
+      <p>基准：{{ coverageText(before.report!) }}；对比：{{ coverageText(after.report!) }}。</p>
+      <p v-if="before.report!.version === 1 || after.report!.version === 1">旧版分数按原记录保留，不补认已充分评估；旧版之间的变化仅供回顾。</p>
+      <p v-else>只有五个维度均完成评估才计算综合分，各维度等权。分项仅在两场都有评分时计算变化。</p>
     </div>
     <div class="history-table-wrap">
       <table class="history-table">
@@ -97,9 +106,9 @@ const label = (entry: (typeof records.value)[number]) =>
         <tbody>
           <tr v-for="item in comparison.data.dimensions" :key="item.id">
             <td>{{ reportDimensionLabels[item.id] }}</td>
-            <td>{{ item.before }}</td>
-            <td>{{ item.after }}</td>
-            <td>{{ signed(item.delta) }}</td>
+            <td>{{ item.before === null ? '未充分评估' : item.before }}<small v-if="item.beforeStatus === 'legacy'" class="history-assessment-note">旧版评分</small></td>
+            <td>{{ item.after === null ? '未充分评估' : item.after }}<small v-if="item.afterStatus === 'legacy'" class="history-assessment-note">旧版评分</small></td>
+            <td>{{ item.delta === null ? unavailableText(item.comparisonStatus) : signed(item.delta) }}</td>
           </tr>
         </tbody>
       </table>

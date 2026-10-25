@@ -6,6 +6,8 @@ import {
   defenseReportSchema,
   reportEvidenceIsValid,
   reportDimensionIds,
+  getDimensionAssessment,
+  type DimensionAssessment,
   type DefenseReport,
 } from './report.js'
 
@@ -42,18 +44,36 @@ export const historyArchiveSchema = z
     { message: '历史记录 ID 重复。' },
   )
 export type HistoryArchive = z.infer<typeof historyArchiveSchema>
+export type ReportComparisonStatus = 'comparable' | 'insufficient' | 'legacy_mismatch'
+function comparisonStatus(before: DimensionAssessment, after: DimensionAssessment): ReportComparisonStatus {
+  if (before === 'insufficient' || after === 'insufficient') return 'insufficient'
+  if (before !== after) return 'legacy_mismatch'
+  return 'comparable'
+}
 export function compareHistoryReports(before: DefenseReport, after: DefenseReport) {
   const a = defenseReportSchema.parse(before),
     b = defenseReportSchema.parse(after)
   if (a.sessionId === b.sessionId || a.projectId !== b.projectId)
     throw new Error('请选择同一项目的两场不同答辩报告。')
+  const overallStatus: ReportComparisonStatus = a.overallScore === null || b.overallScore === null
+    ? 'insufficient'
+    : a.version !== b.version ? 'legacy_mismatch' : 'comparable'
   return {
-    overall: Math.round((b.overallScore - a.overallScore) * 10) / 10,
-    dimensions: reportDimensionIds.map((id) => ({
-      id,
-      before: a.output.dimensions[id].score,
-      after: b.output.dimensions[id].score,
-      delta: b.output.dimensions[id].score - a.output.dimensions[id].score,
-    })),
+    overallStatus,
+    overall: overallStatus === 'comparable' ? Math.round((b.overallScore! - a.overallScore!) * 10) / 10 : null,
+    dimensions: reportDimensionIds.map((id) => {
+      const before = a.output.dimensions[id], after = b.output.dimensions[id]
+      const beforeStatus = getDimensionAssessment(before), afterStatus = getDimensionAssessment(after)
+      const status = comparisonStatus(beforeStatus, afterStatus)
+      return {
+        id,
+        before: before.score,
+        after: after.score,
+        beforeStatus,
+        afterStatus,
+        comparisonStatus: status,
+        delta: status === 'comparable' ? after.score! - before.score! : null,
+      }
+    }),
   }
 }

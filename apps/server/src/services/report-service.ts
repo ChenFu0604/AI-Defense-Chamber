@@ -98,7 +98,7 @@ export function createReportService(
             '报告引用不属于真实用户回答，未接受此报告。',
           )
         const record = defenseReportSchema.parse({
-          version: 1,
+          version: 2,
           id: randomUUID(),
           sessionId: id,
           projectId: session.project.id,

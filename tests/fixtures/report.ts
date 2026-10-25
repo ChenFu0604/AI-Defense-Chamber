@@ -1,6 +1,9 @@
 import {
   calculateOverallScore,
-  type DefenseReport,
+  legacyReportOutputSchema,
+  reportDimensionIds,
+  type CurrentDefenseReport,
+  type LegacyDefenseReport,
   type ReportOutput,
 } from '../../packages/shared/src/report.js'
 import { defenseFixture } from './defense.js'
@@ -55,8 +58,9 @@ export function reportOutputFixture(): ReportOutput {
   const references = [{ messageId: reportAnswerId, quote: reportQuote }]
   const finding = { title: '测试发现', detail: '已提出验证计划，但尚未提供试点结果。', references }
   const dimension = (score: number) => ({
+    status: 'assessed' as const,
     score,
-    reason: '观察不足，分数仅为有限样本下的初步估计。',
+    reason: '固定测试评分，用于协议、图表和持久化断言，不代表实际模型评价。',
     references,
   })
   return {
@@ -85,11 +89,11 @@ export function reportOutputFixture(): ReportOutput {
     ],
   }
 }
-export function reportFixture(): DefenseReport {
+export function reportFixture(): CurrentDefenseReport {
   const session = endedReportSession(),
     output = reportOutputFixture()
   return {
-    version: 1,
+    version: 2,
     id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
     sessionId: session.id,
     projectId: session.project.id,
@@ -100,5 +104,18 @@ export function reportFixture(): DefenseReport {
     answerCount: 1,
     overallScore: calculateOverallScore(output.dimensions),
     output,
+  }
+}
+export function legacyReportFixture(): LegacyDefenseReport {
+  const report = reportFixture()
+  const dimensions = Object.fromEntries(reportDimensionIds.map(id => {
+    const { status: _status, ...saved } = report.output.dimensions[id]
+    return [id, saved]
+  }))
+  return {
+    ...report,
+    version: 1,
+    overallScore: report.overallScore!,
+    output: legacyReportOutputSchema.parse({ ...report.output, dimensions }),
   }
 }

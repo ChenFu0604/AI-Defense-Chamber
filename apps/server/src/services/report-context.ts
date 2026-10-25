@@ -50,7 +50,12 @@ export function buildReportContext(
       return {
         messageId: message.id,
         answer: message.content,
+        questionId: question.id,
         question: question.content,
+        questionType: question.question?.questionType ?? null,
+        precedingAnswerMessageId: answers.some((answer) =>
+          answer.id === question.replyTo && session.messages.indexOf(answer) < session.messages.indexOf(question),
+        ) ? question.replyTo : null,
         judgeId: question.judgeId,
         answerStatus: message.status,
         attachments: message.attachments?.map((a) => ({
@@ -65,7 +70,7 @@ export function buildReportContext(
         message.sender === 'judge' && !answers.some((answer) => answer.replyTo === message.id),
     ).length,
     notice:
-      '保留全部已提交回答。failed 表示逐轮生成失败，不代表该回答本身无效。画像只是背景，评分引用必须来自用户回答。',
+      '保留全部已提交回答。failed 表示逐轮生成失败，不代表该回答本身无效。画像只是背景，评分引用必须来自用户回答。precedingAnswerMessageId 只表示问题与之前回答的实际关联，不保证构成有效追问；各维度观察覆盖仍须根据实际问答内容判断。',
   }
   const serialized = JSON.stringify(context)
   if (serialized.length > MAX_REPORT_CONTEXT_CHARS)

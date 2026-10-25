@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MODEL_REQUEST_TIMEOUT_MS } from '@defense/shared'
 import { requestReport } from '../services/report-api'
-import { reportFixture } from '../../../../tests/fixtures/report'
+import { legacyReportFixture, reportFixture } from '../../../../tests/fixtures/report'
 afterEach(() => {
   vi.unstubAllGlobals()
   vi.useRealTimers()
@@ -18,6 +18,19 @@ describe('report API client', () => {
     expect(fetcher.mock.calls[0]![1]!.method).toBe('GET')
     expect(fetcher.mock.calls[1]![1]!.method).toBe('POST')
     expect(fetcher.mock.calls[0]![0]).toBe(`/api/v1/defense/sessions/${record.sessionId}/report`)
+  })
+  it('accepts partial observations and unchanged legacy reports without fabricating a score', async () => {
+    const partial = reportFixture()
+    partial.output.dimensions.technical = {
+      status: 'insufficient', score: null, reason: '本轮尚未讨论技术方案。', references: [],
+    }
+    partial.overallScore = null
+    for (const record of [partial, legacyReportFixture()]) {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ success: true, data: record })))
+      expect(await requestReport(record.sessionId)).toEqual(record)
+    }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ success: true, data: { ...partial, overallScore: 0 } })))
+    await expect(requestReport(partial.sessionId)).rejects.toMatchObject({ code: 'INVALID_RESPONSE' })
   })
   it('handles missing history and backend model failures without inventing scores', async () => {
     for (const [code, status] of [
