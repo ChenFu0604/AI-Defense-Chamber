@@ -21,6 +21,8 @@ import {
   type ModelSettingsService,
 } from './services/model-settings-service.js'
 import { embeddingSettingsService, type EmbeddingSettingsService } from './services/embedding-settings-service.js'
+import { voiceService, type VoiceService } from './services/voice-service.js'
+import { createVoiceRouter } from './routes/voice.js'
 
 export function createApp(
   options: {
@@ -29,6 +31,7 @@ export function createApp(
     defense?: DefenseService
     modelSettings?: ModelSettingsService
     embeddingSettings?: EmbeddingSettingsService
+    voice?: VoiceService
     reports?: ReportService
     attachments?: AttachmentService
     knowledge?: KnowledgeService
@@ -52,6 +55,8 @@ export function createApp(
     express.json({ limit: '1mb' }),
   )
   app.use(express.json({ limit: '256kb' }))
+  app.use('/api/v1', createVoiceRouter(options.voice ?? voiceService))
+  app.use('/api', createVoiceRouter(options.voice ?? voiceService))
   const knowledge = options.knowledge ?? knowledgeFor(options.attachments ?? attachmentService)
   app.use('/api/v1', createKnowledgeRouter(knowledge))
   app.use('/api', createKnowledgeRouter(knowledge))

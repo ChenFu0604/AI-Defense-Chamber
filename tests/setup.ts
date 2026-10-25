@@ -24,6 +24,19 @@ vi.mock('../apps/server/src/config/embedding-settings-file.js', async (importOri
   }
 })
 
+// Voice tests use explicitly injected temporary files and transports; never read
+// the user's saved ASR/TTS credentials or make incidental paid audio requests.
+vi.mock('../apps/server/src/config/voice-settings-file.js', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../apps/server/src/config/voice-settings-file.js')>()
+  return {
+    ...original,
+    readSavedVoiceSettings(path?: string) {
+      if (path === undefined || path === original.voiceSettingsPath) return null
+      return original.readSavedVoiceSettings(path)
+    },
+  }
+})
+
 // dotenv is loaded by the app; default RAG calls must not use real environment
 // Embedding credentials either. Tests inject config/source or a temporary path.
 vi.mock('../apps/server/src/config/embedding.js', async (importOriginal) => {

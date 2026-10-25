@@ -110,7 +110,7 @@ onBeforeUnmount(() => {
           <div class="chat-judge-context">
             <JudgeAvatar :id="store.session.currentJudgeId" :size="18" />
             <div><h2>{{ judge?.name }}</h2><p>{{ store.session.status === 'ended' ? '本场已结束 · 完整对话已保存' : current?.question ? questionTypeLabels[current.question.questionType] + ' · 一次聊清一个问题' : '准备开始对话' }}</p></div>
-            <AppButton variant="ghost" :aria-expanded="showTools" aria-controls="session-chat-tools" aria-haspopup="dialog" @click="showTools = true"><PanelRight :size="15" />{{ store.session.status === 'ended' ? '训练设置' : '切换评委' }}</AppButton>
+            <AppButton variant="ghost" :disabled="uploading" :aria-expanded="showTools" aria-controls="session-chat-tools" aria-haspopup="dialog" @click="showTools = true"><PanelRight :size="15" />{{ store.session.status === 'ended' ? '训练设置' : '切换评委' }}</AppButton>
           </div>
           <h1 class="chat-project-title">{{ store.session.project.name }}</h1>
           <div class="chat-conversation-status">

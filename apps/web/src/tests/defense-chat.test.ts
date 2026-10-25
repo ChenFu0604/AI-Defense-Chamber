@@ -46,7 +46,7 @@ describe('chat answer composition', () => {
     store.draft = '我会补充原始访谈记录。'
     expect(submit(await render())).not.toContain('disabled')
     const ready = await render()
-    expect(ready.match(/<dialog\b/g)).toHaveLength(2)
+    expect(ready.match(/<dialog\b/g)).toHaveLength(3)
     expect(ready).not.toContain('class="chat-compose-extras"')
     const dialogBody = ready.slice(ready.indexOf('<dialog'))
     expect(dialogBody).toContain('OCR 识别扫描件和图片文字')

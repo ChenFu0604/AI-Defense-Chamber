@@ -1,0 +1,19 @@
+.voice-config-card h3 { display: flex; align-items: center; gap: 9px; margin: 0 0 10px; font-size: 16px; color: var(--text-primary); }
+.voice-service-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; }
+.voice-service-section { min-width: 0; }
+.voice-service-section > p, .voice-catalog-heading p { margin: 0 0 22px; font-size: 13px; color: var(--text-secondary); line-height: 1.8; }
+.voice-catalog-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+.voice-catalog-heading p { margin-bottom: 0; }
+.voice-catalog-note { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 14px 0 20px; line-height: 1.8; color: var(--text-secondary); font-size: 12px; }
+.voice-catalog-note a { color: var(--accent); text-underline-offset: 3px; }
+.voice-judge-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 20px; }
+.voice-manual-toggle { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; font-size: 13px; color: var(--text-secondary); }
+.model-config-form .voice-manual-toggle input { width: 17px; height: 17px; accent-color: var(--accent); }
+.voice-preview-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 14px; margin-top: 8px; }
+.voice-preview-controls .form-field { flex: 1; min-width: 180px; margin-bottom: 0; }
+.voice-preview-controls .app-button { margin-bottom: 2px; }
+.voice-preview-status { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; margin-top: 16px; border-radius: 12px; background: var(--surface-subtle); font-size: 13px; }
+.voice-preview-scope { margin: 16px 0; font-size: 12px; line-height: 1.9; color: var(--text-secondary); }
+.voice-config-card a:focus-visible, .voice-config-card input[type='checkbox']:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 800px) { .voice-service-grid { grid-template-columns: minmax(0, 1fr); gap: 20px; } }
+@media (max-width: 560px) { .voice-judge-grid { grid-template-columns: minmax(0, 1fr); } .voice-preview-controls .app-button { width: 100%; } .voice-catalog-heading { align-items: stretch; } .voice-catalog-heading .app-button { width: 100%; } }
