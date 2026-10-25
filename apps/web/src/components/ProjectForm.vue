@@ -288,14 +288,14 @@ function importDocument() {
         />
         <span class="field-counter">{{ form.name.length }} / {{ projectTextLimits.name }}</span>
       </FormField>
-      <FormField id="project-projectType" label="项目类型" :error="errors.projectType">
+      <FormField id="project-projectType" label="项目类型" hint="选择与你本次练习最接近的项目类型。" :error="errors.projectType">
         <select
           id="project-projectType"
           v-model="form.projectType"
           name="projectType"
           required
           :aria-invalid="!!errors.projectType"
-          :aria-describedby="errors.projectType ? 'project-projectType-error' : undefined"
+          :aria-describedby="'project-projectType-hint' + (errors.projectType ? ' project-projectType-error' : '')"
           @change="onInput('projectType')"
         >
           <option v-for="type in projectTypes" :key="type" :value="type">

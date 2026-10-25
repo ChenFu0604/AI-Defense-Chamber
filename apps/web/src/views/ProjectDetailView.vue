@@ -12,7 +12,6 @@ import {
 } from 'lucide-vue-next'
 import { projectTypeLabels, difficultyLabels, difficultyDescriptions } from '@defense/shared'
 import { useProjectsStore } from '../stores/projects'
-import { projectTextFields } from '../data/project-form'
 import { formatProjectDate } from '../utils/project-format'
 import StorageNotice from '../components/StorageNotice.vue'
 import ProjectAnalysisPanel from '../components/analysis/ProjectAnalysisPanel.vue'
@@ -67,11 +66,7 @@ const analysisStatus = computed(() => {
           <section id="project-brief" class="project-brief-card surface-panel" aria-labelledby="project-brief-heading">
 
             <div class="project-section-heading"><div><h2 id="project-brief-heading">项目资料</h2><p>评委将参考这些资料理解你的项目，修改后请重新生成项目画像。</p></div></div>
-            <div class="detail-sections">
-              <section v-for="field in projectTextFields" :key="field.key" class="detail-section">
-                <h3>{{ field.label }}</h3><p>{{ project[field.key] }}</p>
-              </section>
-            </div>
+            <ProjectSnapshot :project="project" />
           </section>
           <details v-if="project.attachments?.length" id="project-attachments" class="history-card project-fold-card surface-panel">
             <summary ><span>项目图片与文档</span><small>{{ project.attachments.length }} 份材料 · 展开查看</small></summary>

@@ -7,6 +7,7 @@ import FormField from '../ui/FormField.vue'
 import StatusNotice from '../ui/StatusNotice.vue'
 import { useModelSettings } from '../../composables/useModelSettings'
 import { useSystemStore } from '../../stores/system'
+withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false })
 const settings = useModelSettings()
 const {
   form,
@@ -31,9 +32,10 @@ async function save() {
 }
 </script>
 <template>
-  <section class="model-config-card surface-panel" aria-labelledby="model-config-title">
+  <section class="model-config-card surface-panel" :class="{ 'model-config-embedded': embedded }"
+    :aria-labelledby="embedded ? undefined : 'model-config-title'" :aria-label="embedded ? '模型连接设置' : undefined">
 
-    <div class="model-config-heading">
+    <div v-if="!embedded" class="model-config-heading">
       <span class="model-config-icon"><ServerCog :size="24" /></span>
       <div>
         <h2 id="model-config-title">模型配置</h2>
@@ -43,6 +45,7 @@ async function save() {
         saved?.hasApiKey ? '已配置密钥' : '尚未配置密钥'
       }}</span>
     </div>
+    <p v-else class="model-config-dialog-status">OpenAI 兼容 API<span>{{ saved?.hasApiKey ? '已配置密钥' : '尚未配置密钥' }}</span></p>
     <p class="model-config-description">
       项目画像、四角色评审和动态追问共用此配置。保存到后端后立即用于后续请求，重启后继续保留。
     </p>
@@ -186,3 +189,9 @@ async function save() {
     </p>
   </section>
 </template>
+<style scoped>
+.model-config-embedded { padding: 0; max-width: none; background: transparent; border: 0; box-shadow: none; }
+.model-config-dialog-status { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 16px; color: var(--text-secondary); font-size: 12px; }
+.model-config-dialog-status > span { padding: 5px 10px; border-radius: 8px; background: var(--surface-subtle); color: var(--text-primary); }
+.model-config-embedded .model-config-source { margin-top: 16px; padding-top: 0; }
+</style>

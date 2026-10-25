@@ -25,6 +25,20 @@ input::placeholder, textarea::placeholder { color: #66758a; opacity: 1; }
 input[type='checkbox'], input[type='radio'] { accent-color: var(--accent); }
 input:disabled, textarea:disabled, select:disabled { cursor: not-allowed; color: var(--text-secondary); }
 .form-field input[aria-invalid='true'], .form-field textarea[aria-invalid='true'], .form-field select[aria-invalid='true'] { border-color: var(--danger); background: var(--danger-soft); }
+/* Form surfaces must outrank the legacy .form-field / .model-config-form
+   border: 0 rules. Keep conversational composers and native toggles separate. */
+:is(.project-form, .model-config-form) .form-field :is(input:not([type]), input:is([type='text'], [type='number'], [type='password'], [type='url'], [type='email'], [type='search'], [type='tel']), textarea, select) { display: block; width: 100%; max-width: 100%; min-width: 0; min-height: 46px; padding: 12px 14px; border: 1px solid #7c8da8; border-radius: 10px; background: var(--surface-subtle); color: var(--text-primary); line-height: 1.8; box-shadow: none; transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease; }
+:is(.project-form, .model-config-form) .form-field :is(input:not([type]), input:is([type='text'], [type='number'], [type='password'], [type='url'], [type='email'], [type='search'], [type='tel']), textarea, select):hover:not(:disabled):not([readonly]):not([aria-invalid='true']) { border-color: var(--accent); background: var(--accent-soft); }
+:is(.project-form, .model-config-form) .form-field :is(input:not([type]), input:is([type='text'], [type='number'], [type='password'], [type='url'], [type='email'], [type='search'], [type='tel']), textarea, select):focus { outline: none; border-color: var(--accent); background: var(--surface-card); box-shadow: 0 0 0 3px rgb(55 102 213 / 14%); }
+:is(.project-form, .model-config-form) .form-field :is(input:not([type]), input:is([type='text'], [type='number'], [type='password'], [type='url'], [type='email'], [type='search'], [type='tel']), textarea, select)[aria-invalid='true'] { border-color: var(--danger); background: var(--danger-soft); }
+:is(.project-form, .model-config-form) .form-field :is(input:not([type]), input:is([type='text'], [type='number'], [type='password'], [type='url'], [type='email'], [type='search'], [type='tel']), textarea, select)[aria-invalid='true']:focus { box-shadow: 0 0 0 3px rgb(138 32 61 / 12%); }
+:is(.project-form, .model-config-form) .form-field :is(input:not([type]), input:is([type='text'], [type='number'], [type='password'], [type='url'], [type='email'], [type='search'], [type='tel']), textarea, select):disabled { background: var(--page-bg); border-color: var(--border-card); color: var(--text-secondary); box-shadow: none; cursor: not-allowed; }
+:is(.project-form, .model-config-form) .form-field :is(input, textarea)[readonly] { background: var(--page-bg); color: var(--text-secondary); }
+:is(.project-form, .model-config-form) .form-field textarea { min-height: 128px; resize: vertical; }
+.project-form .form-field { min-width: 0; margin-bottom: 24px; }
+.project-form .field-counter { margin: 8px 2px 0; line-height: 1.6; }
+@media (max-width: 700px) { :is(.project-form, .model-config-form) .form-field :is(input, select, textarea) { font-size: 16px; } }
+@media (prefers-reduced-motion: reduce) { :is(.project-form, .model-config-form) .form-field :is(input, select, textarea) { transition: none; } }
 .app-shell .sidebar { position: fixed; inset: 0 auto 0 0; width: 228px; height: 100vh; padding: 28px 18px 20px; background: var(--surface-card); border: 0; border-right: 1px solid var(--line); border-radius: 0; box-shadow: none; overflow-y: auto; }
 .app-shell .brand { padding: 0 4px; gap: 10px; }
 .app-shell .brand-symbol { width: 36px; height: 36px; border-radius: 9px; background: var(--accent); color: var(--accent-contrast); box-shadow: none; }

@@ -2,6 +2,7 @@ import { z } from 'zod'
 import {
   attachmentListSchema,
   defenseOperationSchema,
+  defenseStatusSchema,
   type Attachment,
   type DefenseOperation,
   type DefenseSession,
@@ -14,6 +15,10 @@ const recentSchema = z
       projectId: z.uuid(),
       name: z.string(),
       mode: z.enum(['live', 'demo']),
+      createdAt: z.iso.datetime().optional(),
+      updatedAt: z.iso.datetime().optional(),
+      status: defenseStatusSchema.optional(),
+      answerCount: z.number().int().min(0).max(100).optional(),
     }),
   )
   .max(20)
@@ -27,18 +32,27 @@ const draftKey = (id: string) => 'defense-chamber.draft.v1.' + id
 export function recentDefenseSessions() {
   return recentSchema.parse(JSON.parse(localStorage.getItem(DEFENSE_RECENT_KEY) ?? '[]'))
 }
-export function rememberDefense(session: Pick<DefenseSession, 'id' | 'project' | 'mode'>) {
+export function rememberDefense(session: Pick<DefenseSession, 'id' | 'project' | 'mode'> &
+  Partial<Pick<DefenseSession, 'createdAt' | 'updatedAt' | 'status' | 'messages'>>) {
   const previous = recentDefenseSessions()
+  const saved = previous.find((value) => value.id === session.id)
   const value = JSON.stringify(
-    [
-      {
-        id: session.id,
-        projectId: session.project.id,
-        name: session.project.name,
-        mode: session.mode,
-      },
-      ...previous.filter((v) => v.id !== session.id),
-    ].slice(0, 20),
+    recentSchema.parse(
+      [
+        {
+          ...saved,
+          id: session.id,
+          projectId: session.project.id,
+          name: session.project.name,
+          mode: session.mode,
+          ...(session.createdAt ? { createdAt: session.createdAt } : {}),
+          ...(session.updatedAt ? { updatedAt: session.updatedAt } : {}),
+          ...(session.status ? { status: session.status } : {}),
+          ...(session.messages ? { answerCount: session.messages.filter((message) => message.sender === 'user').length } : {}),
+        },
+        ...previous.filter((v) => v.id !== session.id),
+      ].slice(0, 20),
+    ),
   )
   localStorage.setItem(DEFENSE_RECENT_KEY, value)
   if (localStorage.getItem(DEFENSE_RECENT_KEY) !== value)
