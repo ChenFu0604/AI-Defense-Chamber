@@ -13,6 +13,7 @@ import AnswerFeedback from '../components/defense/AnswerFeedback.vue'
 import RagSources from '../components/knowledge/RagSources.vue'
 import DiscussionSummary from '../components/defense/DiscussionSummary.vue'
 import RequestWait from '../components/ui/RequestWait.vue'
+import ReportSessionOverview from '../components/report/ReportSessionOverview.vue'
 const route = useRoute(),
   store = useDefenseStore(),
   reports = useReportStore()
@@ -61,19 +62,7 @@ const answers = computed(
     {{ store.warning || reports.warning }}
   </StatusNotice>
   <template v-if="store.session?.status === 'ended'">
-    <div class="defense-session-bar">
-      <strong>{{ store.session.project.name }}</strong
-      ><span>{{
-        store.session.mode === 'demo' ? '模拟诊断 · 未调用模型' : '真实答辩记录 · AI 主观训练建议'
-      }}</span
-      ><span>已保存 {{ answers }} 次回答</span>
-    </div>
-    <nav class="page-section-nav" aria-label="报告内容导航">
-      <a href="#report-evaluation">评分与建议</a>
-      <a href="#report-training">本轮练习</a>
-      <a href="#report-feedback">逐轮反馈</a>
-      <a href="#report-transcript">完整记录</a>
-    </nav>
+    <ReportSessionOverview :project-name="store.session.project.name" :mode="store.session.mode" :answers="answers" />
     <div class="report-next-actions surface-panel">
 
       <div><strong>把反馈带到下一步</strong><p>先看改进建议，再查看风险或开始新的练习。</p></div>

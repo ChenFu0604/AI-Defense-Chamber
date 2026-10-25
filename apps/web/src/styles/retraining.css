@@ -1,0 +1,81 @@
+.retraining-page { min-width: 0; max-width: 1240px; margin-inline: auto; }
+.retraining-page .retraining-page-heading { margin-bottom: 22px; }
+.retraining-page .retraining-page-heading h1 { font-size: clamp(24px, 2.2vw, 30px); line-height: 1.5; }
+.retraining-page .retraining-page-heading p { margin-top: 7px; font-size: 14px; line-height: 1.8; color: var(--text-secondary); }
+.retraining-context { padding: 20px 22px; margin-bottom: 20px; }
+.retraining-project-heading { display: flex; align-items: center; gap: 12px; }
+.retraining-project-heading > div { min-width: 0; }
+.retraining-context-icon { display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; color: var(--accent); background: var(--accent-soft); border-radius: 11px; }
+.retraining-project-heading h2 { margin: 0; font-size: 20px; line-height: 1.5; overflow-wrap: anywhere; }
+.retraining-project-heading p { margin: 5px 0 0; color: var(--text-secondary); font-size: 13px; line-height: 1.8; }
+.retraining-settings-label { margin: 15px 0 6px; color: var(--text-secondary); font-size: 12px; line-height: 1.7; }
+.retraining-context .training-summary { gap: 6px 16px; margin: 0 0 8px; padding: 10px 12px; border-radius: 9px; background: var(--surface-subtle); font-size: 12px; }
+.retraining-page .retraining-caption { margin: 0; color: var(--text-secondary); font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
+.retraining-layout { display: grid; grid-template-columns: minmax(0, 1fr) 350px; align-items: start; gap: 20px; }
+.retraining-main { display: grid; min-width: 0; gap: 20px; }
+.retraining-section, .retraining-review { min-width: 0; padding: 20px; }
+.retraining-section-heading { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px; }
+.retraining-section-heading > span { display: grid; place-items: center; flex-shrink: 0; width: 28px; height: 28px; border-radius: 8px; color: var(--accent); background: var(--accent-soft); font-size: 11px; font-variant-numeric: tabular-nums; }
+.retraining-section-heading h2 { margin: 0; font-size: 16px; font-weight: var(--weight-strong); line-height: 1.7; }
+.retraining-section-heading p { margin: 4px 0 0; color: var(--text-secondary); font-size: 12px; line-height: 1.8; }
+.retraining-source-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; min-width: 0; margin: 0 0 12px; padding: 0; border: 0; }
+.retraining-source-choice { display: flex; align-items: flex-start; gap: 8px; min-width: 0; padding: 14px; border: 1px solid var(--border-card); border-radius: 10px; background: var(--surface-subtle); cursor: pointer; }
+.retraining-source-choice > input { flex-shrink: 0; margin: 5px 0 0; accent-color: var(--accent); }
+.retraining-source-choice > span { display: grid; gap: 6px; min-width: 0; }
+.retraining-source-choice strong { display: flex; align-items: flex-start; gap: 6px; color: var(--text-primary); font-size: 13px; font-weight: var(--weight-strong); line-height: 1.7; }
+.retraining-source-choice strong > svg { flex-shrink: 0; margin-top: 3px; color: var(--accent); }
+.retraining-source-choice time, .retraining-source-choice small { color: var(--text-secondary); font-size: 11px; line-height: 1.8; overflow-wrap: anywhere; }
+.retraining-source-choice.is-selected { border-color: var(--accent); background: var(--accent-soft); }
+.retraining-source-choice.is-unavailable { opacity: .65; cursor: not-allowed; }
+.retraining-source-options:disabled .retraining-source-choice { cursor: not-allowed; }
+.retraining-source-choice:focus-within, .retraining-task-choice:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.retraining-subheading { display: flex; align-items: center; gap: 7px; margin: 0 0 12px; color: var(--text-primary); font-size: 14px; font-weight: var(--weight-strong); line-height: 1.7; }
+.retraining-subheading > svg { color: var(--accent); flex-shrink: 0; }
+.retraining-weaknesses { display: grid; gap: 8px; margin: 0 0 22px; padding: 0; list-style: none; }
+.retraining-weaknesses li { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border-radius: 9px; background: var(--surface-subtle); }
+.retraining-weaknesses li > span { display: grid; place-items: center; flex-shrink: 0; width: 21px; height: 21px; margin-top: 1px; color: var(--warning); background: var(--warning-soft); border-radius: 6px; font-size: 11px; }
+.retraining-weaknesses li > div { min-width: 0; }
+.retraining-weaknesses strong { font-size: 13px; font-weight: var(--weight-strong); line-height: 1.7; overflow-wrap: anywhere; }
+.retraining-weaknesses p { margin: 4px 0 0; color: var(--text-secondary); font-size: 13px; line-height: 1.8; overflow-wrap: anywhere; }
+.retraining-task-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.retraining-task-heading .retraining-subheading { margin: 0; }
+.retraining-selected-count { color: var(--accent); font-size: 12px; font-variant-numeric: tabular-nums; }
+.retraining-task-list { display: grid; gap: 8px; margin-top: 12px; }
+.retraining-page .retraining-task-choice { display: flex; align-items: flex-start; gap: 9px; min-width: 0; padding: 12px; border: 1px solid var(--border-card); border-radius: 9px; background: var(--surface-subtle); cursor: pointer; }
+.retraining-page .retraining-task-choice.is-selected { border-color: var(--accent); background: var(--accent-soft); }
+.retraining-task-content { display: grid; min-width: 0; gap: 6px; }
+.retraining-task-content > strong { color: var(--text-primary); font-size: 13px; line-height: 1.7; font-weight: var(--weight-strong); overflow-wrap: anywhere; }
+.retraining-task-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; color: var(--text-secondary); font-size: 11px; }
+.retraining-task-meta .is-in_progress { color: var(--accent); }
+.retraining-task-meta .is-done { color: var(--success); }
+.retraining-task-note { color: var(--text-secondary); font-size: 12px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+.retraining-task-empty { display: flex; align-items: flex-start; gap: 10px; margin-top: 12px; padding: 14px; border-radius: 9px; background: var(--surface-subtle); }
+.retraining-task-empty > svg { flex-shrink: 0; margin-top: 2px; color: var(--accent); }
+.retraining-task-empty strong { font-size: 13px; font-weight: var(--weight-strong); }
+.retraining-task-empty p { margin: 4px 0 0; color: var(--text-secondary); font-size: 12px; line-height: 1.8; }
+.retraining-task-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 14px; margin-top: 14px; }
+.retraining-task-footer .text-button { font-size: 12px; }
+.retraining-report-suggestions { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+.retraining-report-suggestions summary { color: var(--accent); font-size: 12px; cursor: pointer; }
+.retraining-report-suggestions ul { display: grid; gap: 12px; padding: 0; margin: 14px 0; list-style: none; }
+.retraining-report-suggestions strong { font-size: 13px; }
+.retraining-report-suggestions p, .retraining-report-suggestions small { color: var(--text-secondary); font-size: 12px; line-height: 1.8; }
+.retraining-report-suggestions p { margin: 4px 0; }
+.retraining-report-suggestions .text-button { font-size: 12px; }
+.retraining-review { position: sticky; top: 24px; }
+.retraining-review .role-picker { margin: 0; }
+.retraining-review .role-picker > legend { font-size: 13px; margin-bottom: 10px; }
+.retraining-review .role-picker-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.retraining-review .role-choice { padding: 12px; gap: 5px; }
+.retraining-review .role-choice-top { margin-bottom: 3px; }
+.retraining-review .role-choice-english { display: none; }
+.retraining-review .role-choice-intro { font-size: 12px; line-height: 1.7; }
+.retraining-review .role-choice-tags { gap: 4px; }
+.retraining-review .role-choice-tags > span { padding: 2px 5px; font-size: 10px; }
+.retraining-review .role-choice-state { font-size: 10px; margin-top: 4px; }
+.retraining-review .defense-confirm { gap: 8px; margin: 18px 0 14px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 12px; line-height: 1.8; color: var(--text-secondary); }
+.retraining-review > .app-button { width: 100%; }
+.retraining-review .retraining-start-note { margin-top: 12px; font-size: 11px; }
+@media (max-width: 1120px) { .retraining-layout { grid-template-columns: minmax(0, 1fr); } .retraining-review { position: static; } .retraining-review .role-picker-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-height: 800px) { .retraining-review { position: static; } }
+@media (max-width: 700px) { .retraining-context, .retraining-section, .retraining-review { padding: 16px; } .retraining-source-options { grid-template-columns: minmax(0, 1fr); } .retraining-review .role-picker-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .retraining-project-heading { align-items: flex-start; } }

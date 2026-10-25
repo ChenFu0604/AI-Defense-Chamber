@@ -46,10 +46,12 @@ describe('report reading layout', () => {
     const { html, generate } = await renderReport()
     expect(html).toContain(reportFixture().output.summary)
     expect(html.indexOf('下一次答辩前的行动清单')).toBeLessThan(html.indexOf('分项评分与回答依据'))
-    for (const target of ['report-evaluation', 'report-training', 'report-feedback', 'report-transcript', `answer-${reportAnswerId}`]) {
-      expect(html).toContain(`href="#${target}"`)
+    for (const target of ['report-evaluation', 'report-training', 'report-feedback', 'report-transcript']) {
+      expect(html).toContain(`href="/defense/sessions/${endedReportSession().id}/report#${target}"`)
       expect(html).toContain(`id="${target}"`)
     }
+    expect(html).toContain(`href="#answer-${reportAnswerId}"`)
+    expect(html).toContain(`id="answer-${reportAnswerId}"`)
     expect(generate).not.toHaveBeenCalled()
   })
 
